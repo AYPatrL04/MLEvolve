@@ -16,7 +16,7 @@ from agents.coder.stepwise_coder import create_default_step_agents
 from agents.hardware_context import get_hardware_context_for_stage
 from agents.review_contracts import ReviewIssue, StageRepairResult
 from llm import generate
-from utils.precision_policy import CONSERVATIVE_PRECISION_INSTRUCTION
+from utils.precision_policy import precision_mode_instruction
 
 logger = logging.getLogger("MLEvolve")
 
@@ -121,8 +121,9 @@ def _build_repair_prompt(
     cuda_docs_evidence: str = "",
 ) -> str:
     description, guidelines = _stage_ownership(agent, stage)
-    if getattr(agent.acfg, "precision_optimization_mode", "normal") == "conservative":
-        guidelines = [CONSERVATIVE_PRECISION_INSTRUCTION, *(
+    mode = getattr(agent.acfg, "precision_optimization_mode", "normal")
+    if mode in {"conservative", "normal"}:
+        guidelines = [precision_mode_instruction(mode), *(
             item for item in guidelines
             if not any(token in item for token in ("Transformer Engine", "TE FP8", "fp16, bf16", "Do NOT choose AMP"))
         )]

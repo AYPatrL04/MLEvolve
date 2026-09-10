@@ -19,10 +19,10 @@ import yaml
 
 from llm import generate
 from utils.precision_policy import (
-    CONSERVATIVE_PRECISION_INSTRUCTION,
     PrecisionPolicy,
     normalize_precision_policy_name,
     resolve_precision_policy,
+    precision_mode_instruction,
 )
 
 logger = logging.getLogger("MLEvolve")
@@ -188,11 +188,9 @@ def build_pipeline_decision(
         stage_context=stage_context,
         precision_policy=precision_policy,
     )
-    schema = PIPELINE_DECISION_JSON_SCHEMA
-    if precision_policy.mode == "conservative":
-        schema = copy.deepcopy(schema)
-        schema["properties"]["datatype_precision"]["properties"]["precision_policy"]["enum"] = list(precision_policy.allowed_policies)
-        prompt["system"] += " " + CONSERVATIVE_PRECISION_INSTRUCTION
+    schema = copy.deepcopy(PIPELINE_DECISION_JSON_SCHEMA)
+    schema["properties"]["datatype_precision"]["properties"]["precision_policy"]["enum"] = list(precision_policy.allowed_policies)
+    prompt["system"] += " " + precision_mode_instruction(precision_policy.mode)
 
     for attempt in range(max(1, max_retries)):
         try:
@@ -250,7 +248,7 @@ def _render_pipeline_decision_section(payload: str) -> str:
         "model-design -> datatype/quantization -> training "
         "(code keys: model_design -> datatype_precision -> training_evaluation).\n\n"
         "1. Model design: load/prepare data, create features/splits, and choose architecture/model family, loss, criterion, and output interface first.\n"
-        "2. Datatype/quantization: choose dtype, AMP/TF32, GradScaler, TE FP8/MXFP8/NVFP4 recipes, autocast, precision-required model adapters, and precision fallback policy.\n"
+        "2. Datatype/precision: choose only mode-allowed operations, autocast regions, FP32-sensitive regions, scaling and fallback behavior. A policy is not a whole-pipeline dtype.\n"
         "3. Training: choose optimizer, scheduler, batch size, dataloader settings, checkpointing, validation, submission, runtime fallbacks, and logging.\n"
         "Datatype precision may include only precision-required model adapters that preserve the Stage 1 model family, loss, data features, and output interface.\n"
         "Hardware-only training/runtime tuning must not increase epochs, folds, model size, image resolution, ensemble count, TTA, dataset size, or validation workload.\n"
@@ -364,7 +362,7 @@ def _build_decision_prompt(
         f"Data preview:\n{data_preview}\n\n"
         "Pipeline contract:\n"
         "1. Model design: load/prepare data, create features/splits, and choose architecture/model family, loss, criterion, and output interface first.\n"
-        "2. Datatype/quantization: choose dtype, AMP/TF32, GradScaler, TE FP8/MXFP8/NVFP4 recipes, autocast, precision-required model adapters, and precision fallback policy.\n"
+        "2. Datatype/precision: choose only mode-allowed operations, autocast regions, FP32-sensitive regions, scaling and fallback behavior. A policy is not a whole-pipeline dtype.\n"
         "3. Training: choose optimizer, scheduler, batch size, dataloader policy, checkpoint cadence, validation/submission behavior, and fallbacks.\n\n"
         "Rules:\n"
         "- Do not use hardware speed as a reason to violate task correctness, package availability, model-source availability, or submission format.\n"
@@ -373,6 +371,8 @@ def _build_decision_prompt(
         "- Return exactly these top-level keys: model_design, datatype_precision, training_evaluation, evidence. Do not return datatype, model, optimizer, or tuning as top-level keys.\n"
         "- If graph/predictor evidence is missing, record that in evidence.missing_evidence and use conservative tuning fallbacks.\n"
         "- evidence.evidence_refs must only contain refs listed in the hardware/profile evidence payload.\n\n"
+        "- In precision_model_adaptation, specify forward/loss autocast boundaries, FP32-sensitive operations, parameter/input dtypes, backward/scaler behavior, and validation/export handling.\n"
+        "- HWDB recommended_patterns are conditional candidates, not proof of correctness, speed or package availability. Record unmet conditions as missing evidence.\n"
         f"- Select datatype_precision.precision_policy only from this hardware/mode allowlist: "
         f"{', '.join(precision_policy.allowed_policies)}.\n"
         "- FP8/MXFP8/NVFP4 require a compatible Transformer Engine forward/backward path; "

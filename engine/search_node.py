@@ -77,6 +77,7 @@ class SearchNode(DataClassJsonMixin):
 
     # ---- hardware/profile prompt evidence ----
     hardware_context: Optional[Dict[str, Any]] = field(default=None, kw_only=True)
+    hardware_prompt_audit: List[Dict[str, Any]] = field(default_factory=list, kw_only=True)
     graph_evidence: Optional[Dict[str, Any]] = field(default=None, kw_only=True)
     derived_diagnosis: Optional[Dict[str, Any]] = field(default=None, kw_only=True)
     vector_evidence: Optional[Dict[str, Any]] = field(default=None, kw_only=True)

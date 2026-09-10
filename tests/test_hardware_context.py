@@ -57,7 +57,7 @@ def test_compact_context_bounds_every_stage_and_merge_without_losing_precision()
     assert set(sections) == {"model_design", "datatype_precision", "training_evaluation", "merge"}
     for section in sections.values():
         assert len(section) <= 1000
-        assert "conservative; allowed: fp32, disabled, tf32" in section
+        assert "conservative; allowed: fp32, disabled" in section
         assert "31000" in section
         assert "scheduler owns" in section
         assert "UNRELATED_CATALOG" not in section
@@ -122,7 +122,7 @@ def test_compact_context_keeps_only_critical_stage_patterns(mode: str) -> None:
                     "fused_adam", "verbose advice", "large-image", "BF16", "PROFILE_DUMP", "VERBOSE_", "AdamW", "RAW_REFERENCE"):
         assert omitted not in prompt
     dtype = format_compact_hardware_prompt_section(compact, stage="datatype_precision")
-    assert ("Use BF16" in dtype) == (mode == "normal")
+    assert "Use BF16" not in dtype
     assert "checkpointing" not in dtype
     assert len(format_compact_hardware_prompt_section(compact, stage="merge", max_chars=650)) <= 650
     assert compact == original
@@ -147,7 +147,7 @@ def test_compact_context_omits_patterns_from_mismatched_hardware() -> None:
         ]},
     }
     prompt = format_compact_hardware_prompt_section(compact, stage="model_design")
-    assert "conservative; allowed: fp32, disabled, tf32" in prompt
+    assert "conservative; allowed: fp32, disabled" in prompt
     assert "sm_86" not in prompt
     compact["stage_hardware_features"]["hardware"]["compute_capability"] = "8.0"
     compact["stage_hardware_features"]["stages"][0]["node"]["avoid_patterns"] = ["No CUDA extension without sm_80 target."]

@@ -871,6 +871,7 @@ class ModelPreflightGate:
         candidate_dir.mkdir(parents=True, exist_ok=True)
         candidate_path = candidate_dir / "candidate.py"
         candidate_path.write_text(code, encoding="utf-8")
+        (node_dir / f"candidate_attempt_{attempt}.py").write_text(code, encoding="utf-8")
         manifest_path = node_dir / "preflight.yaml"
         manifest = self._manifest(node, candidate_dir, profile.manifest_profile, code)
         manifest_path.write_text(
@@ -981,6 +982,22 @@ class ModelPreflightGate:
         summary_path.write_text(
             json.dumps(outcome.to_dict(), indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
+        )
+        feedback = {
+            "attempt": attempt,
+            "node_id": str(node.id),
+            "candidate_path": str((node_dir / f"candidate_attempt_{attempt}.py").resolve()),
+            "outcome": outcome.to_dict(),
+            "pipeline_decision": getattr(node, "pipeline_decision", None),
+            "stage_note_board": getattr(node, "stage_note_board", []),
+            "hardware_prompt_audit": getattr(node, "hardware_prompt_audit", []),
+            "hardware_evidence_refs": getattr(node, "hardware_evidence_refs", []),
+            "review_history": getattr(node, "review_history", []),
+            "attribution": "unassigned",
+            "attribution_note": "Diagnostics identify observed defects, not their cause. Compare raw HWDB evidence, filtered prompts, stage decisions and candidate code before attributing to HWDB, filtering, generation or integration. CPU checks do not validate CUDA AMP performance or correctness.",
+        }
+        (node_dir / f"feedback_attempt_{attempt}.json").write_text(
+            json.dumps(feedback, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8"
         )
         return outcome
 

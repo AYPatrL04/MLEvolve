@@ -2391,16 +2391,16 @@
           "vision_inference"
         ],
         "recommended_patterns": [
-          "bf16/fp16/TF32 mixed precision for GPU matmul/conv-heavy training; keep metrics/export in fp32",
+          "Consider FP16 AMP for eligible GPU matmul/conv only when normal mode permits it; keep FP32 parameters, sensitive operations and metrics/export, with measured FP32 fallback.",
           "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
-          "TF32 matmul via set_float32_matmul_precision('high')",
+          "Use IEEE FP32 matmul/convolution in conservative and normal modes; hardware support alone does not enable a precision policy.",
           "activation checkpointing only for activation-memory-bound training or OOM fallback; not a speed default",
           "gradient accumulation only when physical batch cannot fit; not a speed default",
-          "sequence packing default for transformer training",
+          "Consider sequence packing only for padded transformer batches with verified attention masks, positions, sample boundaries and unchanged loss semantics.",
           "KV-cache memory budget before autoregressive inference",
-          "quantized inference first for autoregressive/generative inference",
-          "tiled/chunked input default for large image/video/WSI",
-          "channels_last for CNN/UNet vision workloads",
+          "Quantized inference is an optional deployment experiment only when the selected mode permits it and task accuracy is validated; it is not a training default.",
+          "Consider tiled/chunked input only when memory requires it and task geometry, labels and prediction aggregation remain valid.",
+          "Benchmark channels_last for compatible CNN/UNet operations; retain the original layout when conversion overhead or unsupported operations negate gains.",
           "fast DataLoader path: use num_workers>0, pin_memory=True, persistent_workers when workers are reused, and non_blocking=True device copies",
           "runtime avoid per-step CPU-GPU synchronization; aggregate metrics on tensors and call item()/cpu()/numpy() only at sparse logging or final export",
           "runtime validation/inference should use torch.inference_mode() or torch.no_grad() and cast low-precision outputs to fp32 before CPU/NumPy/export",
@@ -2473,19 +2473,18 @@
           "vision_inference"
         ],
         "recommended_patterns": [
-          "bf16/fp16/TF32 mixed precision for GPU matmul/conv-heavy training; keep metrics/export in fp32",
+          "Consider FP16 AMP for eligible GPU matmul/conv only when normal mode permits it; keep FP32 parameters, sensitive operations and metrics/export, with measured FP32 fallback.",
           "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
-          "TF32 matmul via set_float32_matmul_precision('high')",
-          "FP64 viable for HPC workloads (9.7 TFLOPS FP64)",
+          "Use IEEE FP32 matmul/convolution in conservative and normal modes; hardware support alone does not enable a precision policy.",
           "activation checkpointing only for activation-memory-bound training or OOM fallback; not a speed default",
           "gradient accumulation only when physical batch cannot fit; not a speed default",
-          "sequence packing default for transformer training",
+          "Consider sequence packing only for padded transformer batches with verified attention masks, positions, sample boundaries and unchanged loss semantics.",
           "KV-cache memory budget before autoregressive inference",
-          "quantized inference first for autoregressive/generative inference",
+          "Quantized inference is an optional deployment experiment only when the selected mode permits it and task accuracy is validated; it is not a training default.",
           "MIG partitioning for multi-tenant inference packing (up to 7x 5GB instances)",
           "NVLink Bridge for 2-GPU all_reduce (600 GB/s)",
-          "tiled/chunked input default for large image/video/WSI",
-          "channels_last for CNN/UNet vision workloads",
+          "Consider tiled/chunked input only when memory requires it and task geometry, labels and prediction aggregation remain valid.",
+          "Benchmark channels_last for compatible CNN/UNet operations; retain the original layout when conversion overhead or unsupported operations negate gains.",
           "fast DataLoader path: use num_workers>0, pin_memory=True, persistent_workers when workers are reused, and non_blocking=True device copies",
           "runtime avoid per-step CPU-GPU synchronization; aggregate metrics on tensors and call item()/cpu()/numpy() only at sparse logging or final export",
           "runtime validation/inference should use torch.inference_mode() or torch.no_grad() and cast low-precision outputs to fp32 before CPU/NumPy/export",
@@ -2558,19 +2557,18 @@
           "vision_inference"
         ],
         "recommended_patterns": [
-          "bf16/fp16/TF32 mixed precision for GPU matmul/conv-heavy training; keep metrics/export in fp32",
+          "Consider FP16 AMP for eligible GPU matmul/conv only when normal mode permits it; keep FP32 parameters, sensitive operations and metrics/export, with measured FP32 fallback.",
           "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
-          "TF32 matmul via set_float32_matmul_precision('high')",
-          "FP64 viable for HPC workloads (9.7 TFLOPS FP64)",
+          "Use IEEE FP32 matmul/convolution in conservative and normal modes; hardware support alone does not enable a precision policy.",
           "activation checkpointing only for activation-memory-bound training or OOM fallback; not a speed default",
           "gradient accumulation only when physical batch cannot fit; not a speed default",
-          "sequence packing default for transformer training",
+          "Consider sequence packing only for padded transformer batches with verified attention masks, positions, sample boundaries and unchanged loss semantics.",
           "KV-cache memory budget before autoregressive inference",
-          "quantized inference first for autoregressive/generative inference",
+          "Quantized inference is an optional deployment experiment only when the selected mode permits it and task accuracy is validated; it is not a training default.",
           "MIG partitioning for multi-tenant inference packing (up to 7x 10GB instances)",
           "NVLink Bridge for 2-GPU all_reduce (600 GB/s)",
-          "tiled/chunked input default for large image/video/WSI",
-          "channels_last for CNN/UNet vision workloads",
+          "Consider tiled/chunked input only when memory requires it and task geometry, labels and prediction aggregation remain valid.",
+          "Benchmark channels_last for compatible CNN/UNet operations; retain the original layout when conversion overhead or unsupported operations negate gains.",
           "fast DataLoader path: use num_workers>0, pin_memory=True, persistent_workers when workers are reused, and non_blocking=True device copies",
           "runtime avoid per-step CPU-GPU synchronization; aggregate metrics on tensors and call item()/cpu()/numpy() only at sparse logging or final export",
           "runtime validation/inference should use torch.inference_mode() or torch.no_grad() and cast low-precision outputs to fp32 before CPU/NumPy/export",
@@ -2643,19 +2641,18 @@
           "vision_inference"
         ],
         "recommended_patterns": [
-          "bf16/fp16/TF32 mixed precision for GPU matmul/conv-heavy training; keep metrics/export in fp32",
+          "Consider FP16 AMP for eligible GPU matmul/conv only when normal mode permits it; keep FP32 parameters, sensitive operations and metrics/export, with measured FP32 fallback.",
           "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
-          "TF32 matmul via set_float32_matmul_precision('high')",
-          "FP64 viable for HPC workloads (9.7 TFLOPS FP64)",
+          "Use IEEE FP32 matmul/convolution in conservative and normal modes; hardware support alone does not enable a precision policy.",
           "activation checkpointing only for activation-memory-bound training or OOM fallback; not a speed default",
           "gradient accumulation only when physical batch cannot fit; not a speed default",
-          "sequence packing default for transformer training",
+          "Consider sequence packing only for padded transformer batches with verified attention masks, positions, sample boundaries and unchanged loss semantics.",
           "KV-cache memory budget before autoregressive inference",
-          "quantized inference first for autoregressive/generative inference",
+          "Quantized inference is an optional deployment experiment only when the selected mode permits it and task accuracy is validated; it is not a training default.",
           "MIG partitioning for multi-tenant inference packing (up to 7x 5GB instances)",
           "NVLink for multi-GPU all_reduce (600 GB/s via HGX A100)",
-          "tiled/chunked input default for large image/video/WSI",
-          "channels_last for CNN/UNet vision workloads",
+          "Consider tiled/chunked input only when memory requires it and task geometry, labels and prediction aggregation remain valid.",
+          "Benchmark channels_last for compatible CNN/UNet operations; retain the original layout when conversion overhead or unsupported operations negate gains.",
           "fast DataLoader path: use num_workers>0, pin_memory=True, persistent_workers when workers are reused, and non_blocking=True device copies",
           "runtime avoid per-step CPU-GPU synchronization; aggregate metrics on tensors and call item()/cpu()/numpy() only at sparse logging or final export",
           "runtime validation/inference should use torch.inference_mode() or torch.no_grad() and cast low-precision outputs to fp32 before CPU/NumPy/export",
@@ -2728,19 +2725,18 @@
           "vision_inference"
         ],
         "recommended_patterns": [
-          "bf16/fp16/TF32 mixed precision for GPU matmul/conv-heavy training; keep metrics/export in fp32",
+          "Consider FP16 AMP for eligible GPU matmul/conv only when normal mode permits it; keep FP32 parameters, sensitive operations and metrics/export, with measured FP32 fallback.",
           "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
-          "TF32 matmul via set_float32_matmul_precision('high')",
-          "FP64 viable for HPC workloads (9.7 TFLOPS FP64)",
+          "Use IEEE FP32 matmul/convolution in conservative and normal modes; hardware support alone does not enable a precision policy.",
           "activation checkpointing only for activation-memory-bound training or OOM fallback; not a speed default",
           "gradient accumulation only when physical batch cannot fit; not a speed default",
-          "sequence packing default for transformer training",
+          "Consider sequence packing only for padded transformer batches with verified attention masks, positions, sample boundaries and unchanged loss semantics.",
           "KV-cache memory budget before autoregressive inference",
-          "quantized inference first for autoregressive/generative inference",
+          "Quantized inference is an optional deployment experiment only when the selected mode permits it and task accuracy is validated; it is not a training default.",
           "MIG partitioning for multi-tenant inference packing (up to 7x 10GB instances)",
           "NVLink for multi-GPU all_reduce (600 GB/s via HGX A100)",
-          "tiled/chunked input default for large image/video/WSI",
-          "channels_last for CNN/UNet vision workloads",
+          "Consider tiled/chunked input only when memory requires it and task geometry, labels and prediction aggregation remain valid.",
+          "Benchmark channels_last for compatible CNN/UNet operations; retain the original layout when conversion overhead or unsupported operations negate gains.",
           "fast DataLoader path: use num_workers>0, pin_memory=True, persistent_workers when workers are reused, and non_blocking=True device copies",
           "runtime avoid per-step CPU-GPU synchronization; aggregate metrics on tensors and call item()/cpu()/numpy() only at sparse logging or final export",
           "runtime validation/inference should use torch.inference_mode() or torch.no_grad() and cast low-precision outputs to fp32 before CPU/NumPy/export",
@@ -5609,14 +5605,15 @@
           "vision_inference"
         ],
         "recommended_patterns": [
+          "Consider FP16 AMP for eligible GPU matmul/conv only when normal mode permits it; keep FP32 parameters, sensitive operations and metrics/export, with measured FP32 fallback.",
           "activation checkpointing when activation memory dominates [https://docs.pytorch.org/docs/2.12/checkpoint.html]",
-          "sequence packing and KV-cache budget before longer context",
-          "gradient accumulation before raising physical batch",
-          "quantized inference before increasing context or batch",
-          "tiled/chunked input for large image/video/WSI",
-          "channels_last for CNN/UNet vision workloads",
+          "Consider sequence packing only with verified masks and sample boundaries; budget KV-cache only for autoregressive inference. Preserve sequence length.",
+          "Use gradient accumulation only when needed to preserve effective batch under memory limits; benchmark overhead instead of assuming a speedup.",
+          "Quantized inference is an optional deployment experiment only when the selected mode permits it and task accuracy is validated; it is not a training default.",
+          "Consider tiled/chunked input only when memory requires it and task geometry, labels and prediction aggregation remain valid.",
+          "Benchmark channels_last for compatible CNN/UNet operations; retain the original layout when conversion overhead or unsupported operations negate gains.",
           "use 32GB/1.792TBps for single-GPU local LLM inference and PEFT [https://images.nvidia.com/aem-dam/Solutions/geforce/blackwell/nvidia-rtx-blackwell-gpu-architecture.pdf]",
-          "use QLoRA/LoRA before full-parameter fine-tuning",
+          "Parameter-efficient fine-tuning changes the training method; use only when the model-design decision explicitly selects it and the precision policy permits it.",
           "target sm_120 for custom CUDA extensions",
           "custom CUDA kernels: budget 99KB block shared memory and 48 warps/SM [https://docs.nvidia.com/cuda/blackwell-tuning-guide/index.html]",
           "fast DataLoader path: use num_workers>0, pin_memory=True, persistent_workers when workers are reused, and non_blocking=True device copies",
@@ -11218,7 +11215,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "The autocast dtype must itself be allowed for the target architecture."
+        "limitations": "The autocast dtype must itself be allowed for the target architecture.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11260,7 +11270,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations."
+        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11353,7 +11376,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "The autocast dtype must itself be allowed for the target architecture."
+        "limitations": "The autocast dtype must itself be allowed for the target architecture.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11395,7 +11431,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations."
+        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11488,7 +11537,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "The autocast dtype must itself be allowed for the target architecture."
+        "limitations": "The autocast dtype must itself be allowed for the target architecture.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11530,7 +11592,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations."
+        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11623,7 +11698,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "The autocast dtype must itself be allowed for the target architecture."
+        "limitations": "The autocast dtype must itself be allowed for the target architecture.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11665,7 +11753,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations."
+        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11758,7 +11859,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "The autocast dtype must itself be allowed for the target architecture."
+        "limitations": "The autocast dtype must itself be allowed for the target architecture.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -11800,7 +11914,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations."
+        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -17275,7 +17402,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "The autocast dtype must itself be allowed for the target architecture."
+        "limitations": "The autocast dtype must itself be allowed for the target architecture.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {
@@ -17317,7 +17457,20 @@
           "normal",
           "aggressive"
         ],
-        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations."
+        "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+        "description": "Selective FP16 AMP is an optional per-operation compute policy. Preserve FP32 parameters and floating inputs; use FP32 for sensitive loss/reductions and metrics/export.",
+        "recommended_patterns": [
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "For sensitive loss/reductions, locally disable autocast and cast inputs to FP32; preserve integer indices and labels.",
+          "Validation/test forwards may share validated autocast; accumulate metrics and export predictions in FP32. CPU preflight uses FP32."
+        ],
+        "avoid_patterns": [
+          "Do not cast the whole model or batch to half or assume all operations should use FP16.",
+          "Do not assume AMP improves speed or accuracy without a target-GPU comparison; keep an FP32 fallback."
+        ],
+        "example_code": "import torch\nmodel = torch.nn.Linear(64, 32).float()\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = model.to(device)\noptimizer = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ntarget = torch.randn(8, 32, device=device, dtype=torch.float32)\namp_enabled = device.type == 'cuda'  # Select only when the active mode permits FP16 AMP.\nscaler = torch.amp.GradScaler('cuda', enabled=amp_enabled)\noptimizer.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):\n    prediction = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (prediction.float() - target).square().mean()\nscaler.scale(loss).backward()\nscaler.step(optimizer)\nscaler.update()\n",
+        "source_url": "https://docs.pytorch.org/docs/stable/amp.html"
       }
     },
     {

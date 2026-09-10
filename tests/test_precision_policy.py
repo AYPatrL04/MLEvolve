@@ -26,7 +26,7 @@ BASE = {"fp32", "disabled"}
 @pytest.mark.parametrize("architecture", ["unknown", "volta", "turing", "ampere", "ada_lovelace", "hopper", "blackwell"])
 def test_conservative_precision_architecture_allowlist(architecture: str) -> None:
     policy = resolve_precision_policy({"architecture": architecture}, mode="conservative")
-    expected = BASE if architecture in {"unknown", "volta", "turing"} else BASE | {"tf32"}
+    expected = BASE
     assert set(policy.allowed_policies) == expected
     assert policy.preferred_policy == "fp32"
     for feature in ("amp", "fp16", "bf16", "fp8", "int8", "fp64"):
@@ -66,37 +66,37 @@ def test_conservative_guard_accepts_float32_and_disabled_features(code: str) -> 
     assert validate_training_precision(_agent("conservative"), code) == ()
 
 
-def test_conservative_tf32_requires_hardware_and_uses_explicit_profile() -> None:
+def test_conservative_tf32_is_rejected_even_with_explicit_profile() -> None:
     code = 'torch.backends.cuda.matmul.allow_tf32 = True\n'
     assert validate_training_precision(_agent("conservative"), code)
     assert validate_training_precision(_agent("conservative"), code, context=_context("volta"))
-    assert not validate_training_precision(_agent("conservative"), code, context=_context("ampere"))
+    assert validate_training_precision(_agent("conservative"), code, context=_context("ampere"))
     agent = _agent("conservative")
     agent.cfg = SimpleNamespace(preflight=SimpleNamespace(target_profile="config/preflight_profiles/a100_80gb.yaml"))
-    assert not validate_training_precision(agent, code)
+    assert validate_training_precision(agent, code)
     modern_code = 'torch.backends.cuda.matmul.fp32_precision = "tf32"\n'
     assert validate_training_precision(_agent("conservative"), modern_code)
-    assert not validate_training_precision(agent, modern_code)
+    assert validate_training_precision(agent, modern_code)
 
 
 def test_conservative_static_hardware_guidance_hides_low_precision() -> None:
     result = query_hardware_features("NVIDIA A100 SXM4 80GB", "datatype_precision", precision_mode="conservative")
     features = {item["feature_id"] for item in result["features"]}
-    assert "tf32" in features
+    assert "tf32" not in features
     assert not features & {"amp", "fp16", "bf16", "fp8", "int8", "fp64"}
     node = query_hardware_node("NVIDIA A100 SXM4 80GB", "datatype_precision", precision_mode="conservative")
-    assert not any("bf16" in item.lower() or "fp16" in item.lower() for item in node["recommended_patterns"])
+    assert not any("bf16" in item.lower() or "fp16" in item.lower() for item in node.get("recommended_patterns", []))
 
 
-def test_a100_recommends_bf16_without_banning_fp16() -> None:
+def test_a100_normal_allows_optional_fp16_without_preferring_a_format() -> None:
     from agents.hardware_context import format_hardware_datatype_prompt_section
 
     policy = resolve_precision_policy({"architecture": "ampere", "compute_capability": "8.0"}, mode="normal")
-    assert policy.preferred_policy == "bf16_amp"
+    assert policy.preferred_policy is None
     assert policy.allows("fp16_amp")
     prompt = format_hardware_datatype_prompt_section({"precision_policy": policy.to_dict()})
-    assert "Starting precision recommendation: BF16 AMP" in prompt
-    assert "Preserve explicit precision choices" in prompt
+    assert "FP16 AMP is optional" in prompt
+    assert not policy.allows("bf16_amp")
     assert resolve_precision_policy({"architecture": "volta"}).preferred_policy is None
 
 
@@ -105,12 +105,12 @@ def test_a100_recommends_bf16_without_banning_fp16() -> None:
     [
         ("volta", BASE | {"fp16_amp"}, BASE | {"fp16_amp"}),
         ("turing", BASE | {"fp16_amp"}, BASE | {"fp16_amp"}),
-        ("ampere", BASE | {"tf32", "bf16_amp", "fp16_amp"}, BASE | {"tf32", "bf16_amp", "fp16_amp"}),
-        ("ada_lovelace", BASE | {"tf32", "bf16_amp", "fp16_amp"}, BASE | {"tf32", "bf16_amp", "fp16_amp", "fp8_te"}),
-        ("hopper", BASE | {"tf32", "bf16_amp", "fp16_amp"}, BASE | {"tf32", "bf16_amp", "fp16_amp", "fp8_te"}),
+        ("ampere", BASE | {"fp16_amp"}, BASE | {"tf32", "bf16_amp", "fp16_amp"}),
+        ("ada_lovelace", BASE | {"fp16_amp"}, BASE | {"tf32", "bf16_amp", "fp16_amp", "fp8_te"}),
+        ("hopper", BASE | {"fp16_amp"}, BASE | {"tf32", "bf16_amp", "fp16_amp", "fp8_te"}),
         (
             "blackwell",
-            BASE | {"tf32", "bf16_amp", "fp16_amp"},
+            BASE | {"fp16_amp"},
             BASE | {"tf32", "bf16_amp", "fp16_amp", "fp8_te", "mxfp8_te", "nvfp4_te"},
         ),
     ],
@@ -163,10 +163,10 @@ def test_canonical_amp_policy_names_are_normalized(value: str) -> None:
     [
         ("NVIDIA Tesla V100 32GB", "normal", {"fp16"}, {"bf16", "tf32", "fp8", "mxfp8", "nvfp4", "fp64"}),
         ("NVIDIA T4", "normal", {"fp16", "int8", "int4"}, {"bf16", "tf32", "fp8", "mxfp8", "nvfp4"}),
-        ("GeForce RTX 4090", "normal", {"fp16", "bf16", "tf32", "int8"}, {"fp8", "mxfp8", "nvfp4", "fp4"}),
+        ("GeForce RTX 4090", "normal", {"fp16", "int8"}, {"bf16", "tf32", "fp8", "mxfp8", "nvfp4", "fp4"}),
         ("GeForce RTX 4090", "aggressive", {"fp8", "fp8_e4m3", "fp8_e5m2"}, {"mxfp8", "nvfp4", "fp4"}),
         ("NVIDIA H100 PCIe 80GB", "aggressive", {"fp8", "fp8_e4m3", "fp8_e5m2"}, {"mxfp8", "nvfp4", "fp4"}),
-        ("GeForce RTX 5090", "normal", {"fp16", "bf16", "tf32", "int8"}, {"fp8", "mxfp8", "nvfp4", "fp4", "fp64"}),
+        ("GeForce RTX 5090", "normal", {"fp16", "int8"}, {"bf16", "tf32", "fp8", "mxfp8", "nvfp4", "fp4", "fp64"}),
         ("GeForce RTX 5090", "aggressive", {"fp8", "mxfp8", "nvfp4", "int8"}, {"fp4", "fp64"}),
     ],
 )
@@ -309,7 +309,7 @@ def test_deterministic_validation_rejects_generic_fp4_and_normal_mode_fp8() -> N
 
     assert generic and generic[0].severity == "critical"
     assert generic[0].category == "datatype_precision"
-    assert fp8 and "normal mode" in fp8[0].evidence
+    assert fp8 and "normal mode" in fp8[0].evidence.lower()
 
 
 def test_aggressive_fp8_and_nvfp4_require_explicit_transformer_engine_recipe() -> None:

@@ -19,7 +19,7 @@ from typing import List, Tuple, Dict, Any
 from llm import generate, compile_prompt_to_md
 from utils.response import extract_code, extract_text_up_to_code, wrap_code
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
-from utils.precision_policy import CONSERVATIVE_PRECISION_INSTRUCTION
+from utils.precision_policy import precision_mode_instruction
 from agents.planner.base_planner import (
     PLANNING_ALLOWED_MODULES,
     PLANNING_JSON_FORMAT,
@@ -200,12 +200,13 @@ class StepAgent:
             prev_summary = "This is the first step, no previous steps."
 
         guidelines_to_use = self.guidelines.copy()
-        if getattr(agent_instance.acfg, "precision_optimization_mode", "normal") == "conservative":
+        mode = getattr(agent_instance.acfg, "precision_optimization_mode", "normal")
+        if mode in {"conservative", "normal"}:
             guidelines_to_use = [
                 guideline for guideline in guidelines_to_use
                 if not any(token in guideline for token in ("Transformer Engine", "TE FP8", "fp16, bf16", "Do NOT choose AMP"))
             ]
-            guidelines_to_use.append(CONSERVATIVE_PRECISION_INSTRUCTION)
+        guidelines_to_use.append(precision_mode_instruction(mode))
 
         use_pretrain = (
             hasattr(agent_instance, 'use_coldstart') and
@@ -597,7 +598,7 @@ def create_default_step_agents(
             "Read the Cross-Stage Note Board first and preserve the Stage 1 candidate target; precision choices and adapters should support that target instead of changing the model/data design.",
             "CRITICAL: Do NOT redesign model family, loss function, model output interface, data features, preprocessing, optimizer, scheduler, batch size, epochs, learning rate, dataloader workers, gradient accumulation, checkpoint cadence, validation metric, or submission logic.",
             "Allowed precision-required model adaptations: wrap or replace compatible modules with Transformer Engine layers, add precision shape padding/config hooks, define TE FP8/MXFP8/NVFP4 autocast recipes, or keep selected layers in higher precision. These must preserve the Stage 1 model family, loss, data features, and output interface.",
-            "Use the Hardware/Profile Optimization Context to choose among fp32, tf32, fp16, bf16, TE FP8/MXFP8/NVFP4, or disabled AMP. Prefer low-precision TE modes only when hardware, framework/package availability, and model structure evidence support them; keep fp32 fallback for fragile losses or unsupported devices.",
+            "Choose only from the current mode's allowed precision policies. FP16 AMP is selective: define forward/loss autocast regions, FP32-sensitive regions, backward/scaling behavior and CPU/FP32 fallback. A hardware capability is not a requirement to use it.",
             hardware_node_rule,
             "Note board: record how the precision policy and any precision-required adapter support the Stage 1 target and which feature keys drove the choice.",
             "Keep precision configurable and valid for the canonical effective backend. Do not hardcode scheduler backend selection or implement scheduler-owned launch and resource controls.",
@@ -628,7 +629,7 @@ def create_default_step_agents(
                 "Hardware-aware training: optimize runtime at fixed modeling intent. Do NOT increase epochs, folds, model size, input resolution, ensemble count, TTA, dataset size, or validation workload as a hardware-only optimization unless the user explicitly asks for score improvement.",
                 "Allowed hardware optimizations in this stage: physical batch size, gradient accumulation while preserving effective batch size, dataloader workers, pin_memory, persistent_workers, channels_last, safe torch.compile, checkpointing, and runtime logging. Precision choices and precision-required model adapters must consume the datatype_precision policy.",
                 "Scheduler-aware training: run as an independent subprocess and follow the one canonical effective backend in the Hardware/Profile Optimization Context. Keep scheduler-owned launch and resource controls out of job code, and never integrate with or launch sibling jobs.",
-                "Hardware-aware training: use the hardware/profile context to choose physical batch size, accumulation, checkpoint cadence, and dataloader settings. If choosing a riskier setting for score reasons, include an explicit fallback path for OOM/timeout such as smaller batch size, accumulation, lower resolution, fewer epochs, or checkpoint resume.",
+                "Hardware-aware training: choose physical batch size, accumulation, checkpoint cadence, and dataloader settings from evidence. On OOM/timeout, preserve model/input geometry, data exposure and effective batch; record smaller physical batch, accumulation or checkpoint-resume fallbacks instead of silently reducing the task.",
                 "When feasible, log resolved batch size, selected precision, elapsed time, throughput, and peak CUDA memory so later scheduler graph evidence can learn from this run.",
             ]
         )

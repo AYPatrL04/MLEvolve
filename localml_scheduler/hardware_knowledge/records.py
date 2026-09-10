@@ -286,6 +286,9 @@ def validate_has_feature(payload: dict[str, Any]) -> dict[str, Any]:
         "limitations": _as_string(payload.get("limitations")),
         "hardware_specific_how_to_use": _as_string(payload.get("hardware_specific_how_to_use")),
         "hardware_specific_sample_code": _as_string(payload.get("hardware_specific_sample_code")),
+        "hardware_specific_description": _as_string(payload.get("hardware_specific_description")),
+        "recommended_patterns": _as_string_list(payload.get("recommended_patterns"), field_name="recommended_patterns"),
+        "avoid_patterns": _as_string_list(payload.get("avoid_patterns"), field_name="avoid_patterns"),
         "verified": bool(payload.get("verified", False)),
         "last_verified_at": _as_string(payload.get("last_verified_at")),
     }
@@ -481,7 +484,10 @@ def load_hardware_knowledge_from_graph_json(path: str | Path) -> dict[str, list[
                     "software_requirements": props.get("software_requirements") or [],
                     "limitations": props.get("limitations"),
                     "hardware_specific_how_to_use": props.get("hardware_specific_how_to_use") or feature.get("how_to_use"),
-                    "hardware_specific_sample_code": props.get("hardware_specific_sample_code") or feature.get("sample_code"),
+                    "hardware_specific_sample_code": props.get("hardware_specific_sample_code") or props.get("example_code") or feature.get("sample_code"),
+                    "hardware_specific_description": props.get("description"),
+                    "recommended_patterns": props.get("recommended_patterns"),
+                    "avoid_patterns": props.get("avoid_patterns"),
                     "verified": props.get("verified", False),
                     "last_verified_at": props.get("last_verified_at"),
                 }

@@ -10,6 +10,7 @@ not sufficient.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import re
 from typing import Any, Mapping
 
 
@@ -24,10 +25,56 @@ CONSERVATIVE_PRECISION_INSTRUCTION = (
     "Conservative precision is mandatory for candidate models: use float32 parameters, floating inputs, "
     "optimizer state, training, validation, and inference. Keep integer indices/labels unchanged. "
     "Disable AMP/autocast and GradScaler; do not use FP16, BF16, FP8, FP4, FP64, quantized models, "
-    "or lower-precision adapters. TF32 may accelerate float32 matmul/convolution only on confirmed "
-    "Ampere-or-newer CUDA hardware; otherwise use FP32. TF32 uses reduced internal mantissa precision "
-    "while tensors remain float32. This rule overrides inherited code and hardware recommendations."
+    "or lower-precision adapters. Disable TF32 for matmul and cuDNN convolution using the installed "
+    "PyTorch version's supported controls; use IEEE FP32, including float32 matmul precision 'highest'. "
+    "This rule overrides inherited code and hardware recommendations."
 )
+
+NORMAL_PRECISION_INSTRUCTION = (
+    "Normal mode permits FP32 and selective FP16 AMP only, not BF16, TF32, quantization or TE recipes. "
+    "FP16 is an option, not a requirement or a whole-pipeline dtype. Keep model parameters and floating "
+    "inputs and floating regression targets in FP32; preserve integer indices and labels. Use CUDA autocast only around eligible forward "
+    "operations and compatible loss computation. Run backward and optimizer updates outside autocast, "
+    "with GradScaler for FP16 and unscale before gradient clipping. For fragile losses/reductions, disable "
+    "autocast locally and explicitly cast inputs to FP32. Keep metric accumulation and prediction export "
+    "in FP32; validation/test forwards may share a validated autocast path. Do not call model.half() or "
+    "cast the entire batch to half. CPU preflight uses FP32 with AMP/scaling disabled. Disable TF32 for "
+    "matmul and convolution. Compare finite loss/gradients, task quality and elapsed time against FP32; "
+    "retain FP32 for unsupported, unstable or slower operations. Record the actual regions and fallback, "
+    "not an unmeasured speedup."
+)
+
+
+def precision_mode_instruction(mode: str) -> str:
+    if mode == PRECISION_MODE_CONSERVATIVE:
+        return CONSERVATIVE_PRECISION_INSTRUCTION
+    if mode == PRECISION_MODE_NORMAL:
+        return NORMAL_PRECISION_INSTRUCTION
+    return "Select only hardware/mode-allowed precision policies and preserve an FP32 fallback."
+
+
+def precision_advice_allowed(text: str, policy: PrecisionPolicy) -> bool:
+    """Filter positive advice across every stage; this is not a code validator."""
+    text = str(text or "").lower().replace("-", "_")
+    if policy.mode == PRECISION_MODE_AGGRESSIVE:
+        if "fp6" in text or ("fp4" in text and "nvfp4" not in text):
+            return False
+        return all(token not in text or policy.allows(required) for token, required in {
+            "fp8": "fp8_te", "mxfp8": "mxfp8_te", "nvfp4": "nvfp4_te"
+        }.items())
+    requirements = {
+        r"\b(?:fp16|float16|half|amp|autocast|gradscaler)\b": "fp16_amp",
+        r"\b(?:bf16|bfloat16)\b": "bf16_amp",
+        r"\btf32\b|set_float32_matmul_precision\(['\"](?:high|medium)['\"]\)": "tf32",
+        r"\b(?:fp8\w*|float8\w*)\b": "fp8_te",
+        r"\bmxfp8\b": "mxfp8_te",
+        r"\bnvfp4\b": "nvfp4_te",
+    }
+    if re.search(r"\b(?:fp64|float64|fp6|fp4|mxfp4)\b", text):
+        return False
+    if policy.mode != PRECISION_MODE_AGGRESSIVE and re.search(r"\b(?:quantiz\w*|qlora|int[48])\b", text):
+        return False
+    return all(not re.search(pattern, text) or policy.allows(required) for pattern, required in requirements.items())
 
 _BASE_POLICIES = ("fp32", "disabled")
 _POLICY_TO_FEATURES: dict[str, tuple[str, ...]] = {
@@ -133,12 +180,12 @@ def resolve_precision_policy(
     capability = _first_text(capability_value)
     normalized_architecture = _normalize_architecture(architecture_value, capability)
     allowed = list(_BASE_POLICIES)
-    if normalized_mode == PRECISION_MODE_CONSERVATIVE:
-        if normalized_architecture in {"ampere", "ada_lovelace", "hopper", "blackwell"}:
-            allowed.append("tf32")
-    elif normalized_architecture in {"volta", "turing"}:
+    if normalized_mode == PRECISION_MODE_NORMAL:
+        if normalized_architecture in {"volta", "turing", "ampere", "ada_lovelace", "hopper", "blackwell"}:
+            allowed.append("fp16_amp")
+    elif normalized_mode == PRECISION_MODE_AGGRESSIVE and normalized_architecture in {"volta", "turing"}:
         allowed.append("fp16_amp")
-    elif normalized_architecture in {"ampere", "ada_lovelace", "hopper", "blackwell"}:
+    elif normalized_mode == PRECISION_MODE_AGGRESSIVE and normalized_architecture in {"ampere", "ada_lovelace", "hopper", "blackwell"}:
         allowed.extend(("tf32", "bf16_amp", "fp16_amp"))
 
     if normalized_mode == PRECISION_MODE_AGGRESSIVE:
@@ -189,7 +236,7 @@ def resolve_precision_policy(
         ),
         preferred_policy=(
             "fp32" if normalized_mode == PRECISION_MODE_CONSERVATIVE
-            else "bf16_amp" if normalized_architecture == "ampere" else None
+            else "bf16_amp" if normalized_mode == PRECISION_MODE_AGGRESSIVE and normalized_architecture == "ampere" else None
         ),
     )
 

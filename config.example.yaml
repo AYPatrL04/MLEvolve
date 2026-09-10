@@ -294,7 +294,7 @@ agent:
   hardware_context_limit: 8
   hardware_context_max_prompt_chars: 3500
   hardware_context_mode: full  # full | compact (bounded evidence; no feature-selection LLM call)
-  precision_optimization_mode: normal  # conservative (FP32/TF32 only) | normal | aggressive
+  precision_optimization_mode: normal  # conservative (IEEE FP32 only) | normal (FP32 + selective FP16 AMP) | aggressive
   # NVIDIA CUDA documentation enrichment is local-first and disabled by
   # default. Enable progressively: shadow -> prefetch_only -> debug_cached ->
   # debug_live. Only debug_live permits a blocking hosted lookup.

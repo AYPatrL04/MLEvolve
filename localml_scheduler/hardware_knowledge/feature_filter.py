@@ -11,6 +11,7 @@ from utils.precision_policy import (
     PrecisionPolicy,
     precision_feature_visibility,
     resolve_precision_policy,
+    precision_advice_allowed,
 )
 
 # ---------------------------------------------------------------------------
@@ -89,18 +90,13 @@ def query_hardware_node(
     recommended_patterns = _filter_patterns_by_stage(
         _as_str_list(props.get("recommended_patterns")), stage
     )
-    if stage == "datatype_precision":
-        recommended_patterns = [
-            pattern
-            for pattern in recommended_patterns
-            if _precision_pattern_allowed(pattern, precision_policy)
-        ]
+    recommended_patterns = [pattern for pattern in recommended_patterns if _precision_pattern_allowed(pattern, precision_policy)]
 
     feature_index = _stage_feature_key_index(
         graph,
         edges,
         stage,
-        precision_policy=precision_policy if stage == "datatype_precision" else None,
+        precision_policy=precision_policy,
     )
 
     return _compact_dict({
@@ -195,7 +191,7 @@ def query_hardware_features(
 
         edge_props = edge.get("properties", {})
         visibility = None
-        if category == "precision" and stage == "datatype_precision":
+        if category == "precision":
             visibility = precision_feature_visibility(feature_id, precision_policy)
             if visibility == "hidden":
                 continue
@@ -203,15 +199,15 @@ def query_hardware_features(
             "feature_id": feature_id,
             "name": _feature_name(feat_props),
             "category": category,
-            "description": feat_props.get("description"),
-            "example_code": feat_props.get("example_code"),
+            "description": edge_props.get("description") or feat_props.get("description"),
+            "example_code": edge_props.get("example_code") or feat_props.get("example_code"),
             "api_symbols": feat_props.get("api_symbols", []),
             "usage": feat_props.get("usage"),
-            "recommended_patterns": feat_props.get("recommended_patterns", []),
-            "avoid_patterns": feat_props.get("avoid_patterns", []),
+            "recommended_patterns": [pattern for pattern in edge_props.get("recommended_patterns", feat_props.get("recommended_patterns", [])) if precision_advice_allowed(pattern, precision_policy)],
+            "avoid_patterns": edge_props.get("avoid_patterns", feat_props.get("avoid_patterns", [])),
             "support_level": edge_props.get("support_level"),
             "recommended": (
-                visibility == "recommendation"
+                visibility == "recommendation" and edge_props.get("recommended") is True
                 if visibility is not None
                 else edge_props.get("recommended")
             ),
@@ -330,11 +326,9 @@ def _stage_feature_key_index(
             continue
         description = _feature_short_description(feature_id, feat_props)
         _append_unique_feature_pair(all_keys, feature_id, description)
-        if visibility == "integer_indicator" or (
-            visibility is None and edge_props.get("recommended") is False
-        ):
+        if visibility in {"integer_indicator", "permitted"} or edge_props.get("recommended") is False:
             _append_unique_feature_pair(not_recommended_keys, feature_id, description)
-        elif visibility == "recommendation" or edge_props.get("recommended") is True:
+        elif edge_props.get("recommended") is True:
             _append_unique_feature_pair(recommended_keys, feature_id, description)
         support_level = str(edge_props.get("support_level") or "").lower()
         if (
@@ -366,19 +360,7 @@ def _merge_text_values(*values: Any) -> str:
 
 
 def _precision_pattern_allowed(pattern: str, policy: PrecisionPolicy) -> bool:
-    text = str(pattern or "").lower().replace("-", "_")
-    if policy.mode == "conservative" and re.search(
-        r"\b(?:fp16|float16|bf16|bfloat16|fp64|float64|amp|autocast|gradscaler|quantiz\w*)\b", text
-    ):
-        return False
-    requirements = {
-        "mxfp8": "mxfp8_te",
-        "nvfp4": "nvfp4_te",
-        "fp8": "fp8_te",
-    }
-    if "fp6" in text or ("fp4" in text and "nvfp4" not in text):
-        return False
-    return all(token not in text or policy.allows(required) for token, required in requirements.items())
+    return precision_advice_allowed(pattern, policy)
 
 
 def _feature_short_description(feature_id: str, feat_props: dict[str, Any]) -> str:
@@ -519,7 +501,13 @@ def _append_unique_feature_pair(values: list[list[str]], feature_id: str, descri
 def _lookup_node(
     graph: dict[str, Any], hardware_name: str,
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
-    query = hardware_name.lower()
+    def normalize(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+    query = normalize(hardware_name)
+    if not query:
+        return None, []
+    candidates = []
     for node in graph["nodes"]:
         if node["label"] != "Hardware":
             continue
@@ -530,13 +518,16 @@ def _lookup_node(
             props.get("name", ""),
             props.get("name_key", ""),
         ] + list(props.get("aliases") or [])
-        if any(query in s.lower() or s.lower() in query for s in searchable if s):
-            hw_id = node["id"]
-            edges = [
-                e for e in graph["edges"]
-                if e.get("from") == hw_id and e.get("type") == "HAS_FEATURE"
-            ]
-            return node, edges
+        names = [normalize(s) for s in searchable if s]
+        if query in names:
+            candidates = [node]
+            break
+        if any(f" {query} " in f" {s} " or f" {s} " in f" {query} " for s in names):
+            candidates.append(node)
+    # A10 must never match A100; ambiguous capacity/SKU names require more evidence.
+    if len(candidates) == 1:
+        node = candidates[0]
+        return node, [e for e in graph["edges"] if e.get("from") == node["id"] and e.get("type") == "HAS_FEATURE"]
     return None, []
 
 

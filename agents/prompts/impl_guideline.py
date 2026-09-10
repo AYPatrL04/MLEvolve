@@ -6,7 +6,7 @@ import humanize
 
 from agents.runtime_dependencies import advertised_package_names
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
-from utils.precision_policy import CONSERVATIVE_PRECISION_INSTRUCTION
+from utils.precision_policy import precision_mode_instruction
 
 
 def get_impl_guideline_from_agent(agent):
@@ -26,8 +26,8 @@ def get_impl_guideline_from_agent(agent):
         pretrain_model_dir=getattr(agent.cfg, "pretrain_model_dir", ""),
         task_name=getattr(agent.cfg, "exp_id", ""),
     )
-    if getattr(agent.acfg, "precision_optimization_mode", "normal") == "conservative":
-        guideline["Conservative precision"] = [CONSERVATIVE_PRECISION_INSTRUCTION]
+    mode = getattr(agent.acfg, "precision_optimization_mode", "normal")
+    guideline["Precision policy"] = [precision_mode_instruction(mode)]
     return guideline
 
 

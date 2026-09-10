@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import logging
 import json
 import re
@@ -16,6 +17,7 @@ from utils.precision_policy import (
     PrecisionPolicy,
     precision_feature_visibility,
     resolve_precision_policy,
+    precision_advice_allowed,
 )
 
 logger = logging.getLogger("MLEvolve")
@@ -26,9 +28,10 @@ HARDWARE_STAGE1_HEADING = "# Hardware-Aware Stage 1 Candidate Construction Conte
 HARDWARE_DATATYPE_HEADING = "# Hardware-Aware Datatype/Precision Context"
 HARDWARE_TRAINING_HEADING = "# Hardware-Aware Training Hyperparameter Context"
 EVIDENCE_NOT_LAW_RULE = (
-    "Treat recommendations as empirical evidence, not hard rules. Follow high-confidence hardware/profile "
-    "guidance by default; if a scoring reason requires deviating, state why and include a fallback such as "
-    "smaller physical batch size, gradient accumulation, AMP, reduced resolution, fewer epochs, or checkpointing."
+    "HWDB recommended_patterns are conditional candidates, not measured speedups or mandatory steps. "
+    "Check workload, installed backend, allowed precision and each stated limitation before applying one. "
+    "A capability or verified flag does not prove benefit for this candidate. Keep the baseline when "
+    "evidence is missing; record feature keys, unmet conditions and measured results without inventing them."
 )
 CONSTRAINT_PRECEDENCE_RULE = (
     "Hardware advice never overrides task, dataset, submission, package, model-source, or filesystem constraints. "
@@ -461,6 +464,7 @@ def apply_hardware_context_to_node(node: Any, context: HardwarePromptContext | N
     if context is None or not context.compact_context:
         return
     compact = context.compact_context
+    _record_hardware_prompt_audit(node, context)
     node.hardware_context = compact.get("hardware_context")
     node.graph_evidence = compact.get("graph_evidence")
     node.derived_diagnosis = compact.get("derived_diagnosis")
@@ -478,6 +482,7 @@ def apply_hardware_design_brief_to_node(node: Any, context: HardwarePromptContex
     if context is None or not context.compact_context:
         return
     compact = context.compact_context
+    _record_hardware_prompt_audit(node, context)
     _store_hardware_decision(node, {
         "stage": "model_design",
         "rationale": "Hardware-aware model design brief was provided before draft generation.",
@@ -1021,6 +1026,13 @@ def _filter_precision_stage_features(
     merged_feature_ids: list[str] = []
     for raw_stage in list(result.get("stages") or []):
         stage = copy.deepcopy(raw_stage)
+        node = dict(stage.get("node") or {})
+        if "recommended_patterns" in node:
+            node["recommended_patterns"] = [p for p in node["recommended_patterns"] if precision_advice_allowed(p, policy)]
+        stage["node"] = node
+        for feature in stage.get("features") or []:
+            if "recommended_patterns" in feature:
+                feature["recommended_patterns"] = [p for p in feature["recommended_patterns"] if precision_advice_allowed(p, policy)]
         if policy.mode == "conservative":
             stage["features"] = [
                 item for item in stage.get("features") or []
@@ -1051,7 +1063,7 @@ def _filter_precision_stage_features(
                 continue
             item = dict(feature)
             item["prompt_visibility"] = visibility
-            item["recommended"] = visibility == "recommendation"
+            item["recommended"] = visibility == "recommendation" and feature.get("recommended") is True
             if visibility == "permitted":
                 item["notes"] = (
                     "Allowed only in aggressive mode after backend, model, shape, speed, "
@@ -1133,19 +1145,7 @@ def _filter_vector_evidence_for_role(
 
 
 def _precision_evidence_allowed(entry: dict[str, Any], policy: PrecisionPolicy) -> bool:
-    text = _evidence_entry_text(entry).lower().replace("-", "_")
-    if policy.mode == "conservative" and re.search(
-        r"\b(?:fp16|float16|bf16|bfloat16|fp64|float64|amp|autocast|gradscaler|quantiz\w*)\b", text
-    ):
-        return False
-    disallowed = {
-        "fp8": "fp8_te",
-        "mxfp8": "mxfp8_te",
-        "nvfp4": "nvfp4_te",
-    }
-    if "fp6" in text or ("fp4" in text and "nvfp4" not in text):
-        return False
-    return all(token not in text or required in policy.allowed_policies for token, required in disallowed.items())
+    return precision_advice_allowed(_evidence_entry_text(entry), policy)
 
 
 def _filter_precision_recommendations(
@@ -1461,7 +1461,9 @@ def format_compact_hardware_prompt_section(
         "- Run one subprocess on the configured backend; scheduler owns devices, launch, concurrency and memory limits.",
     ]
     if policy.get("mode") == "conservative":
-        lines.append("- Float32 model/input/state; no AMP/GradScaler. TF32 only on confirmed Ampere+; otherwise FP32.")
+        lines.append("- IEEE FP32 model/input/state; disable AMP/GradScaler and TF32 matmul/convolution.")
+    elif policy.get("mode", "normal") == "normal":
+        lines.append("- FP16 AMP is optional and local: FP32 parameters/inputs, sensitive loss, metrics/export; scaled backward outside autocast. CPU fallback: FP32. Disable TF32.")
     effective_backend = compact.get("effective_backend") or backend.get("effective_backend") or backend.get("packing_backend")
     if effective_backend:
         lines.append(f"- Effective backend: {effective_backend}.")
@@ -1543,7 +1545,7 @@ def format_hardware_design_brief(compact: dict[str, Any], *, max_chars: int = 35
             suffix = f" ({details})" if details else ""
             benefit_text = f"; benefits={benefits}" if benefits else ""
             risk_text = f"; risks={risk}" if risk else ""
-            lines.append(f"  - {family}{suffix}: {_short(rationale, 180)}{benefit_text}{risk_text}")
+            lines.append(f"- Model candidate: {family}{suffix}: {_short(rationale, 180)}{benefit_text}{risk_text}")
     feature_index = compact.get("hardware_feature_index") or {}
     feature_keys = list(feature_index.get("features") or [])
     if feature_keys:
@@ -1849,6 +1851,12 @@ def _append_precision_policy(lines: list[str], policy: dict[str, Any]) -> None:
     if policy.get("mode") == "conservative":
         lines.append(f"- Conservative precision: {CONSERVATIVE_PRECISION_INSTRUCTION}")
         return
+    if policy.get("mode", "normal") == "normal":
+        lines.append(
+            "- FP16 AMP is optional, not a whole-pipeline cast: FP32 parameters/inputs, local autocast for forward, "
+            "FP32-sensitive losses/reductions and metrics/export; GradScaler and backward outside autocast. "
+            "Disable TF32; use FP32 on CPU. Retain FP32 wherever AMP is unstable, unsupported or slower."
+        )
     if policy.get("preferred_policy") == "bf16_amp":
         lines.append(
             "- Starting precision recommendation: BF16 AMP on Ampere/A100 with FP32 model parameters, "
@@ -1896,9 +1904,11 @@ def _render_prompt_lines(lines: list[str], *, max_chars: int) -> str:
     mandatory_prefixes = (
         "#",
         "- Hardware:",
+        "- Model candidate:",
         "- Precision optimization mode:",
         "- Allowed native training precision policies:",
         "- Conservative precision:",
+        "- FP16 AMP is optional",
         "- Integer capability indicators",
         "- Precision evidence rule:",
         "- Stage boundary:",
@@ -2227,6 +2237,9 @@ def _compact_stage_hardware_feature(feature: dict[str, Any]) -> dict[str, Any]:
         if value in (None, "", [], {}):
             continue
         if isinstance(value, str):
+            if key in {"example_code", "limitations", "notes", "usage", "recommendation_scope", "model_shape_limitations"}:
+                shortened[key] = value
+                continue
             if key == "example_code":
                 limit = 520
             elif is_optimizer and key == "notes":
@@ -2237,6 +2250,9 @@ def _compact_stage_hardware_feature(feature: dict[str, Any]) -> dict[str, Any]:
                 limit = 220
             shortened[key] = _short(value, limit)
         elif isinstance(value, list):
+            if key in {"recommended_patterns", "avoid_patterns"}:
+                shortened[key] = list(value)
+                continue
             item_limit = 220 if is_optimizer and key in {"recommended_patterns", "avoid_patterns"} else 180
             shortened[key] = [_short(entry, item_limit) if isinstance(entry, str) else entry for entry in value]
         else:
@@ -2433,6 +2449,7 @@ def _format_stage_hardware_features(stage_context: dict[str, Any]) -> list[str]:
         if audit_bits:
             lines.append(f"    - filter_audit: {', '.join(audit_bits)}")
         for feature in list(stage.get("features") or []):
+            block_start = len(lines)
             feature_id = feature.get("feature_id") or "feature"
             name = feature.get("name") or feature.get("feature_name") or ""
             details = _format_kv(
@@ -2456,18 +2473,19 @@ def _format_stage_hardware_features(stage_context: dict[str, Any]) -> list[str]:
             for key in summary_keys:
                 summary = feature.get(key)
                 if summary:
-                    limit = 320 if is_optimizer_stage and key == "notes" else 220 if is_optimizer_stage else 160
-                    text = _short(summary, limit)
+                    text = str(summary)
                     if text not in summary_parts:
                         summary_parts.append(f"{key}: {text}")
             summary_text = f": {'; '.join(summary_parts[:3])}" if summary_parts else ""
             lines.append(f"    - {feature_id}: {name}{detail_text}{summary_text}")
             for pattern in feature.get("recommended_patterns") or []:
-                lines.append(f"      recommended: {_short(pattern, 220)}")
+                lines.append(f"      candidate: {pattern}")
             for pattern in feature.get("avoid_patterns") or []:
-                lines.append(f"      avoid: {_short(pattern, 220)}")
+                lines.append(f"      avoid: {pattern}")
             if is_optimizer_stage and feature_id == "muon_optimizer" and feature.get("example_code"):
-                lines.append(f"      example: {_short(feature['example_code'], 360)}")
+                lines.append(f"      example: {feature['example_code']}")
+            # Keep the recommendation and its applicability conditions inseparable.
+            lines[block_start:] = ["\n".join(lines[block_start:])]
     source = stage_context.get("source")
     feature_count = stage_context.get("feature_count")
     if source or feature_count is not None:
@@ -2601,6 +2619,22 @@ def _evidence_entry_text(entry: dict[str, Any]) -> str:
         else:
             parts.append(str(value))
     return " ".join(parts)
+
+
+def _record_hardware_prompt_audit(node: Any, context: HardwarePromptContext) -> None:
+    """Keep pre-filter evidence and the rendered guidance together for later triage."""
+    prompt = getattr(context, "prompt_section", "") or ""
+    entry = {
+        "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+        "prompt_section": prompt,
+        "raw_context": copy.deepcopy(getattr(context, "raw_context", None)),
+        "filtered_context": copy.deepcopy(getattr(context, "filtered_context", None)),
+        "precision_policy": copy.deepcopy(context.compact_context.get("precision_policy")),
+    }
+    audit = list(getattr(node, "hardware_prompt_audit", None) or [])
+    if entry not in audit:
+        audit.append(entry)
+    node.hardware_prompt_audit = audit
 
 
 def _store_hardware_decision(node: Any, decision: dict[str, Any]) -> None:
