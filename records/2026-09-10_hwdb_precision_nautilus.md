@@ -240,3 +240,44 @@ not the stale trigger timestamp.
   storage or in a built image before requesting another training GPU. Await
   OpenAI access and a verified small-Qwen endpoint; do not silently fall back
   to the original 27B service or claim a light-model comparison has started.
+
+## DeepSeek Reset: 2026-09-11 22:30 UTC
+
+- User selected DeepSeek V4.1 Flash for every agent stage and explicitly
+  requested resetting and redoing the failed tasks. API model ID is
+  `deepseek-flash`; the official /models endpoint authenticated successfully.
+  Credential is held only in namespace ecepxie's dedicated Secret
+  `hwdb-deepseek-20260911`, key `api-key`. Never print its value.
+- Source revision d57609bdeda55d00b6f3734b38f84b80bdf4ca9e was pushed to
+  fork/hwdb-precision-guidance. Design/draft/optimization use low reasoning;
+  structured reviews disable thinking and use named function calls.
+  Both configured model roles use DeepSeek. Review/preflight fail closed.
+- Stopped and deleted only Job hwdb-precision-20260910 to release its idle
+  A10. All historical results remain on PVC yuze-li-vol under
+  aypatrl04-hwdb-precision-20260910. Snapshot of matrix/bootstrap/regressions
+  and a superseded README are in archive-before-deepseek-20260911 there.
+  Snapshot retains three timeouts, one interrupted running mode and twenty
+  missing-data entries; it is evidence, not the new execution queue.
+- CPU-only Job hwdb-deepseek-20260911-prepare is running, initially pod
+  hwdb-deepseek-20260911-prepare-8fbf9 on exp-19-10.sdsc.optiputer.net.
+  Source and dependency installation use node-local /runtime, not Ceph.
+  New persistent experiment subPath: aypatrl04-hwdb-deepseek-20260911.
+  Installation finished in minutes; Linux regression checks are in progress.
+- Local verification: 53 focused client tests passed; broader suite 184
+  passed with two known macOS preexec resource-limit failures, to be checked
+  on Linux. Separate new launcher/client tests: 15 passed. GPU launcher
+  verifies successful CPU Job completion and exact image digest; runtime
+  extraction verifies SHA256. No pip installation is performed on a GPU.
+- After CPU tests and live generation/real CODE_REVIEW_SPEC validation pass,
+  launch via `.venv/bin/python deployments/launch_deepseek_precision.py run`.
+  This creates hwdb-deepseek-20260911-run only once and targets A10/A100,
+  preferring available 80GB A100. It runs a fresh 24-entry matrix at 10 nodes
+  and 10800 seconds per dataset/mode. Only Jigsaw and Spooky public inputs
+  are currently mounted; the other twenty entries remain blocked, not run.
+- Hourly automation nautilus-hwdb-hourly-checks now follows both replacement
+  jobs and may invoke that gated launcher after successful preparation.
+  OpenAI and small-Qwen comparison arms are deferred, not silently run.
+- CPU gate results: all 186 Linux regression tests passed in 70.12 seconds,
+  including both real-worker checks that fail on macOS. Live DeepSeek smoke
+  returned generation=passed and review_schema=passed for the actual
+  CODE_REVIEW_SPEC. Runtime packaging follows these successful checks.
