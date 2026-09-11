@@ -80,3 +80,9 @@ It never accepts rules automatically. Only verified public archives enter the
 training runtime. Held-out labels and the Kaggle Secret are mounted only into
 the dataset worker, not the agents. See `prepare_kaggle_data.py` and the
 remote `datasets/status.json` for per-dataset completion or blockers.
+
+Disaster Tweets is absent from that MLE-bench registry. Its explicitly custom
+definition uses the labeled Kaggle training set with a stratified 80/20 split,
+seed 42, binary F1, and identical inputs across precision modes. It is not an
+official MLE-bench or Kaggle leaderboard result. Its verified `ready.json`
+overrides the initial missing-definition row in the current preparation run.

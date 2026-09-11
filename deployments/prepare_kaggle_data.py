@@ -33,6 +33,11 @@ def archive(source, destination):
 def stage_public():
     rows = json.loads((ROOT / "status.json").read_text())
     for row in rows:
+        override = ROOT / row["competition"] / "ready.json"
+        if override.exists():
+            ready = json.loads(override.read_text())
+            assert ready["competition"] == row["competition"]
+            row.update(ready)
         if row["status"] != "ready":
             continue
         path = ROOT / row["competition"] / "public.tar"
@@ -59,8 +64,9 @@ def main():
         folder.mkdir(exist_ok=True)
         print(json.dumps(row), flush=True)
         with (folder / "prepare.log").open("w") as log:
-            proc = subprocess.Popen([sys.executable, "-m", "mlebench.cli", "prepare", "-c", name,
-                                     "--data-dir", str(LOCAL)], stdin=subprocess.DEVNULL,
+            command = ([sys.executable, "/launcher/prepare_disaster_tweets.py"] if name == "nlp-getting-started"
+                       else [sys.executable, "-m", "mlebench.cli", "prepare", "-c", name, "--data-dir", str(LOCAL)])
+            proc = subprocess.Popen(command, stdin=subprocess.DEVNULL,
                                     stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             descendants = set()
             try:
@@ -70,7 +76,9 @@ def main():
             finally:
                 stop_group(proc, descendants)
         row.update(exit_code=code, status="blocked_preparation" if code else "publishing")
-        if code == 0:
+        if code == 0 and name == "nlp-getting-started":
+            row.update(json.loads((folder / "ready.json").read_text()))
+        elif code == 0:
             prepared = LOCAL / name / "prepared"
             # Held-out labels are stored in a separate mount absent from agent pods.
             archive(prepared / "private", Path("/heldout") / name / "private.tar")

@@ -7,7 +7,7 @@ import subprocess
 
 
 PREFIX = "hwdb-deepseek-20260911"
-LAUNCHER_CONFIG = PREFIX + "-launcher-v4"
+LAUNCHER_CONFIG = PREFIX + "-launcher-v5"
 SOURCE_COMMIT = "d57609bdeda55d00b6f3734b38f84b80bdf4ca9e"
 IMAGE = "nvcr.io/nvidia/pytorch:26.04-py3"
 KUBECTL = ["kubectl", "--context", "nautilus", "-n", "ecepxie"]
@@ -77,12 +77,11 @@ def main():
         print("Job already exists; not restarting: " + PREFIX + "-" + args.phase)
         return
     image = IMAGE
-    if args.phase in {"prepare", "data"}:
+    if args.phase in {"prepare", "data", "run"}:
         folder = Path(__file__).parent
         config = {"apiVersion": "v1", "kind": "ConfigMap", "immutable": True,
                   "metadata": {"name": LAUNCHER_CONFIG, "namespace": "ecepxie"},
-                  "data": {name: (folder / name).read_text() for name in ("bootstrap_deepseek_precision.sh", "git_retry.sh", "prepare_kaggle_data.py")}}
-        print(kubectl("apply", "-f", "-", payload=json.dumps(config)))
+                  "data": {name: (folder / name).read_text() for name in ("bootstrap_deepseek_precision.sh", "git_retry.sh", "prepare_kaggle_data.py", "prepare_disaster_tweets.py")}}
     if args.phase != "prepare":
         prep = json.loads(kubectl("get", "job", PREFIX + "-prepare", "-o", "json"))
         if not any(c["type"] == "Complete" and c["status"] == "True" for c in prep.get("status", {}).get("conditions", [])):
@@ -96,6 +95,7 @@ def main():
             data = json.loads(kubectl("get", "job", PREFIX + "-data", "-o", "json"))
             if not any(c["type"] == "Complete" and c["status"] == "True" for c in data.get("status", {}).get("conditions", [])):
                 raise SystemExit("Dataset preparation has not finished; no GPU requested.")
+    print(kubectl("apply", "-f", "-", payload=json.dumps(config)))
     print(kubectl("apply", "-f", "-", payload=json.dumps(manifest(args.phase, image))))
 
 

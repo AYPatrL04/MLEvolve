@@ -317,3 +317,19 @@ not the stale trigger timestamp.
   monitor tracks all three phases, data.log and datasets/status.json, and can
   invoke the gated run launcher after dataset attempts finish. Failed or
   rule-blocked datasets are reported separately, never counted as tested.
+- Kaggle authentication is verified by a real 3.50 GiB Speech Recognition
+  download; the downloaded archive passed its official expected checksum.
+  Its dataset split/preparation continues on CPU, with no GPU requested.
+- Disaster Tweets is not present even in the full pinned MLE-bench registry.
+  Added an explicitly custom stratified 80/20, seed-42 binary-F1 definition:
+  6090 public training rows and 1523 held-out rows, labels isolated in /heldout.
+  It downloaded and prepared successfully in the active data CPU pod without
+  interrupting Speech Recognition. Source ZIP SHA256 and split provenance are
+  saved under datasets/nlp-getting-started; its ready.json is authoritative
+  over the initial blocked row in datasets/status.json. It must not be labeled
+  an official MLE-bench/Kaggle leaderboard evaluation.
+- Active data pod: hwdb-deepseek-20260911-data-8w8pb (launcher-v4). Future GPU
+  worker uses launcher-v5, which stages that ready override and all verified
+  official public archives. The other nine missing datasets retain official
+  MLE-bench definitions and checksum verification. Current launcher/staging/
+  split/client tests: 20 passed locally. Runtime core remains pinned d57609b.
