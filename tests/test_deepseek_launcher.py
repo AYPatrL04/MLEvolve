@@ -47,3 +47,13 @@ def test_existing_run_is_not_restarted(monkeypatch):
     monkeypatch.setattr("sys.argv", ["launcher", "run"])
     launcher.main()
     assert len(calls) == 1
+
+
+def test_data_credentials_and_heldout_labels_are_not_mounted_into_agents():
+    data = launcher.manifest("data")["spec"]["template"]["spec"]
+    agent = launcher.manifest("run")["spec"]["template"]["spec"]
+    assert any(v.get("secret", {}).get("secretName") == "hwdb-kaggle-20260911" for v in data["volumes"])
+    assert all(v["name"] != "kaggle" for v in agent["volumes"])
+    assert any(m["mountPath"] == "/heldout" for m in data["containers"][0]["volumeMounts"])
+    assert all(m["mountPath"] != "/heldout" for m in agent["containers"][0]["volumeMounts"])
+    assert all(e["name"] != "DEEPSEEK_API_KEY" for e in data["containers"][0]["env"])

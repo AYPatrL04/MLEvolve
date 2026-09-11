@@ -289,3 +289,31 @@ not the stale trigger timestamp.
   preparation Job. The immutable launcher ConfigMap is now
   hwdb-deepseek-20260911-launcher-v2; source model/runtime revision unchanged.
   Requests/limits now also meet Nautilus's CPU/memory ratio guidance.
+- Corrected CPU preparation completed successfully, with 186 tests passed
+  again in 71.14 seconds, a second successful live API/review smoke, and a
+  fully checksummed runtime archive. Exact image:
+  nvcr.io/nvidia/pytorch@sha256:192d749b4d773610ec9e01c0443a9df545d196c412b7b8fd33bfa3da362a49e7.
+
+## Kaggle Access Supplied: 2026-09-11
+
+- User identified an existing local Kaggle credential file. Loaded it directly
+  into Secret hwdb-kaggle-20260911 without printing its values or storing them
+  in the repository. The local credential file was left untouched.
+- Added CPU-only Job hwdb-deepseek-20260911-data. It restores the tested runtime
+  on node-local disk, downloads/prepares the ten missing datasets one at a time
+  using MLE-bench's official splits and checksum verification, and publishes
+  verified public archives. Each attempt has a one-hour subprocess deadline;
+  no interactive rule acceptance or leaderboard submission is performed.
+- Private held-out archives use separate PVC subPath
+  aypatrl04-hwdb-heldout-20260911, absent from the agent pod. Kaggle credentials
+  are likewise available only to the dataset job, not the training agents.
+- First data attempt exposed missing competition config files in the installed
+  MLE-bench wheel, before any Kaggle request. Preserved the error/status under
+  data-attempt-1, then replaced only the data CPU job with a pinned source
+  checkout of MLE-bench 507f92e1138bb6e40dac5c6ee7a6758e6424bf97. The current
+  launcher ConfigMap is hwdb-deepseek-20260911-launcher-v4. Matching source
+  metadata is also staged for the eventual training runtime.
+- GPU submission now requires both prepare and data Jobs Complete. The hourly
+  monitor tracks all three phases, data.log and datasets/status.json, and can
+  invoke the gated run launcher after dataset attempts finish. Failed or
+  rule-blocked datasets are reported separately, never counted as tested.

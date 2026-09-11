@@ -6,7 +6,7 @@ export PYTHONUNBUFFERED=1
 export HF_HOME=/experiment/cache/huggingface
 export MPLCONFIGDIR=/runtime/matplotlib
 mkdir -p /runtime /experiment/cache
-phase=${1:?Expected prepare or run}
+phase=${1:?Expected prepare, data or run}
 exec > >(tee -a "/experiment/${phase}.log") 2>&1
 date -u
 
@@ -35,16 +35,38 @@ if [[ "$phase" == prepare ]]; then
   sha256sum runtime.tar > runtime.tar.sha256
   touch READY
   echo 'CPU preparation, regression tests and live agent smoke passed.'
-elif [[ "$phase" == run ]]; then
+elif [[ "$phase" == run || "$phase" == data ]]; then
   test -f /experiment/READY
   cd /experiment
   sha256sum -c runtime.tar.sha256
   tar -C /runtime -xf runtime.tar
   export PATH=/runtime/venv/bin:$PATH
   cd /runtime/repo
+  if [[ "$phase" == data ]]; then
+    source /launcher/git_retry.sh
+    # The wheel omits competition metadata; use its exact source revision.
+    git init /runtime/mlebench-source
+    cd /runtime/mlebench-source
+    git remote add origin https://github.com/openai/mle-bench.git
+    git_retry fetch --depth 1 origin 507f92e1138bb6e40dac5c6ee7a6758e6424bf97
+    git checkout --detach FETCH_HEAD
+    tar --blocking-factor=8192 -C /runtime/mlebench-source -cf /experiment/mlebench-source.tar .
+    cd /experiment
+    sha256sum mlebench-source.tar > mlebench-source.tar.sha256
+    export PYTHONPATH=/runtime/mlebench-source
+    cd /runtime/repo
+    exec python /launcher/prepare_kaggle_data.py
+  fi
+  cd /experiment
+  sha256sum -c mlebench-source.tar.sha256
+  mkdir -p /runtime/mlebench-source
+  tar -C /runtime/mlebench-source -xf mlebench-source.tar
+  export PYTHONPATH=/runtime/mlebench-source
+  cd /runtime/repo
+  python /launcher/prepare_kaggle_data.py --stage-public
   nvidia-smi > /experiment/gpu.txt
   exec python deployments/run_hwdb_precision_matrix.py --agent-profile deepseek-flash --root /experiment/results --seconds 10800 --nodes 10
 else
-  echo 'Expected prepare or run' >&2
+  echo 'Expected prepare, data or run' >&2
   exit 2
 fi

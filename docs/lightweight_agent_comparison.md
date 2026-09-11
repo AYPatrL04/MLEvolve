@@ -71,3 +71,12 @@ tests the runtime and real API, then packages an exact-prefix runtime archive.
 Only after its READY marker and successful Job completion may the GPU job run
 `bootstrap_deepseek_precision.sh run`. No pip installation runs on the GPU.
 Both jobs must use the same container image and /runtime mount path.
+
+The user subsequently supplied a local Kaggle credential file. The dedicated
+CPU-only `data` phase now attempts the remaining ten datasets before the `run`
+phase can request a GPU. It uses the pinned MLE-bench source (the wheel omits
+competition metadata), official splits, and default checksum verification.
+It never accepts rules automatically. Only verified public archives enter the
+training runtime. Held-out labels and the Kaggle Secret are mounted only into
+the dataset worker, not the agents. See `prepare_kaggle_data.py` and the
+remote `datasets/status.json` for per-dataset completion or blockers.

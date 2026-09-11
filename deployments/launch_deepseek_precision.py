@@ -7,7 +7,7 @@ import subprocess
 
 
 PREFIX = "hwdb-deepseek-20260911"
-LAUNCHER_CONFIG = PREFIX + "-launcher-v2"
+LAUNCHER_CONFIG = PREFIX + "-launcher-v4"
 SOURCE_COMMIT = "d57609bdeda55d00b6f3734b38f84b80bdf4ca9e"
 IMAGE = "nvcr.io/nvidia/pytorch:26.04-py3"
 KUBECTL = ["kubectl", "--context", "nautilus", "-n", "ecepxie"]
@@ -47,6 +47,13 @@ def manifest(phase, image=IMAGE):
                     {"name": "launcher", "configMap": {"name": LAUNCHER_CONFIG}},
                     {"name": "shm", "emptyDir": {"medium": "Memory", "sizeLimit": "16Gi"}}],
     }
+    if phase == "data":
+        pod["containers"][0]["env"] = [{"name": "KAGGLE_CONFIG_DIR", "value": "/credentials"}]
+        pod["containers"][0]["volumeMounts"].extend([
+            {"name": "kaggle", "mountPath": "/credentials", "readOnly": True},
+            {"name": "workspace", "mountPath": "/heldout", "subPath": "aypatrl04-hwdb-heldout-20260911"},
+        ])
+        pod["volumes"].append({"name": "kaggle", "secret": {"secretName": "hwdb-kaggle-20260911", "defaultMode": 256}})
     if gpu:
         pod["tolerations"] = [{"key": "nvidia.com/gpu", "operator": "Exists"}]
         pod["affinity"] = {"nodeAffinity": {
@@ -57,26 +64,26 @@ def manifest(phase, image=IMAGE):
                 {"key": "nvidia.com/gpu.product", "operator": "In", "values": ["NVIDIA-A100-SXM4-80GB", "NVIDIA-A100-80GB-PCIe"]}]}}],
         }}
     return {"apiVersion": "batch/v1", "kind": "Job", "metadata": {"name": PREFIX + "-" + phase, "namespace": "ecepxie"},
-            "spec": {"backoffLimit": 0, "activeDeadlineSeconds": 280800 if gpu else 10800,
+            "spec": {"backoffLimit": 0, "activeDeadlineSeconds": 280800 if gpu else (43200 if phase == "data" else 10800),
                      "template": {"metadata": {"labels": {"app": PREFIX, "phase": phase}}, "spec": pod}}}
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("phase", choices=("prepare", "run"))
+    parser.add_argument("phase", choices=("prepare", "data", "run"))
     args = parser.parse_args()
     existing = kubectl("get", "job", PREFIX + "-" + args.phase, "--ignore-not-found", "-o", "json")
     if existing.strip():
         print("Job already exists; not restarting: " + PREFIX + "-" + args.phase)
         return
     image = IMAGE
-    if args.phase == "prepare":
+    if args.phase in {"prepare", "data"}:
         folder = Path(__file__).parent
         config = {"apiVersion": "v1", "kind": "ConfigMap", "immutable": True,
                   "metadata": {"name": LAUNCHER_CONFIG, "namespace": "ecepxie"},
-                  "data": {name: (folder / name).read_text() for name in ("bootstrap_deepseek_precision.sh", "git_retry.sh")}}
+                  "data": {name: (folder / name).read_text() for name in ("bootstrap_deepseek_precision.sh", "git_retry.sh", "prepare_kaggle_data.py")}}
         print(kubectl("apply", "-f", "-", payload=json.dumps(config)))
-    else:
+    if args.phase != "prepare":
         prep = json.loads(kubectl("get", "job", PREFIX + "-prepare", "-o", "json"))
         if not any(c["type"] == "Complete" and c["status"] == "True" for c in prep.get("status", {}).get("conditions", [])):
             raise SystemExit("CPU preparation has not completed successfully; no GPU requested.")
@@ -85,6 +92,10 @@ def main():
         image = successful[-1]["status"]["containerStatuses"][0]["imageID"].removeprefix("docker-pullable://")
         if "@sha256:" not in image:
             raise SystemExit("Could not resolve the exact prepared container image; no GPU requested.")
+        if args.phase == "run":
+            data = json.loads(kubectl("get", "job", PREFIX + "-data", "-o", "json"))
+            if not any(c["type"] == "Complete" and c["status"] == "True" for c in data.get("status", {}).get("conditions", [])):
+                raise SystemExit("Dataset preparation has not finished; no GPU requested.")
     print(kubectl("apply", "-f", "-", payload=json.dumps(manifest(args.phase, image))))
 
 
