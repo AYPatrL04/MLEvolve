@@ -35,7 +35,26 @@ def save(path, value):
     temporary.replace(path)
 
 
-def make_config(repo, root, public, competition, mode, seconds, nodes):
+AGENT_PROFILES = ("legacy-qwen", "openai-mini", "qwen-small")
+
+
+def agent_settings(profile):
+    if profile == "openai-mini":
+        return dict(model="gpt-5.4-mini", provider="openai", api_key="",
+                    base_url="https://api.openai.com/v1")
+    if profile == "qwen-small":
+        endpoint = os.environ.get("MLEVOLVE_QWEN_BASE_URL", "")
+        model = os.environ.get("MLEVOLVE_QWEN_MODEL", "")
+        if not endpoint or not model:
+            raise ValueError("Set MLEVOLVE_QWEN_BASE_URL and MLEVOLVE_QWEN_MODEL for a verified small-Qwen service")
+        return dict(model=model, provider="vllm", api_key="EMPTY", base_url=endpoint)
+    if profile == "legacy-qwen":
+        return dict(model="qwen3.8-27b-int8-a100", provider="vllm", api_key="EMPTY",
+                    base_url="http://mlevolve-qwen-a100.ecepxie.svc.cluster.local:8000/v1")
+    raise ValueError(f"Unknown agent profile: {profile}")
+
+
+def make_config(repo, root, public, competition, mode, seconds, nodes, agent_profile="legacy-qwen"):
     cfg = yaml.safe_load((repo / "config.example.yaml").read_text())
     cfg.update(data_dir=str(public), dataset_dir=str(public.parent.parent.parent),
                desc_file=str(public / "description.md"), exp_name=f"{competition}_{mode}",
@@ -44,9 +63,11 @@ def make_config(repo, root, public, competition, mode, seconds, nodes):
     cfg["agent"].update(steps=nodes, time_limit=seconds, seed=42,
                         precision_optimization_mode=mode, use_global_memory=False)
     for role in ("code", "feedback"):
-        cfg["agent"][role].update(
-            model="qwen3.8-27b-int8-a100", provider="vllm", api_key="EMPTY",
-            base_url="http://mlevolve-qwen-a100.ecepxie.svc.cluster.local:8000/v1")
+        cfg["agent"][role].update(agent_settings(agent_profile))
+    if agent_profile != "legacy-qwen":
+        cfg["agent"]["review"]["fail_open_on_unavailable"] = False
+        cfg["vllm_client"]["structured_output_mode"] = "json_schema"
+        cfg["vllm_client"]["default_completion_tokens"] = 8192
     cfg["hardware_knowledge"]["settings"]["graph"]["enabled"] = False
     cfg["hardware_knowledge"]["settings"]["runtime_root"] = str(root / "hwdb")
     cfg["scheduler"]["runtime_root"] = str(root / "scheduler")
@@ -149,11 +170,22 @@ def main():
     parser.add_argument("--seconds", type=int, default=10800)
     parser.add_argument("--nodes", type=int, default=10)
     parser.add_argument("--inventory-only", action="store_true")
+    parser.add_argument("--agent-profile", choices=AGENT_PROFILES, default="legacy-qwen")
+    parser.add_argument("--smoke-only", action="store_true")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     args.root.mkdir(parents=True, exist_ok=True)
     state_file = args.root / "matrix.json"
     previous = json.loads(state_file.read_text()) if state_file.exists() else []
+    settings = agent_settings(args.agent_profile)
+    identity = {"profile": args.agent_profile, "model": settings["model"],
+                "provider": settings["provider"], "base_url": settings["base_url"]}
+    identity_path = args.root / "agent_identity.json"
+    if identity_path.exists() and json.loads(identity_path.read_text()) != identity:
+        raise ValueError("Use a fresh result root when changing the agent model or endpoint")
+    if previous and not identity_path.exists() and args.agent_profile != "legacy-qwen":
+        raise ValueError("Do not mix new agent results with the original run; use a fresh root")
+    save(identity_path, identity)
     prior = {(r["competition"], r["mode"]): r for r in previous}
     rows = []
     for competition in COMPETITIONS:
@@ -170,13 +202,29 @@ def main():
     save(state_file, rows)
     if args.inventory_only:
         return
+    if args.agent_profile != "legacy-qwen" or args.smoke_only:
+        env = dict(os.environ, MLEVOLVE_VLLM_CACHE_SALT="hwdb-lightweight-agent-smoke-20260911")
+        with (args.root / "agent-smoke.log").open("a") as log:
+            proc = subprocess.Popen([sys.executable, "-m", "deployments.smoke_agent",
+                                     "--agent-profile", args.agent_profile],
+                                    cwd=repo, env=env, stdout=log, stderr=subprocess.STDOUT,
+                                    start_new_session=True)
+            descendants = set()
+            try:
+                code = wait_bounded(proc, 180, descendants)
+            finally:
+                stop_group(proc, descendants)
+        if code != 0:
+            raise RuntimeError("Agent compatibility check failed; see agent-smoke.log. No experiments launched.")
+        if args.smoke_only:
+            return
     for row in rows:
         if row["status"] != "queued":
             continue
         root = args.root / row["competition"] / row["mode"]
         root.mkdir(parents=True, exist_ok=True)
         public = args.data_root / row["competition"] / "prepared/public"
-        config = make_config(repo, root, public, row["competition"], row["mode"], args.seconds, args.nodes)
+        config = make_config(repo, root, public, row["competition"], row["mode"], args.seconds, args.nodes, args.agent_profile)
         config_path = root / "config.yaml"
         config_path.write_text(yaml.safe_dump(config, sort_keys=False))
         env = dict(os.environ, MLEVOLVE_CONFIG=str(config_path),

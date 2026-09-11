@@ -57,6 +57,10 @@ class _VLLMHttpClient:
         headers = dict(self._headers)
         headers.update(payload.pop("extra_headers", {}) or {})
         payload.update(payload.pop("extra_body", {}) or {})
+        if "enable_thinking" in payload:
+            template = dict(payload.get("chat_template_kwargs") or {})
+            template["enable_thinking"] = payload.pop("enable_thinking")
+            payload["chat_template_kwargs"] = template
         return headers, payload
 
     def create(self, **params: Any) -> Any:
@@ -174,6 +178,9 @@ def query(
         _client=_client_for(stage),
         _provider_override="vllm",
         _vllm_cache_salt=salt,
+        _structured_output_mode=getattr(
+            getattr(cfg, "vllm_client", None), "structured_output_mode", "tool_call"
+        ),
         **model_kwargs,
     )
 

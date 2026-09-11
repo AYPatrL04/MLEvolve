@@ -63,6 +63,7 @@ vllm_client:
   session_affinity: true
   # Context capacity stays server-controlled; this bounds one generated response.
   default_completion_tokens: 16384
+  structured_output_mode: tool_call  # json_schema works without a server tool-call parser
 hardware_knowledge:
   enabled: true
   include_profile_evidence: true

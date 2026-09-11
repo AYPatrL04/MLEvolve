@@ -4,6 +4,7 @@ import json
 import logging
 import re
 import time
+import jsonschema
 from contextlib import nullcontext
 from typing import Any
 
@@ -14,6 +15,22 @@ from .common import FunctionSpec, compile_prompt_to_md
 from .model_profiles import get_profile, supports_json_schema, thinking_json_incompatible
 
 logger = logging.getLogger("MLEvolve")
+
+
+def _stage_api_key(stage: Any) -> str | None:
+    if stage.api_key:
+        return stage.api_key
+    if str(getattr(stage, "provider", "")).lower() == "openai":
+        return None  # The SDK reads OPENAI_API_KEY; configs need not contain secrets.
+    return "EMPTY"
+
+
+def _normalize_gpt5_params(params: dict, model: str, stage: Any) -> None:
+    if str(getattr(stage, "provider", "")).lower() == "openai" and model.startswith("gpt-5"):
+        if "max_tokens" in params:
+            params["max_completion_tokens"] = params.pop("max_tokens")
+        for key in ("temperature", "top_p", "presence_penalty"):
+            params.pop(key, None)
 
 
 def _default_max_tokens(model: str) -> int:
@@ -275,6 +292,9 @@ def query(
     client_override = model_kwargs.pop("_client", None)
     provider_override = model_kwargs.pop("_provider_override", None)
     vllm_cache_salt = model_kwargs.pop("_vllm_cache_salt", None)
+    structured_mode = model_kwargs.pop("_structured_output_mode", "tool_call")
+    if structured_mode not in {"tool_call", "json_schema"}:
+        raise ValueError("structured_output_mode must be tool_call or json_schema")
     context_cache_role = str(model_kwargs.pop("context_cache_role", "analysis"))
     context_cache_stable_prefix = model_kwargs.pop("context_cache_stable_prefix", None)
     context_cache_dynamic_system_message = model_kwargs.pop(
@@ -284,7 +304,7 @@ def query(
     model = filtered.get("model", "")
     stage = _stage_config_for_model(cfg, model, stage_name)
     client = client_override or OpenAI(
-        api_key=stage.api_key,
+        api_key=_stage_api_key(stage),
         base_url=stage.base_url or None,
         timeout=1200.0,
     )
@@ -330,12 +350,23 @@ def query(
         params["presence_penalty"] = profile["presence_penalty"]
     if extra_body:
         params["extra_body"] = extra_body
-    if func_spec is not None:
+    if func_spec is not None and structured_mode == "json_schema":
+        params["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {"name": func_spec.name, "strict": False, "schema": func_spec.json_schema},
+        }
+    elif func_spec is not None:
         tool_dict = func_spec.as_openai_tool_dict
+        if str(getattr(stage, "provider", "")).lower() == "openai":
+            tool_dict.pop("strict", None)
+            # Planner schemas include dynamic maps that cannot use strict mode.
+            tool_dict["function"]["strict"] = False
         if _is_openrouter_stage(stage) or not supports_json_schema(model):
             tool_dict.pop("strict", None)
         params["tools"] = [tool_dict]
         params["tool_choice"] = func_spec.openai_tool_choice_dict
+
+    _normalize_gpt5_params(params, model, stage)
 
     prepared = _prepare_context_cache(
         params,
@@ -411,11 +442,14 @@ def query(
                 raise e
             logger.info(f"OpenAI function call response: {output}", extra={"verbose": True})
         else:
-            logger.warning("Expected function call, got no tool_calls; attempting JSON content fallback")
+            if structured_mode != "json_schema":
+                logger.warning("Expected function call, got no tool_calls; attempting JSON content fallback")
             raw_content = message.content or ""
             json_payload = _extract_json_object(raw_content)
             output = _parse_json_args(json_payload)
             logger.info(f"OpenAI JSON content fallback response: {output}", extra={"verbose": True})
+        if structured_mode == "json_schema":
+            jsonschema.Draft7Validator(func_spec.json_schema).validate(output)
 
     info = {
         "model": getattr(completion, "model", model),
@@ -480,7 +514,7 @@ def generate(
     model = stage.model
     messages = _prompt_to_messages(prompt, model=model)
     client = _client or OpenAI(
-        api_key=stage.api_key,
+        api_key=_stage_api_key(stage),
         base_url=stage.base_url or None,
         timeout=1200.0,
     )
@@ -527,6 +561,7 @@ def generate(
         else:
             params["response_format"] = {"type": "json_object"}
 
+    _normalize_gpt5_params(params, model, stage)
     prepared = _prepare_context_cache(
         params,
         cfg=cfg,

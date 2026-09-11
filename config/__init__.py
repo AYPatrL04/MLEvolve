@@ -70,6 +70,7 @@ class VLLMClientConfig:
     # Completion length is separate from the server-side context window.
     # Set null only when an intentionally uncapped completion is required.
     default_completion_tokens: int | None = 16384
+    structured_output_mode: str = "tool_call"  # tool_call | json_schema
 
 @dataclass
 class DecayConfig:
