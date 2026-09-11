@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/git_retry.sh"
 root=/experiment
 export GIT_LFS_SKIP_SMUDGE=1
 export PIP_NO_CACHE_DIR=1
@@ -9,12 +10,17 @@ mkdir -p "$root/cache"
 exec > >(tee -a "$root/bootstrap.log") 2>&1
 date -u
 if [[ ! -d "$root/repo/.git" ]]; then
-  git clone --depth 1 --branch hwdb-precision-guidance https://github.com/AYPatrL04/MLEvolve.git "$root/repo"
+  git init "$root/repo"
 fi
 cd "$root/repo"
-git fetch --depth 1 origin 48feb8809057fa341793e610b4db072d84ee0cd9
+if ! git remote get-url origin > /dev/null 2>&1; then
+  git remote add origin https://github.com/AYPatrL04/MLEvolve.git
+fi
+if ! git cat-file -e '48feb8809057fa341793e610b4db072d84ee0cd9^{commit}' 2>/dev/null; then
+  git_retry fetch --depth 1 origin 48feb8809057fa341793e610b4db072d84ee0cd9
+fi
 git checkout 48feb8809057fa341793e610b4db072d84ee0cd9
-git submodule update --init --recursive --depth 1
+git_retry submodule update --init --recursive --depth 1
 cp /launcher/run_hwdb_precision_matrix.py deployments/run_hwdb_precision_matrix.py
 python -m venv --system-site-packages "$root/venv"
 export PATH="$root/venv/bin:$PATH"

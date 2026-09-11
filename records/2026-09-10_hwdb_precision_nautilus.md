@@ -73,3 +73,45 @@ The initially mounted bootstrap runs the five hardware regression modules;
 the committed launcher also includes test_model_preflight_integration.py.
 Rerun that module explicitly after dependency setup if the mounted bootstrap
 has not picked up the updated ConfigMap; preserve its Linux worker results.
+
+## Hourly Check: 2026-09-11 04:59 UTC
+
+- Pod hwdb-precision-20260910-stzmj remains Running, zero restarts, on
+  gpu-06.nrp.mghpcc.org. Scheduling, volume attachment and container startup
+  events were successful.
+- Parent checkout completed at the intended application commit 48feb88.
+- Infrastructure issue: the first PerfSeer submodule clone failed with
+  `curl 56 Recv failure: Connection reset by peer`, early EOF and invalid
+  index-pack output. Git scheduled its built-in retry; the retry's Git/HTTP
+  processes were still active at inspection. No manual restart was performed.
+- Actual GPU: NVIDIA A10, 0 MiB allocated, 0% utilization during setup.
+- Matrix unchanged: four queued runs, twenty blocked_missing_data entries.
+- No regression-test log, runtime logs, journals or preflight feedback exist
+  yet. Dependency setup and agent training have not started. There are no
+  observed agent errors or precision-policy results; HWDB/filter attribution
+  is unavailable, not a passing result.
+- Hourly monitoring remains active. Preserve this retry and inspect the next
+  bootstrap outcome before considering recovery. Missing datasets remain an
+  independent blocker.
+
+## Download Recovery: 2026-09-11 05:11 UTC
+
+- User requested investigation and repair of the connection reset. The logs
+  establish an interrupted Git HTTP receive, but do not identify whether
+  GitHub, the network path, or an intermediary sent the reset.
+- Git's existing retry completed before intervention was needed. Verified
+  recursive submodule status now exactly matches PerfSeer b9b6d48 and
+  preflight d908527, with no `+` mismatch markers. The parent remains pinned.
+- The job progressed past Git to Python virtual-environment creation and
+  ensurepip. No job restart, source replacement or other-workload changes
+  were necessary. Agent training is not yet underway.
+- Hardened the bootstrap for subsequent starts: use the existing pinned
+  commit when present; fetch into an initialized checkout rather than
+  restarting a full clone; three attempts with backoff; HTTP/1.1; a 60-second
+  low-throughput timeout and 20-minute per-attempt process timeout; Git
+  object validation. This is mitigation, not proof of an HTTP/2 defect.
+- New deployments/git_retry.sh must be included in the launcher ConfigMap
+  alongside bootstrap_hwdb_precision.sh and run_hwdb_precision_matrix.py.
+  Updating that ConfigMap does not retrofit retry handling into an already
+  executing Git process. The current download has independently recovered.
+- Four new retry/syntax tests passed locally. Hourly monitoring remains active.
