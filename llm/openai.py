@@ -5,6 +5,7 @@ import logging
 import re
 import time
 import jsonschema
+import os
 from contextlib import nullcontext
 from typing import Any
 
@@ -22,6 +23,14 @@ def _stage_api_key(stage: Any) -> str | None:
         return stage.api_key
     if str(getattr(stage, "provider", "")).lower() == "openai":
         return None  # The SDK reads OPENAI_API_KEY; configs need not contain secrets.
+    if str(getattr(stage, "provider", "")).lower() == "deepseek":
+        from urllib.parse import urlparse
+        if urlparse(stage.base_url).hostname != "api.deepseek.com":
+            raise ValueError("Environment DeepSeek credentials require the official API hostname")
+        key = os.environ.get("DEEPSEEK_API_KEY", "")
+        if not key:
+            raise ValueError("DEEPSEEK_API_KEY must be supplied securely in the environment")
+        return key
     return "EMPTY"
 
 
@@ -31,6 +40,17 @@ def _normalize_gpt5_params(params: dict, model: str, stage: Any) -> None:
             params["max_completion_tokens"] = params.pop("max_tokens")
         for key in ("temperature", "top_p", "presence_penalty"):
             params.pop(key, None)
+
+
+def _configure_deepseek(params: dict, stage: Any, *, structured: bool) -> None:
+    if str(getattr(stage, "provider", "")).lower() != "deepseek":
+        return
+    extra = dict(params.get("extra_body") or {})
+    extra["thinking"] = {"type": "disabled" if structured else "enabled"}
+    params["extra_body"] = extra
+    if not structured:
+        params["reasoning_effort"] = "low"
+        params.pop("temperature", None)
 
 
 def _default_max_tokens(model: str) -> int:
@@ -367,6 +387,7 @@ def query(
         params["tool_choice"] = func_spec.openai_tool_choice_dict
 
     _normalize_gpt5_params(params, model, stage)
+    _configure_deepseek(params, stage, structured=func_spec is not None)
 
     prepared = _prepare_context_cache(
         params,
@@ -473,7 +494,7 @@ def _prompt_to_messages(prompt: str | dict | list, model: str = "") -> list[dict
         if prompt.get("system"):
             messages.append({"role": "system", "content": str(prompt["system"])})
 
-        is_gpt = (model or "").lower().startswith("gpt")
+        is_gpt = (model or "").lower().startswith(("gpt", "deepseek"))
         user_content = str(prompt["user"]) if prompt.get("user") else ""
         assistant_content = str(prompt["assistant"]) if prompt.get("assistant") else ""
 
@@ -562,6 +583,7 @@ def generate(
             params["response_format"] = {"type": "json_object"}
 
     _normalize_gpt5_params(params, model, stage)
+    _configure_deepseek(params, stage, structured=json_schema is not None)
     prepared = _prepare_context_cache(
         params,
         cfg=cfg,

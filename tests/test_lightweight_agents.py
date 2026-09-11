@@ -6,7 +6,7 @@ import pytest
 from context_cache.config import ContextCacheSettings
 from deployments.run_hwdb_precision_matrix import agent_settings
 from llm.common import FunctionSpec
-from llm.openai import _normalize_gpt5_params, _stage_api_key, query
+from llm.openai import _configure_deepseek, _normalize_gpt5_params, _prompt_to_messages, _stage_api_key, query
 from llm.vllm import _VLLMHttpClient
 
 
@@ -78,3 +78,28 @@ def test_unauthed_local_endpoint_does_not_inherit_openai_key():
     assert _stage_api_key(SimpleNamespace(provider="vllm", api_key="")) == "EMPTY"
     assert _stage_api_key(SimpleNamespace(provider="openai", api_key="")) is None
     assert _stage_api_key(SimpleNamespace(provider="openai", api_key="explicit")) == "explicit"
+
+
+def test_deepseek_credentials_stay_out_of_saved_config(monkeypatch):
+    settings = agent_settings("deepseek-flash")
+    assert settings["model"] == "deepseek-flash" and settings["api_key"] == ""
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-only-key")
+    assert _stage_api_key(SimpleNamespace(**settings)) == "test-only-key"
+    settings["base_url"] = "https://unrelated.invalid/v1"
+    with pytest.raises(ValueError, match="official API"):
+        _stage_api_key(SimpleNamespace(**settings))
+
+
+def test_deepseek_low_reasoning_and_non_thinking_review():
+    stage = SimpleNamespace(provider="deepseek")
+    generation = {"temperature": 0.7}
+    _configure_deepseek(generation, stage, structured=False)
+    assert generation == {"extra_body":{"thinking":{"type":"enabled"}},"reasoning_effort":"low"}
+    review = {}
+    _configure_deepseek(review, stage, structured=True)
+    assert review == {"extra_body":{"thinking":{"type":"disabled"}}}
+
+
+def test_deepseek_does_not_send_unsupported_assistant_prefill():
+    messages = _prompt_to_messages({"user":"Write code", "assistant":"```python"}, "deepseek-flash")
+    assert messages == [{"role":"user", "content":"Write code\n\n```python"}]

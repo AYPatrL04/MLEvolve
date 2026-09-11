@@ -35,10 +35,13 @@ def save(path, value):
     temporary.replace(path)
 
 
-AGENT_PROFILES = ("legacy-qwen", "openai-mini", "qwen-small")
+AGENT_PROFILES = ("legacy-qwen", "openai-mini", "qwen-small", "deepseek-flash")
 
 
 def agent_settings(profile):
+    if profile == "deepseek-flash":
+        return dict(model="deepseek-flash", provider="deepseek", api_key="",
+                    base_url="https://api.deepseek.com/v1")
     if profile == "openai-mini":
         return dict(model="gpt-5.4-mini", provider="openai", api_key="",
                     base_url="https://api.openai.com/v1")

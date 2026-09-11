@@ -6,6 +6,11 @@ FP32 plus selective FP16. Agent-model precision is a separate variable.
 
 ## Profiles
 
+- `deepseek-flash`: the active replacement arm, DeepSeek V4.1 Flash at
+  https://api.deepseek.com/v1. Uses DEEPSEEK_API_KEY from a Kubernetes Secret,
+  never saved configuration. Generation uses low reasoning effort; structured
+  review disables thinking and uses named function calls. The official model
+  ID is documented at https://api-docs.deepseek.com/updates/.
 - `openai-mini`: gpt-5.4-mini, direct OpenAI API. The official model page lists
   coding/subagent support, Chat Completions and structured output:
   https://developers.openai.com/api/docs/models/gpt-5.4-mini
@@ -56,6 +61,13 @@ probe returned HTTP 200 with valid JSON on the same endpoint. This establishes
 the request/server compatibility defect, not a precision/HWDB defect. No shared
 model-serving deployment was restarted or modified.
 
-The running historical experiment is left intact. New model profiles are
-prepared but not launched until credentials and a working small-Qwen endpoint
-are supplied. Do not reclassify historical timeouts as new-model results.
+The user subsequently requested resetting and redoing all failed tasks with
+DeepSeek. Preserve the historical result directory as superseded evidence and
+use a fresh experiment root, resetting all 24 entries. The ten unavailable
+datasets remain blocked, not completed. OpenAI/small-Qwen arms are deferred.
+
+`bootstrap_deepseek_precision.sh prepare` installs on CPU/node-local storage,
+tests the runtime and real API, then packages an exact-prefix runtime archive.
+Only after its READY marker and successful Job completion may the GPU job run
+`bootstrap_deepseek_precision.sh run`. No pip installation runs on the GPU.
+Both jobs must use the same container image and /runtime mount path.

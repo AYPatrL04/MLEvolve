@@ -18,6 +18,8 @@ def main():
     stage = agent_settings(args.agent_profile)
     if stage["provider"] == "openai" and not os.environ.get("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY is not configured; mount an authorized Secret, never put keys in result configs")
+    if stage["provider"] == "deepseek" and not os.environ.get("DEEPSEEK_API_KEY"):
+        raise RuntimeError("DEEPSEEK_API_KEY is not configured; mount an authorized Secret")
     from llm import generate, query
     from agents.code_review_agent import CODE_REVIEW_SPEC
 
@@ -28,7 +30,7 @@ def main():
     cfg.vllm_client.structured_output_mode = "json_schema"
     cfg.vllm_client.default_completion_tokens = 2048
     cfg.exp_name = "lightweight-agent-smoke"
-    text = generate("Reply with the single word READY.", cfg, max_tokens=128, max_retries=1)
+    text = generate("Reply with the single word READY.", cfg, max_tokens=1024, max_retries=1)
     if not text.strip():
         raise RuntimeError("Generation returned empty content")
     output = query(
