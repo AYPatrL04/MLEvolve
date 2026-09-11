@@ -7,6 +7,7 @@ import subprocess
 
 
 PREFIX = "hwdb-deepseek-20260911"
+LAUNCHER_CONFIG = PREFIX + "-launcher-v2"
 SOURCE_COMMIT = "d57609bdeda55d00b6f3734b38f84b80bdf4ca9e"
 IMAGE = "nvcr.io/nvidia/pytorch:26.04-py3"
 KUBECTL = ["kubectl", "--context", "nautilus", "-n", "ecepxie"]
@@ -43,7 +44,7 @@ def manifest(phase, image=IMAGE):
                         "resources": resources, "volumeMounts": mounts}],
         "volumes": [{"name": "workspace", "persistentVolumeClaim": {"claimName": "yuze-li-vol"}},
                     {"name": "runtime", "emptyDir": {"sizeLimit": "100Gi"}},
-                    {"name": "launcher", "configMap": {"name": PREFIX + "-launcher"}},
+                    {"name": "launcher", "configMap": {"name": LAUNCHER_CONFIG}},
                     {"name": "shm", "emptyDir": {"medium": "Memory", "sizeLimit": "16Gi"}}],
     }
     if gpu:
@@ -72,7 +73,7 @@ def main():
     if args.phase == "prepare":
         folder = Path(__file__).parent
         config = {"apiVersion": "v1", "kind": "ConfigMap", "immutable": True,
-                  "metadata": {"name": PREFIX + "-launcher", "namespace": "ecepxie"},
+                  "metadata": {"name": LAUNCHER_CONFIG, "namespace": "ecepxie"},
                   "data": {name: (folder / name).read_text() for name in ("bootstrap_deepseek_precision.sh", "git_retry.sh")}}
         print(kubectl("apply", "-f", "-", payload=json.dumps(config)))
     else:

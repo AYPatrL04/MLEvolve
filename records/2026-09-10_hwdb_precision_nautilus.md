@@ -281,3 +281,11 @@ not the stale trigger timestamp.
   including both real-worker checks that fail on macOS. Live DeepSeek smoke
   returned generation=passed and review_schema=passed for the actual
   CODE_REVIEW_SPEC. Runtime packaging follows these successful checks.
+- Transfer correction: tar's default 10 KiB writes stalled on Ceph at about
+  0.25 MiB/s, despite node-local source/packages. A bounded remote 32 MiB
+  probe using 4 MiB writes completed in 1.45 seconds (23.1 MB/s). Changed
+  archive output to 1 MiB records (`--blocking-factor=2048`), preserved the
+  first CPU logs under preparation-attempt-1, and replaced only our CPU
+  preparation Job. The immutable launcher ConfigMap is now
+  hwdb-deepseek-20260911-launcher-v2; source model/runtime revision unchanged.
+  Requests/limits now also meet Nautilus's CPU/memory ratio guidance.

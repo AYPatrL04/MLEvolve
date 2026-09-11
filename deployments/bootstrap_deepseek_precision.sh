@@ -28,7 +28,8 @@ if [[ "$phase" == prepare ]]; then
   python -m pytest -q tests/test_lightweight_agents.py tests/test_qwen_vllm_output_limit.py tests/context_cache/test_vllm.py tests/test_config_loading.py tests/test_hwdb_prompt_safety.py tests/test_hardware_feature_filter.py tests/test_hardware_knowledge_client.py tests/test_hardware_context.py tests/test_stage_hardware_prompt_preview.py tests/test_model_preflight_integration.py > /experiment/regression-tests.log 2>&1
   python deployments/run_hwdb_precision_matrix.py --agent-profile deepseek-flash --root /experiment/results --smoke-only
   # Both pods use this exact image and /runtime prefix, including editable installs.
-  tar -C /runtime -cf /experiment/runtime.tar.partial repo venv
+  # Ceph writes have high per-call latency; the tar default is only 10 KiB.
+  tar --blocking-factor=2048 -C /runtime -cf /experiment/runtime.tar.partial repo venv
   mv /experiment/runtime.tar.partial /experiment/runtime.tar
   cd /experiment
   sha256sum runtime.tar > runtime.tar.sha256
