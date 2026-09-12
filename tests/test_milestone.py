@@ -140,3 +140,40 @@ def test_rejected_candidate_evidence_survives_discard(tmp_path):
     assert evidence["hardware_prompt_audit"] == node.hardware_prompt_audit
     assert evidence["review_issues"] == node.review_issues
     assert (tmp_path / "rejected_candidates/good/candidate.py").read_text() == node.code
+
+
+@pytest.mark.parametrize("gpu_submission", [True, False])
+def test_read_only_audit_requires_original_matching_gpu_provenance(tmp_path, gpu_submission):
+    from deployments.audit_hwdb_milestone import audit
+    from utils.pipeline_logging import PipelineActionLogger
+    cfg, node, packet, _ = fixture(tmp_path)
+    logs = tmp_path / "logs"
+    logs.mkdir()
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (tmp_path / "submission").rename(workspace / "submission")
+    report = tmp_path / "preflight_report.json"
+    report.write_text(json.dumps({"stages": [{"name": n, "status": "PASS"} for n in (
+        "hardware", "construction", "data_contract", "cpu_training", "validation", "memory",
+    )]}))
+    original = {k: getattr(node, k) for k in (
+        "id", "code", "stage", "review_status", "preflight_admitted", "preflight_mode",
+        "preflight_code_hash", "_term_out", "exec_time",
+    )}
+    original.update(metric={"value": 0.7, "maximize": True}, is_buggy=True, is_valid=False,
+                    preflight_report_path=str(report))
+    journal = json.dumps({"nodes": [original]})
+    (logs / "journal.json").write_text(journal)
+    logger = PipelineActionLogger(logs / "pipeline.sqlite3", run_id="test", mode="hardware_aware")
+    logger.upsert_job_packet(**packet)
+    logger.upsert_job_packet("gpu-job", requires_gpu=None)
+    logger.emit("scheduler_submission_created", node_id="good", job_id="gpu-job", payload={
+        "requires_gpu": gpu_submission, "preflight_code_hash": node.preflight_code_hash,
+    })
+    logger.emit("job_finished", node_id="good", job_id="gpu-job", payload={"status": "COMPLETED"})
+    logger.emit("execution_result_parsed", node_id="good", payload={"is_buggy": False, "is_valid": True, "metric": 0.7})
+    result = audit(logs, cfg.data_dir)
+    assert result["milestone_met"] is gpu_submission
+    assert (logs / "journal.json").read_text() == journal
+    assert logger.latest_job_packet("good")["requires_gpu"] is None
+    logger.close()

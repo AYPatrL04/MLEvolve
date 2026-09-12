@@ -13,6 +13,25 @@ from utils.metric import MetricValue
 from utils.pipeline_logging import PipelineActionLogger
 
 
+def test_partial_job_completion_preserves_submission_provenance(tmp_path):
+    logger = PipelineActionLogger(tmp_path / "pipeline.sqlite3", run_id="run", mode="hardware_aware")
+    logger.upsert_job_packet("job", node_id="node", status="PENDING", requires_gpu=True,
+                             uses_amp=False, script_signature="signature", model_key="model",
+                             submitted_at="original", created_at="created")
+    logger.upsert_job_packet("job", node_id="node", status="COMPLETED", duration_seconds=27)
+    logger.update_job_packet_for_node("node", metric=0.75, status="parsed_valid")
+    packet = logger.latest_job_packet("node")
+    assert packet["status"] == "parsed_valid" and packet["metric"] == 0.75
+    assert packet["requires_gpu"] == 1 and packet["uses_amp"] == 0
+    assert packet["script_signature"] == "signature" and packet["model_key"] == "model"
+    assert packet["submitted_at"] == "original" and packet["created_at"] == "created"
+    logger.upsert_job_packet("job", requires_gpu=False)
+    assert logger.latest_job_packet("node")["requires_gpu"] == 0
+    logger.upsert_job_packet("job", model_key=None)
+    assert logger.latest_job_packet("node")["model_key"] is None
+    logger.close()
+
+
 def test_pipeline_action_logger_writes_sqlite_tables(tmp_path: Path) -> None:
     logger = PipelineActionLogger(tmp_path / "pipeline.sqlite3", run_id="run-a", mode="baseline")
 

@@ -269,7 +269,11 @@ class PipelineActionLogger:
             "payload_json",
         ]
         placeholders = ", ".join("?" for _ in columns)
-        updates = ", ".join(f"{column}=excluded.{column}" for column in columns if column != "job_id")
+        # Lifecycle events are partial updates, not replacement job snapshots.
+        # In particular, completion must not erase submission-time GPU provenance.
+        update_columns = {key for key in fields if key in columns and key != "job_id"}
+        update_columns.add("payload_json")
+        updates = ", ".join(f"{column}=excluded.{column}" for column in columns if column in update_columns)
         with self._lock, self._connect() as conn:
             conn.execute(
                 f"""

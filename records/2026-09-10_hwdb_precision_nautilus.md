@@ -591,3 +591,103 @@ not the stale trigger timestamp.
   responses are HTTP 200. No verified end-to-end success reported yet.
   One monitoring command's automatic approval review timed out; the single
   permitted retry succeeded. This was not a model/API or cluster failure.
+
+## Hourly Check: 2026-09-12 15:10-15:14 UTC
+
+- Same milestone A10 pod Running, zero restarts, 3 MiB GPU memory and 0%
+  utilization. No current pod events. Matrix remains first_valid_node with
+  no overall wall/node budget; no milestone_success.json, no scheduler job
+  packets, no preflight attempts and no validation metrics at the main snapshot.
+  Recent DeepSeek calls continue returning HTTP 200.
+- Four rejected candidates were persisted at the first snapshot; a fifth
+  (`5a17e06f2d964460b337eaf9dac7e8a9`) was also rejected during inspection.
+  Final review issues/history, code hashes and two HWDB prompt audit entries
+  per candidate are now available. Task metadata says classification for all
+  four initially inspected candidates. This verifies logging/task-inference
+  improvements, not end-to-end success or precision performance.
+- Repeated critical categories: scheduler_step_control on all five;
+  training_runtime_diagnostics on two initial candidates; batch_quality_envelope
+  and batch_optimizer_coupling on one; unresolved autocast helper on one.
+  Exact diagnostic categories are validator outputs, not automatic root-cause
+  attribution to agent hallucination or HWDB.
+- Confirmed generated API misuse in candidate `3d855090746742dc98fc85a2e601f09d`:
+  lines 1225-1243 call control_hook.safe_point with payload={epoch, global_step,
+  steps_per_epoch} then catch Exception and pass. The real signature at
+  localml_scheduler/execution/control.py:193 requires epoch/global_step keyword
+  arguments and does not accept payload. Thus this hook would fail and be
+  silently disabled. The generic missing-hooks diagnostic hides this specificity.
+- Confirmed validator false positives in candidate
+  `775b23a7a69d47998bc506f2a6879d1e`: its lines 658-659 define type-annotated
+  QUALITY_SAFE_PHYSICAL_BATCH_SIZES and BATCH_LR_SCALING_POLICY. Local reproduction
+  returns [16,32,64]/fixed for plain assignments but None/None for identical
+  annotated assignments. The current regex detectors do not accept annotations.
+- The rejected conservative autocast helper in candidate `3d855...` returns
+  torch.autocast(enabled=False) or nullcontext at lines 650-665. Therefore the
+  unresolved-helper diagnostic does not establish actual FP16 use. Other
+  candidates wrap scheduler calls or alias TrainingDiagnostics, which also
+  exceed current syntactic recognizers; no general correctness claim made.
+- Next targeted repair should distinguish unsupported API calls from unproven
+  wrappers, report exact missing contract clauses, and handle valid annotated
+  assignments with AST parsing. Do not bypass mandatory runtime evidence or
+  weaken FP32 rules to obtain admission. No source edits, Job restart, label/
+  credential access or historical-result overwrite during this hourly check.
+  Milestone run and hourly monitoring remain active as authorized.
+
+## Milestone Verified and Stopped: 2026-09-12 16:18-17:09 UTC
+
+- The 16:18 snapshot showed eight review-rejected drafts followed by real GPU
+  execution. Candidate `99091e8f68044b83bdbe54369f4a1324`, job
+  `40565675-0bc7-496f-b2b8-cccdf2ccf08d`, completed training, validation and
+  submission. Internal validation F1: **0.747532**, 972 completed CUDA optimizer
+  updates, zero skipped/unaccounted updates, FP32 parameters and optimizer state,
+  autocast disabled, TF32 matmul/cuDNN disabled. Six epochs were reported, with
+  early stopping. The first parsed result appeared at about 16:09 UTC, roughly
+  two hours after the experiment started, not an official held-out/leaderboard score.
+- A subsequent repair candidate `d442fba1564c4b69af908f0f588b69dd`, job
+  `4358b7e6-3c17-4932-9047-94e7b09c6f53`, also executed successfully: internal
+  validation F1 **0.7458064516129033**, 1620 completed CUDA updates, zero skips,
+  same observed strict FP32 policy. It was unnecessary for the one-node target.
+- Both passed hardware, construction, data-contract, real CPU training,
+  validation and memory preflight stages. Overall admission was INCONCLUSIVE
+  but admitted under the existing policy: abstract-forward hit a PyTorch
+  meta/weakref tensor-swap warning, and static_source flagged CUDA-dependent
+  branches. Do not describe this as every preflight stage PASS. Real CUDA
+  execution subsequently confirmed the exercised branch and precision behavior.
+- The optional format service on localhost:5005 was absent; the old parser
+  logged a misleading format-pass message after its fallback. The milestone's
+  separate public-sample check independently verified required columns, 1523
+  row count, IDs/order, nonmissing binary predictions and submission hashes.
+  No private held-out labels were read or scored.
+- Confirmed bookkeeping defect: submission events recorded requires_gpu=true,
+  but PipelineActionLogger.upsert_job_packet replaced omitted fields with NULL
+  on partial completion updates. The milestone rejected both only because that
+  GPU flag was lost, and incorrectly routed the valid nodes back to agent repair.
+  Original SQLite rows and journal flags are preserved, not silently corrected.
+- Fixed the local logger to update only explicitly supplied columns, preserving
+  GPU/source/batch provenance and creation timestamps. Explicit false/None updates
+  still work. Added regression tests for the actual lifecycle overwrite case.
+- A separate read-only reconciliation script reconstructs only facts recorded
+  in matching submission/completion/parsed-result events, checks the exact code
+  hash and job ID, and invokes the unchanged milestone verifier against real
+  runtime diagnostics and public submission artifacts. It additionally requires
+  all six real CPU stages above to PASS. Tests verify missing GPU provenance
+  cannot be accepted and the original journal/DB are unchanged. **21 tests passed.**
+- Remote audit `/experiment/milestone-20260912/event_reconciled_audit_20260912.json`
+  reports milestone_met=true for both nodes, no unmet criteria. First node source
+  event IDs: 147/152/153; second: 168/173/174. First code SHA256:
+  `6e309b76170c598bcc57f1a1c5a6c9ecbadd8a5de3ba2ae68798b14505bff0a2`;
+  submission SHA256:
+  `3fdc89d738861423e07e0a39f1ceb8cfcd5fe3e21952afac4d02c831b3db2328`.
+  This audit is the explicit success record; original matrix/journal are retained
+  as historical evidence of the failed automatic bookkeeping, not rewritten.
+- With the one-node goal verified, suspended `hwdb-milestone-20260912-run` to
+  stop redundant work. At 17:09 UTC confirmed the GPU pod is gone and only the
+  completed CPU preparation pod remains. All PVC results preserved. The logger
+  fix is not hot-patched into the historical runtime; future runs must use it.
+- Deleted hourly automation `nautilus-hwdb-hourly-checks` because the milestone
+  is complete. First deletion approval review timed out; the permitted retry
+  succeeded. No usage reset or permission bypass was attempted.
+- Outcome: strict FP32 end-to-end feasibility demonstrated on A10. Normal-mode
+  selective-FP16 quality/efficiency comparison is still untested. Remaining work
+  includes annotation-aware validators, clearer scheduler API repair diagnostics,
+  abstract/meta preflight warnings, and accurate optional-format-service reporting.
