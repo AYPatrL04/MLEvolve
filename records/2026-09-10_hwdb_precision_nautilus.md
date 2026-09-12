@@ -730,3 +730,32 @@ not the stale trigger timestamp.
 - Results are remote under `/experiment/disaster-compare-20260912/results`.
   Each training operation retains a 1-hour guard, but there is no overall 3-hour
   shutdown or retry loop. Six finite paired runs finish naturally or report failure.
+
+### Remote Launch Confirmed
+
+- Pushed experiment commit `861ddb041393366642dbf2cdaf68dabc8f00d841` to
+  `AYPatrL04/MLEvolve`, branch `hwdb-precision-guidance`. This immutable commit,
+  not subsequent documentation commits, is pinned in both job manifests.
+- CPU preparation completed successfully on `gpu-06.nrp.mghpcc.org`, without
+  requesting a GPU. **168 remote regression tests passed** and the pinned
+  candidate completed one real CPU optimizer update with no skipped updates.
+  Runtime archive checksum and READY marker were published successfully.
+- Additional surrounding coverage: local macOS run had 135 passes, one skip
+  and four subprocess/process-inspection failures caused by sandbox restrictions.
+  Linux rerun passed those four tests and 139 of 140 overall; the remaining test
+  required the repository working directory and passed when rerun there.
+  Thus all 140 surrounding tests also have Linux passing evidence. These
+  supplemental checks were read from kubectl exec output, not the gate log.
+- Created `hwdb-disaster-compare-20260912-run`; pod
+  `hwdb-disaster-compare-20260912-run-q4mp5` scheduled on
+  `gpu-12.nrp.mghpcc.org` with exactly one A10/A100 GPU request. At the latest
+  startup snapshot it was ContainerCreating, pulling the pinned image, without
+  image-pull error events. A bounded readiness wait timed out; this is not a
+  training timeout, connection-reset report or measured precision failure.
+  No GPU training/F1 comparison result is claimed at this snapshot.
+- Both historical GPU jobs remain suspended. The new job is the only active
+  experiment among these three; no datasets or credentials were downloaded.
+- Created hourly thread monitor `disaster-tweets-precision-checks` for these
+  specific jobs and remote results. It reports the explicitly requested hourly
+  status/log checks, preserves old evidence, does not resume the 12-dataset matrix,
+  and deletes itself after completion or a terminal blocker is reported.
