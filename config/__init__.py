@@ -175,7 +175,7 @@ class CudaDocsConfig:
 @dataclass
 class AgentConfig:
     steps: int
-    time_limit: int
+    time_limit: int | None
     initial_drafts: int
     seed: int
     data_preview: bool
@@ -198,6 +198,7 @@ class AgentConfig:
     hardware_context_max_prompt_chars: int = 3500
     hardware_context_mode: str = "full"
     precision_optimization_mode: str = "normal"
+    stop_after_valid_nodes: int = 0
     review: ReviewConfig = field(default_factory=ReviewConfig)
     cuda_docs: CudaDocsConfig = field(default_factory=CudaDocsConfig)
 

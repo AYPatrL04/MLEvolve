@@ -141,3 +141,25 @@ def write_node_diagnostics(cfg, journal):
                 stream.write(json.dumps(build_node_diagnostics(cfg, node), default=str) + "\n")
     temporary.replace(path)
     return path
+
+
+def write_rejected_candidate(cfg, node):
+    """Persist final code and review evidence before a rejected node is discarded."""
+    safe_id = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(node.id))
+    folder = Path(cfg.log_dir) / "rejected_candidates" / safe_id
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "candidate.py").write_text(node.code or "", encoding="utf-8")
+    record = build_node_diagnostics(cfg, node)
+    record.update(
+        review_history=getattr(node, "review_history", []),
+        hardware_prompt_audit=getattr(node, "hardware_prompt_audit", []),
+        pipeline_decision=getattr(node, "pipeline_decision", None),
+        stage_note_board=getattr(node, "stage_note_board", []),
+        preflight_report_path=getattr(node, "preflight_report_path", None),
+        attribution="unassigned",
+    )
+    path = folder / "diagnostics.json"
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(record, indent=2, default=str) + "\n", encoding="utf-8")
+    temporary.replace(path)
+    return path

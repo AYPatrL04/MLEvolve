@@ -397,7 +397,9 @@ def _build_decision_prompt(
 def _fallback_decision(*, task_desc: Any, data_preview: str, evidence_state: dict[str, Any]) -> dict[str, Any]:
     text = f"{task_desc or ''}\n{data_preview or ''}"
     modality = _infer_modality(text)
-    target_type = _infer_target_type(text)
+    target_type = _infer_target_type(str(task_desc or ""))
+    if target_type == "unknown":
+        target_type = _infer_target_type(data_preview or "")
     missing = list(evidence_state["missing_evidence"])
     if not evidence_state["has_any_hardware_evidence"]:
         missing.append("hardware/profile evidence not available")
@@ -711,9 +713,9 @@ def _infer_target_type(text: str) -> str:
         return "ranking"
     if any(token in lower for token in ("sequence", "translate", "caption", "generated text")):
         return "sequence"
-    if any(token in lower for token in ("regression", "rmse", "mae", "continuous", "value")):
+    if re.search(r"\b(regression|rmse|rmsle|mae|mean squared error|mean absolute error)\b", lower):
         return "regression"
-    if any(token in lower for token in ("class", "label", "accuracy", "auc", "logloss", "f1")):
+    if re.search(r"\b(classification|classes|class|labels?|accuracy|auc|logloss|log loss|f1|f-score)\b", lower):
         return "classification"
     return "unknown"
 

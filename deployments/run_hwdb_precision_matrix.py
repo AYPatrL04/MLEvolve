@@ -57,10 +57,10 @@ def agent_settings(profile):
     raise ValueError(f"Unknown agent profile: {profile}")
 
 
-def make_config(repo, root, public, competition, mode, seconds, nodes, agent_profile="legacy-qwen"):
+def make_config(repo, root, public, competition, mode, seconds, nodes, agent_profile="legacy-qwen", milestone=False):
     cfg = yaml.safe_load((repo / "config.example.yaml").read_text())
     cfg.update(data_dir=str(public), dataset_dir=str(public.parent.parent.parent),
-               desc_file=str(public / "description.md"), exp_name=f"{competition}_{mode}",
+               desc_file=str(public / "description.md"), exp_name=f"{competition}_{mode}", exp_id=competition,
                log_dir=str(root / "runs"), workspace_dir=str(root / "runs"),
                cpu_number=8, copy_data=False)
     cfg["agent"].update(steps=nodes, time_limit=seconds, seed=42,
@@ -82,7 +82,21 @@ def make_config(repo, root, public, competition, mode, seconds, nodes, agent_pro
     # No historical lessons or cross-mode memory may influence this comparison.
     cfg["lesson_profiles"] = {"enabled": False, "read_enabled": False, "write_enabled": False}
     cfg["exec"]["timeout"] = min(seconds, 3600)
+    if milestone:
+        cfg["agent"].update(time_limit=None, stop_after_valid_nodes=1, initial_drafts=0)
+        cfg["scheduler"]["enabled"] = True
+        cfg["agent"]["search"]["num_drafts"] = 1
     return cfg
+
+
+def public_data_ready(public, competition):
+    if not (public / "description.md").is_file():
+        return False
+    if competition == "new-york-city-taxi-fare-prediction":
+        return (public / "labels.csv").is_file() and (public / "test.csv").is_file()
+    if competition == "mlsp-2013-birds":
+        return (public / "essential_data").is_dir() and any((public / "essential_data").rglob("*.csv"))
+    return any(public.glob("*train*"))
 
 
 def stop_group(proc, descendants=()):
@@ -115,16 +129,16 @@ def stop_group(proc, descendants=()):
 
 
 def wait_bounded(proc, seconds, descendants):
-    deadline = time.monotonic() + seconds
+    deadline = time.monotonic() + seconds if seconds is not None else None
     parent = psutil.Process(proc.pid)
     while proc.poll() is None:
         try:
             descendants.update(parent.children(recursive=True))
         except psutil.NoSuchProcess:
             pass
-        if time.monotonic() >= deadline:
+        if deadline is not None and time.monotonic() >= deadline:
             raise subprocess.TimeoutExpired(proc.args, seconds)
-        time.sleep(min(1, max(0, deadline - time.monotonic())))
+        time.sleep(min(1, max(0, deadline - time.monotonic())) if deadline is not None else 1)
     return proc.returncode
 
 
@@ -175,11 +189,14 @@ def main():
     parser.add_argument("--inventory-only", action="store_true")
     parser.add_argument("--agent-profile", choices=AGENT_PROFILES, default="legacy-qwen")
     parser.add_argument("--smoke-only", action="store_true")
+    parser.add_argument("--first-valid-node", action="store_true", help="Disaster Tweets conservative feasibility milestone, without an overall deadline")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     args.root.mkdir(parents=True, exist_ok=True)
     state_file = args.root / "matrix.json"
     previous = json.loads(state_file.read_text()) if state_file.exists() else []
+    if args.first_valid_node and previous:
+        raise ValueError("Use a fresh result root for a milestone attempt; do not overwrite previous evidence")
     settings = agent_settings(args.agent_profile)
     identity = {"profile": args.agent_profile, "model": settings["model"],
                 "provider": settings["provider"], "base_url": settings["base_url"]}
@@ -192,16 +209,22 @@ def main():
     prior = {(r["competition"], r["mode"]): r for r in previous}
     rows = []
     for competition in COMPETITIONS:
+        if args.first_valid_node and competition != "nlp-getting-started":
+            continue
         public = args.data_root / competition / "prepared/public"
         for mode in ("conservative", "normal"):
+            if args.first_valid_node and mode != "conservative":
+                continue
             old = prior.get((competition, mode), {})
             if old.get("status") in {"finished", "failed", "timeout"}:
                 rows.append(old)
                 continue
-            ready = (public / "description.md").is_file() and any(public.glob("*train*"))
+            ready = public_data_ready(public, competition)
             rows.append(dict(competition=competition, mode=mode,
                              status="queued" if ready else "blocked_missing_data",
-                             node_budget=args.nodes, wall_seconds=args.seconds))
+                             node_budget=None if args.first_valid_node else args.nodes,
+                             wall_seconds=None if args.first_valid_node else args.seconds,
+                             goal="first_valid_node" if args.first_valid_node else "bounded_comparison"))
     save(state_file, rows)
     if args.inventory_only:
         return
@@ -227,7 +250,7 @@ def main():
         root = args.root / row["competition"] / row["mode"]
         root.mkdir(parents=True, exist_ok=True)
         public = args.data_root / row["competition"] / "prepared/public"
-        config = make_config(repo, root, public, row["competition"], row["mode"], args.seconds, args.nodes, args.agent_profile)
+        config = make_config(repo, root, public, row["competition"], row["mode"], args.seconds, args.nodes, args.agent_profile, milestone=args.first_valid_node)
         config_path = root / "config.yaml"
         config_path.write_text(yaml.safe_dump(config, sort_keys=False))
         env = dict(os.environ, MLEVOLVE_CONFIG=str(config_path),
@@ -241,8 +264,13 @@ def main():
                                     stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             descendants = set()
             try:
-                code = wait_bounded(proc, args.seconds, descendants)
+                code = wait_bounded(proc, None if args.first_valid_node else args.seconds, descendants)
                 row.update(status="finished" if code == 0 else "failed", exit_code=code)
+                if args.first_valid_node:
+                    evidence = list((root / "runs").glob("*/logs/milestone_success.json"))
+                    verified = [json.loads(p.read_text()) for p in evidence]
+                    row.update(status="milestone_met" if code == 0 and any(e.get("met") is True for e in verified) else "failed",
+                               milestone_evidence=verified)
             except subprocess.TimeoutExpired:
                 row.update(status="timeout", exit_code=124)
             finally:

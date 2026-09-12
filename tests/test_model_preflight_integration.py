@@ -739,6 +739,47 @@ if __name__ == "__main__":
     }
 
 
+@pytest.mark.skipif(__import__("sys").platform != "linux", reason="Isolated checker process limits require Linux")
+def test_multiinput_integer_token_adapter_passes_real_cpu_preflight(tmp_path):
+    code = '''
+import torch
+BATCH_SIZE = 2
+MODEL_FAMILY = "multiinput_embedding_contract_test"
+
+class Model(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.embedding = torch.nn.Embedding(8, 4)
+        self.output = torch.nn.Linear(4, 1)
+    def forward(self, word_ids, char_ids, keyword_ids):
+        features = sum(self.embedding(x).mean(dim=1) for x in (word_ids, char_ids, keyword_ids))
+        return self.output(features).squeeze(-1)
+
+class CandidateAdapter:
+    def build_model(self, context):
+        return Model().to(context["device"])
+    def build_optimizer(self, model, context):
+        return torch.optim.SGD(model.parameters(), lr=0.01)
+    def build_train_batch(self, scenario, device):
+        size = scenario["batch_size"]
+        tensors = tuple(torch.ones(size, length, dtype=torch.long, device=device) for length in (5, 7, 1))
+        return {"inputs": tensors, "target": torch.zeros(size, device=device)}
+    def build_validation_batch(self, scenario, device):
+        return self.build_train_batch(scenario, device)
+    def training_step(self, model, batch, context):
+        return torch.nn.functional.binary_cross_entropy_with_logits(model(*batch["inputs"]), batch["target"])
+    def validation_step(self, model, batch, context):
+        return self.training_step(model, batch, context)
+
+if __name__ == "__main__":
+    pass
+'''
+    outcome = ModelPreflightGate(_cfg(tmp_path)).run(_node(code), generated=True)
+    assert outcome.admitted, outcome.to_dict()
+    assert "DAT001" not in outcome.diagnostic_codes
+    assert outcome.mode == "full_cpu"
+
+
 def test_detached_loss_is_confirmed_and_blocked(tmp_path):
     code = """
 import torch

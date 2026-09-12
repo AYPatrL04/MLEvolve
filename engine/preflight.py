@@ -725,7 +725,11 @@ def diagnostic_to_review_issue(diagnostic: Mapping[str, Any]) -> ReviewIssue | N
     exception_type = str(diagnostic.get("exception_type") or "")
     stack_trace = str(diagnostic.get("stack_trace") or "")
     targeted_guidance = ""
-    if stage == "construction" and exception_type == "KeyError":
+    if code == "DAT001" and "could not identify model inputs" in message.lower():
+        from engine.preflight_contract import PREFLIGHT_BATCH_CONTRACT
+
+        targeted_guidance = " " + PREFLIGHT_BATCH_CONTRACT
+    elif stage == "construction" and exception_type == "KeyError":
         targeted_guidance = (
             " Treat checker-supplied context as a partial mapping: merge it over "
             "CandidateAdapter defaults before reading optional keys, while preserving "

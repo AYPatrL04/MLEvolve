@@ -333,3 +333,228 @@ not the stale trigger timestamp.
   official public archives. The other nine missing datasets retain official
   MLE-bench definitions and checksum verification. Current launcher/staging/
   split/client tests: 20 passed locally. Runtime core remains pinned d57609b.
+
+## Hourly Check: 2026-09-12 04:25 UTC
+
+- Live cluster access is available again. The earlier 23:02 UTC check was
+  rejected by the Codex tool-approval layer because of a usage limit; it did
+  not inspect or launch a cluster job. No intervening successful launch was
+  found at this check. This was a monitoring/launch delay, not a DeepSeek API
+  or candidate precision failure.
+- Both prerequisite Jobs are Complete: runtime preparation took 8m12s and
+  data preparation took 26 minutes. The completed data log confirms all nine
+  registry-backed missing datasets prepared successfully with recorded public
+  archive SHA256 values. With existing Jigsaw/Spooky and the previously
+  verified Disaster Tweets ready.json override, all twelve datasets are ready.
+  Disaster Tweets remains explicitly a custom holdout, not an official
+  MLE-bench/Kaggle leaderboard evaluation.
+- The GPU run Job was absent. Invoked the authorized gated launcher, which
+  verified both completion gates and the exact image digest, then created
+  launcher-v5 and Job hwdb-deepseek-20260911-run. Fresh pod:
+  hwdb-deepseek-20260911-run-n7vsz, scheduled on gpu-15.nrp.mghpcc.org, a node
+  previously listed with NVIDIA-A10. The required selector allows only
+  A10/A100. A live individual-node GET was forbidden by cluster RBAC; verify
+  the actual visible GPU with nvidia-smi after the container starts.
+- Startup state is ContainerCreating with zero restarts. Events show normal
+  scheduling, successful PVC attachment, and image pulling. Runtime logs are
+  not yet available because the container has not started. No validated
+  candidate execution, GPU utilization sample, metric, precision compliance
+  result or HWDB/filter attribution can be claimed from this startup check.
+- No preparation job was restarted, no historical results were overwritten,
+  and no credentials/held-out labels were inspected. Hourly monitoring remains
+  active for staging, compatibility checks and the fresh 24-run comparison.
+
+## Hourly Check: 2026-09-12 05:26-05:31 UTC
+
+- Run pod hwdb-deepseek-20260911-run-n7vsz is Running with zero restarts.
+  nvidia-smi confirms NVIDIA A10, 3 MiB used and 0% utilization. Image pull
+  took 27m17s; container started at 04:52:56 UTC. Runtime/source archive
+  checksums passed, public data staging completed, and the third live DeepSeek
+  generation/review-schema smoke passed. No package install occurred on GPU.
+- Disaster Tweets conservative started at about 05:04:52 UTC. Matrix currently
+  has one running, nineteen queued and four blocked_missing_data entries.
+  All DeepSeek API requests observed in the current generation/review log
+  returned HTTP 200, unlike the former Qwen tool-parser errors. One warm-first
+  context-cache gate timeout triggered a generation retry; subsequent calls
+  proceeded. This is an orchestration/cache delay, not an observed API outage.
+- Candidates 87ed319e3b7541bfb0570f9b20a076c1 and
+  10494a9fa9d64390b44a1c1161d1808e were rejected by stage-aware review before
+  GPU execution. For the second candidate, two applied repair rounds still
+  left one critical issue. Pipeline events confirm preflight_admitted/status
+  null and gpu_execution_avoided=true. The pipeline DB contains zero job
+  packets; journal contains only the root with a null metric, and there are
+  no feedback_attempt files. No candidate has reached CPU preflight or GPU
+  training at this check, so no precision efficacy finding can be made.
+- Logging gap: rejection events persist issue counts and applied repair
+  patches, but not the full unresolved review_issues/history. Rejected nodes
+  are removed from the journal. node_diagnostics.jsonl is empty. Therefore
+  the precise surviving critical issue cannot be attributed reliably to the
+  agent, reviewer, HWDB or filtering from these retained summaries alone.
+  Preserve rejected-node issues, code hash and hardware prompt audit before
+  discard in a future tested change; do not infer a hardware defect from a
+  rejection count. Observed repair patches concern training/resume/evaluation
+  behavior, while the stage plan explicitly requested strict FP32/no TF32.
+- Confirmed inventory bug, not missing downloads: runner line 201 requires a
+  top-level filename matching *train*. NYC Taxi correctly supplies labels.csv
+  (about 5.66 GB) and test.csv; Birds supplies nested essential_data and
+  supplemental_data. Both also have description.md and sample_submission.csv.
+  Their four mode runs are falsely blocked despite successfully prepared
+  public archives. Replace this filename heuristic with verified preparation
+  metadata or validated per-dataset layouts, test it, and include these four
+  runs in a controlled continuation without overwriting active/history state.
+- No live source/config changes, restarts or historical-result overwrites
+  performed. The current bounded first mode continues generating candidates.
+  Hourly monitoring remains active; distinguish successful API integration
+  from the still-unachieved first training execution and unresolved logging/
+  inventory defects. Never count the four falsely blocked modes as completed.
+
+## Hourly Check: 2026-09-12 06:26 UTC
+
+- Same A10 pod Running, zero restarts; GPU 3 MiB and 0% utilization. No
+  current pod events were returned. Matrix unchanged: one running, nineteen
+  queued, four falsely blocked dataset/mode entries. Disaster Tweets
+  conservative has consumed about 81.7 of its 180-minute wall budget.
+- Pipeline DB now records seven review_rejected events, fourteen repair
+  rounds and twenty-one review rounds. Six execution-avoided finalizations
+  were persisted at the snapshot; the seventh candidate had just completed
+  rejected review. DeepSeek HTTP calls in the bounded recent log succeed
+  with 200 responses. This is continued review/admission churn, not the old
+  Qwen API compatibility failure or a demonstrated precision regression.
+- Still zero job_packets, only the root journal node with null metric, and
+  no feedback_attempt files. No candidate has reached CPU preflight or GPU
+  training. Rejected-node diagnostic retention and the Birds/Taxi inventory
+  heuristic remain unresolved; there is no new HWDB/filter attribution.
+- Asked the user whether to pause and preserve the idle-GPU comparison while
+  diagnosing/fixing rejection logging and inventory, or continue the bounded
+  run. Recommended pause/diagnosis; awaiting the user's response. Do not ask
+  the same question again while it remains pending. No active-job mutation,
+  restart, credential access or result overwrite performed in this check.
+
+## Hourly Check: 2026-09-12 07:27 UTC
+
+- Same run pod Running with zero restarts; NVIDIA A10 remains at 3 MiB and
+  0% utilization. No current pod events returned. Matrix still one running,
+  nineteen queued and four falsely blocked modes (Birds/Taxi inventory bug).
+- Disaster Tweets conservative has used 142.2 of 180 minutes. There are now
+  eleven rejected reviews and eleven execution-avoided finalizations, with
+  twenty-two repair rounds and thirty-three review rounds. Still zero job
+  packets, only the root journal node with null metric, and no preflight
+  feedback files. The log warns that no valid Top-K candidates exist and
+  falls back to root expansion. No training or precision comparison yet.
+- One new repair conflict at 07:14:20 UTC on candidate
+  88dec8ae57944e32acc8a80b7250125c records a malformed SEARCH/REPLACE response
+  involving datatype_precision and training_evaluation repairs. This is a
+  repair-format/integration observation, not proof of an incorrect precision
+  policy or HWDB recommendation. That candidate was ultimately rejected.
+  Recent DeepSeek requests continue returning HTTP 200.
+- Prior pause/diagnosis versus continue question remains unanswered; it was
+  not repeated. No active workload, source, config or historical result was
+  changed. Bounded run and hourly monitoring remain active. Detailed surviving
+  review issues remain unavailable in persisted rejection summaries, so HWDB/
+  filter root-cause attribution remains unassigned.
+
+## Hourly Check: 2026-09-12 08:27 UTC
+
+- Disaster Tweets conservative timed out (exit 124) after the three-hour
+  budget. SIGTERM at 08:04:52 UTC triggered shutdown and a hardware report;
+  matrix finalized it at about 08:05:09 UTC. The existing runner automatically
+  started normal mode at 08:05:11 UTC. Matrix: one timeout, one running,
+  eighteen queued, four falsely blocked Birds/Taxi entries. Same pod remains
+  Running, zero restarts, A10 3 MiB/0%; no current pod events returned.
+- Final conservative pipeline counts: thirteen review rejections/execution
+  avoidances, one completed review, zero job packets and no valid metric.
+  Hardware report records GPU average/p95/max utilization all 0%, with 3 MiB
+  memory throughout sampled observations. Its CPU/RAM figures report host
+  totals (503.71 GiB RAM), not necessarily this pod's resource consumption.
+- New concrete evidence: final candidate f6f1abdff2be41f5b5d3d0a5f15814bf
+  reached full CPU preflight. feedback_attempt_0.json and _1.json both FAIL
+  with DAT001 (could not identify model inputs in representative batch) and
+  GPU003; neither is admitted, and no internal_error is reported. Candidate
+  hashes differ (6599ff5f... then 0f6a21c5...), but _make_batch and adapter
+  train/validation batch methods are unchanged across these attempts.
+- Confirmed adapter/checker contract mismatch: candidate returns a dict of
+  word_ids, char_ids, keyword_ids and target; checker _find_inputs_and_target
+  recognizes only inputs/input/x/images/image/features for dictionary inputs.
+  Thus the checker rejects this multi-input batch before exercising training.
+  This is an integration/adapter-shape issue, not evidence that FP32 is bad or
+  that an HWDB precision recommendation caused the failure. Preserve token
+  indices as integer tensors in any eventual repair; do not force FP32 onto
+  embedding indices or bypass validation.
+- Feedback retains candidate snapshots, review history, pipeline decisions,
+  stage notes and hardware_prompt_audit. Attribution remains unassigned. A
+  separate metadata inconsistency is visible: pipeline model_design labels
+  the binary-F1 task regression with MSE/MAE fallback while stage notes describe
+  a classifier. Investigate task inference separately; it is not established
+  as the cause of DAT001. The review-only rejection logging gap remains.
+- Normal mode has one review rejection so far, zero job packets and no
+  preflight feedback yet; it is generating/reviewing its second candidate.
+  Recent DeepSeek HTTP requests succeed. Another warm-first cache gate retry
+  occurred, but no API outage is established.
+- No manual restart, source/config change, secret access, held-out-label
+  exposure or evidence overwrite performed. The earlier pause/diagnose choice
+  is still pending and was not repeated. Hourly monitoring remains active.
+
+## Hourly Check: 2026-09-12 09:28 UTC
+
+- Same A10 run pod Running with zero restarts, 3 MiB GPU memory and 0%
+  compute utilization. No current pod events returned. Matrix: conservative
+  timeout, normal running, eighteen queued, four falsely blocked Birds/Taxi
+  modes. No new completed comparison or hardware efficacy result.
+- Disaster Tweets normal has used 83.1 of 180 minutes. Pipeline DB records
+  six review rejections and six execution-avoided finalizations, twelve repair
+  rounds, nineteen review rounds and three repair-patch conflict events. The
+  seventh candidate is in review. Recent API calls return HTTP 200.
+- Normal still has zero job packets, only a root journal node with null
+  metric, and no feedback_attempt files. It has not reached CPU preflight
+  or GPU training, so neither optional FP16 usage nor runtime compliance/
+  quality/speed can be assessed. Review/repair progress is not training progress.
+- Previously established conservative adapter/checker DAT001 mismatch,
+  rejection-diagnostic retention gap, task-type metadata inconsistency and
+  inventory heuristic bug remain unresolved. This check supplies no new
+  evidence assigning their cause to HWDB or precision filtering.
+- The user's earlier pause/diagnose choice remains pending; no duplicate
+  question was sent. No source/config edits, restarts, secret access or
+  historical-result changes were made. Bounded run and hourly monitor remain
+  active, with the existing timeout retained as a failure rather than a result.
+
+## Authorized Milestone Repair: 2026-09-12
+
+- User approved pausing and repairing the pipeline, and replacing the optimistic
+  three-hour overall cutoff with at least one candidate completing the full
+  process. Suspended `hwdb-deepseek-20260911-run`; confirmed its GPU pod is gone.
+  All prior `/experiment/results` evidence and completed preparation/data Jobs
+  remain intact. Never resume the old matrix automatically.
+- Shared adapter prompt and DAT001 repair now specify recognized inputs/target
+  keys, multiple positional inputs, integer token indices, and checker-owned
+  backward/optimizer updates. The pinned checker itself is not weakened.
+- Final rejected code, review issues/history, HWDB audit and stage decisions
+  persist under `logs/rejected_candidates/<node>/`, outside the discarded journal.
+  Review-execution-avoided DB events also retain final issues and history.
+- Removed generic `value` regression inference; task description has precedence
+  over data-preview words. Corrected Taxi labels.csv and Birds nested-data
+  readiness, and set the real competition exp_id in generated configs.
+- New `--first-valid-node` targets Disaster Tweets conservative first. It uses
+  the same three code-generation stages and real review, CPU preflight, scheduler,
+  training and result parsing. Candidates run serially with feedback before the
+  next generation. Rejected or failed executions do not consume the goal.
+- Overall agent time_limit is null, with no Kubernetes GPU Job deadline.
+  Per-execution timeout remains one hour, and existing API/preflight timeouts
+  remain. The misleading fixed nine-hour prompt text was removed. Operational
+  failures remain failures; there is no blind automatic Job restart.
+- Success requires fresh full-CPU admission for the actual code, accepted
+  review, a matching parsed-valid GPU job packet and finite metric, completed
+  CUDA optimizer updates, observed precision-policy compliance, and independent
+  public-sample submission validation (including Disaster Tweets IDs/binary
+  predictions). `milestone_success.json` records evidence and hashes. No held-out
+  labels are read, and this does not prove FP32/FP16 performance superiority.
+- Local focused regressions: 197 passed. Added a Linux-only multi-input
+  embedding adapter full-CPU regression; this must pass in the remote CPU gate
+  before any replacement GPU job is launched. Synthetic unit/adapter fixtures
+  are not counted as the live Kaggle milestone.
+- Replacement deployment: `hwdb-milestone-20260912-prepare` then gated
+  `hwdb-milestone-20260912-run`. New artifacts use
+  `/experiment/milestone-20260912/`; only Disaster Tweets public data is staged.
+  Reuses existing credential references and exact container image; no Kaggle
+  Secret or held-out labels in agent pods. Deployment is pending at this entry.
+- Hourly automation updated to the milestone objective and explicitly forbidden
+  from resuming the suspended legacy comparison.

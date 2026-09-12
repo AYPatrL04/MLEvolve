@@ -389,7 +389,14 @@ class AgentSearch:
             "reason": "preflight admission rejected" if preflight_rejected else "unresolved critical review issues",
             "critical_issue_count": len(critical),
             "gpu_execution_avoided": True,
+            "review_issues": node.review_issues,
+            "review_history": getattr(node, "review_history", []),
         }
+        cfg = getattr(self, "cfg", None)
+        if cfg is not None and getattr(cfg, "log_dir", None) is not None:
+            from utils.node_diagnostics import write_rejected_candidate
+
+            payload["diagnostics_path"] = str(write_rejected_candidate(cfg, node))
         try:
             from engine.preflight import node_preflight_metadata
 
@@ -471,7 +478,7 @@ class AgentSearch:
 
                 elif parent_node.is_buggy is False:
                     can_use_fusion = False
-                    if self.search_start_time:
+                    if self.search_start_time and self.acfg.time_limit is not None:
                         elapsed_time = time.time() - self.search_start_time
                         if elapsed_time >= self.acfg.time_limit / 2:
                             can_use_fusion = True

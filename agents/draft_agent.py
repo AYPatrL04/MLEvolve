@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 from llm import compile_prompt_to_md
 from engine.search_node import SearchNode
+from engine.preflight_contract import PREFLIGHT_BATCH_CONTRACT
 from agents.coder import plan_and_code_query, stepwise_plan_and_code_query
 from agents.triggers import register_node
 from agents.hardware_context import (
@@ -55,6 +56,7 @@ def model_preflight_generation_instructions() -> list[str]:
         "as the training pipeline; do not use mock tensors or a different toy model. "
         "Its batch builders must honor `scenario['batch_size']` and return all inputs "
         "required by the model plus a target.",
+        PREFLIGHT_BATCH_CONTRACT,
         "- Keep imports, constants, class/function definitions, and read-only device "
         "configuration import-safe. Put all training, validation, prediction, and "
         "submission side effects under `if __name__ == '__main__':`.",
@@ -117,6 +119,15 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
         "and then implement this solution in Python with the quality expected of a Kaggle Grandmaster. "
         "We will now provide a description of the task."
     )
+    if getattr(agent.acfg, "stop_after_valid_nodes", 0):
+        introduction = (
+            "Build one compact, real trainable model and a complete executable pipeline "
+            "for this feasibility test. Prioritize correct data handling, learned GPU "
+            "training, validation, test inference and the required integration contracts. "
+            "Avoid unnecessary ensembles or architectural complexity. A modest measured "
+            "score is acceptable; fabricated metrics and dummy predictions are not. "
+            "This is a local validation experiment, not a leaderboard submission."
+        )
     prompt: Any = {
         "Introduction": introduction,
         "Task description": agent.task_desc,

@@ -30,9 +30,11 @@ def archive(source, destination):
     return digest(destination)
 
 
-def stage_public():
+def stage_public(competitions=None):
     rows = json.loads((ROOT / "status.json").read_text())
     for row in rows:
+        if competitions is not None and row["competition"] not in competitions:
+            continue
         override = ROOT / row["competition"] / "ready.json"
         if override.exists():
             ready = json.loads(override.read_text())

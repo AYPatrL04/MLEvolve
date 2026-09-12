@@ -59,7 +59,7 @@ def check_improvement(agent, cur_node: SearchNode, parent_node: SearchNode):
         cur_node.branch_id is not None):
 
         time_elapsed = time.time() - agent.search_start_time
-        time_progress = time_elapsed / agent.acfg.time_limit
+        time_progress = time_elapsed / agent.acfg.time_limit if agent.acfg.time_limit else 0.0
 
         if not hasattr(agent, 'branch_node_count'):
             agent.branch_node_count = {}

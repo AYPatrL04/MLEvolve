@@ -7,13 +7,21 @@ import humanize
 from agents.runtime_dependencies import advertised_package_names
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
 from utils.precision_policy import precision_mode_instruction
+from engine.preflight_contract import PREFLIGHT_BATCH_CONTRACT
 
 
 def get_impl_guideline_from_agent(agent):
     """Build implementation guideline from agent config."""
-    tot_time_remaining = agent.acfg.time_limit - (time.time() - agent.start_time)
+    tot_time_remaining = (
+        agent.acfg.time_limit - (time.time() - agent.start_time)
+        if agent.acfg.time_limit is not None else None
+    )
     configured_timeout = getattr(getattr(agent.cfg, "exec", None), "timeout", None)
-    if configured_timeout is None:
+    if tot_time_remaining is None:
+        if configured_timeout is None:
+            raise ValueError("Milestone runs require a finite per-execution timeout")
+        exec_timeout = int(configured_timeout)
+    elif configured_timeout is None:
         exec_timeout = int(max(0, tot_time_remaining))
     else:
         exec_timeout = int(max(0, min(float(configured_timeout), tot_time_remaining)))
@@ -33,6 +41,8 @@ def get_impl_guideline_from_agent(agent):
 
 def _format_time(time_in_sec):
     """Format seconds for display."""
+    if time_in_sec is None:
+        return "no overall deadline"
     return f"{int(time_in_sec) // 3600}h {(int(time_in_sec) % 3600) // 60}m {int(time_in_sec) % 60}s"
 
 
@@ -50,7 +60,7 @@ def get_impl_guideline(
     impl_guideline = [
         f"**Resource Budget**: Time left ≈ {_format_time(tot_time_remaining)} | Steps left = {steps_remaining} | Max execution time per run = {humanize.naturaldelta(exec_timeout)}",
         "",
-        "**Note:** Code execution MUST complete within 9 hours (hard limit) — any solution exceeding this will be invalid. Within this constraint, prioritize performance and optimization.",
+        f"Code execution must complete within the configured per-run limit of {humanize.naturaldelta(exec_timeout)}, including validation and test inference.",
         "🎯 **CRITICAL REQUIREMENTS** (Non-Negotiable):",
         "",
         "**1. Model Inference for ALL Predictions**",
@@ -83,6 +93,7 @@ def get_impl_guideline(
         "• Treat every caller-supplied `context` as a partial mapping: merge it over adapter defaults before reading optional keys, and preserve caller-provided values.",
         "• CandidateAdapter context mutations do not persist between checker method calls; `training_step` and `validation_step` MUST resolve the script's real criterion when the partial context omits it or supplies `None`, rather than relying on `build_model` to mutate a local context.",
         "• Batch builders MUST honor `scenario['batch_size']` and `device`; use `os.environ.get('MLEVOLVE_INPUT_DIR', './input')` to locate input fixtures during the isolated CPU check.",
+        PREFLIGHT_BATCH_CONTRACT,
         "• When `scenario['fixture']` is non-empty, it is the authoritative named input contract: build every listed tensor with the declared non-batch shape, preserve those names in the returned mapping, and pass all model inputs to the real forward path. Do not collapse a multimodal fixture into one feature vector.",
         "• Adapter construction and a one-batch CPU step must be lightweight and must not download weights or require CUDA.",
         "",
@@ -109,6 +120,15 @@ def get_impl_guideline(
         "□ Is execution behind the main guard and is CandidateAdapter complete and CPU-safe?",
         "□ Does scheduled PyTorch training use script_scheduler_context, load_resume_checkpoint, and STEP/EPOCH safe_point calls with steps_per_epoch and a complete state_factory? Preserve these hooks during merges and repairs; keep setup inside the training entrypoint and hooks inactive when the context is None.",
     ]
+    if tot_time_remaining is None:
+        impl_guideline[0] = (
+            "Milestone objective: complete one real candidate through review, CPU preflight, "
+            "GPU training, validation and test submission. There is no overall wall-clock "
+            "deadline or failed-node budget. "
+            f"Max execution time per run = {humanize.naturaldelta(exec_timeout)}. "
+            "Start with a compact trainable model and a complete executable pipeline; "
+            "do not fabricate metrics, bypass checks, or use dummy predictions."
+        )
     if expose_prediction:
         impl_guideline.append(
             "The implementation should include a predict() function, "

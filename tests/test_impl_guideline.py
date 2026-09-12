@@ -71,3 +71,14 @@ def test_petfinder_guideline_names_its_multimodal_preflight_batch(monkeypatch) -
     text = "\n".join(guideline["Implementation guideline"])
     assert "image [B, 3, 256, 256]" in text
     assert "tabular [B, 12]" in text
+
+
+def test_milestone_prompt_has_no_expired_total_budget(monkeypatch):
+    agent = _agent(exec_timeout=3600)
+    agent.acfg.time_limit = None
+    monkeypatch.setattr(impl_guideline.time, "time", lambda: 100000.0)
+    text = "\n".join(impl_guideline.get_impl_guideline_from_agent(agent)["Implementation guideline"])
+    assert "no overall wall-clock deadline" in text
+    assert "Max execution time per run = an hour" in text
+    assert "9 hours" not in text
+    assert "torch.long" in text

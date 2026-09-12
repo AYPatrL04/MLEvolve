@@ -211,6 +211,8 @@ def select_from_top_k_weighted(agent, top_k_nodes: List[dict]) -> SearchNode | N
 
 def select_with_soft_switch(agent) -> SearchNode | None:
     """Soft switch: exploration (UCT) vs exploitation (Top-K) by time progress."""
+    if agent.acfg.time_limit is None:
+        return _log_selected(agent, select(agent, agent.virtual_root), "milestone_uct")
     if agent.search_start_time is None:
         logger.info("📊 Search not started yet, using standard UCT")
         return _log_selected(agent, select(agent, agent.virtual_root), "uct_not_started")

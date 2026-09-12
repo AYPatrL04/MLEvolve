@@ -7,6 +7,7 @@ import sys
 import shutil
 import time
 import threading
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from engine.agent_search import AgentSearch as Agent
 from engine.executor import Interpreter
@@ -154,6 +155,11 @@ def _run_scheduler_rounds(
     save_callback=save_run,
 ) -> int:
     """Submit ready candidates immediately while generation continues."""
+    if getattr(cfg.agent, "stop_after_valid_nodes", 0):
+        return _run_milestone_rounds(
+            agent=agent, interpreter=interpreter, cfg=cfg, journal=journal,
+            logger=logger, save_callback=save_callback,
+        )
     execute_one = exec_callback or interpreter.run
     total_steps = int(cfg.agent.steps)
     completed = count_budget_nodes(journal.nodes)
@@ -243,6 +249,49 @@ def _run_scheduler_rounds(
             break
 
     return completed
+
+
+def _run_milestone_rounds(*, agent, interpreter, cfg, journal, logger, save_callback=save_run):
+    """Wait for each result before generating more; failures cannot exhaust the goal."""
+    import json
+    from engine.milestone import verify_node
+    from utils.pipeline_logging import log_pipeline_event
+
+    target = int(cfg.agent.stop_after_valid_nodes)
+    successes = set()
+    while len(successes) < target:
+        search_cfg = cfg.agent.search
+        if not _ensure_scheduler_generation_capacity(
+            agent=agent, cfg=cfg, total_steps=int(search_cfg.num_drafts) + 1, logger=logger,
+        ):
+            raise RuntimeError("Milestone search has no executable work; inspect diagnostics")
+        candidate = agent.step(exec_callback=interpreter.run, node=None, execute_immediately=False)
+        if candidate is None:
+            time.sleep(1)
+            continue
+        agent.execute_deferred_nodes([candidate], interpreter.run_many)
+        packet = agent.pipeline_logger.latest_job_packet(candidate.id)
+        evidence = verify_node(cfg, candidate, packet)
+        log_pipeline_event(agent, "milestone_candidate_checked", node=candidate, payload=evidence)
+        if evidence["met"]:
+            successes.add(candidate.id)
+            path = Path(cfg.log_dir) / "milestone_success.json"
+            temporary = path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(evidence, indent=2) + "\n")
+            temporary.replace(path)
+            logger.info("Verified end-to-end GPU milestone for node %s", candidate.id)
+        elif candidate.is_buggy is False:
+            # Keep the measured metric, but route incomplete runtime evidence to repair.
+            candidate.is_buggy = True
+            candidate.is_valid = False
+            candidate.analysis = (candidate.analysis or "") + "\nMilestone evidence incomplete: " + "; ".join(evidence["reasons"])
+            candidate.review_issues.append({
+                "source": "milestone", "severity": "critical", "category": "runtime_evidence",
+                "owner": "training_evaluation", "evidence": "; ".join(evidence["reasons"]),
+                "repair_instruction": "Preserve real training and validation; repair the missing runtime diagnostics, precision policy or submission contract. Never fabricate evidence.",
+            })
+        save_callback(cfg, journal)
+    return count_budget_nodes(journal.nodes)
 
 
 def run():
@@ -421,6 +470,8 @@ def run():
         total_steps = cfg.agent.steps
         initial_draft_count = cfg.agent.initial_drafts
         scheduler_enabled = scheduler_client is not None
+        if getattr(cfg.agent, "stop_after_valid_nodes", 0) and not scheduler_enabled:
+            raise ValueError("End-to-end milestone mode requires the GPU scheduler")
         if scheduler_enabled:
             # Scheduler-backed execution is pipelined below. Do not accumulate
             # a code-only initial group before the first submission.

@@ -17,6 +17,16 @@ from engine.search_node import Journal, SearchNode
 from utils.serialize import dumps_json, loads_json
 
 
+@pytest.mark.parametrize("text,expected", [
+    ("Predict binary labels. Evaluation: F1. Values are 0 or 1.", "classification"),
+    ("Regression: predict continuous target values; RMSE.", "regression"),
+    ("An arbitrary value in a table", "unknown"),
+])
+def test_target_inference_does_not_treat_value_as_regression(text, expected):
+    from agents.prompts.pipeline_decision import _infer_target_type
+    assert _infer_target_type(text) == expected
+
+
 def _agent(
     task_desc: str = "image classification with train_images and labels",
     *,

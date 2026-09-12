@@ -30,6 +30,38 @@ def test_twelve_unique_competitions():
     assert len(set(matrix.COMPETITIONS)) == 12
 
 
+def test_milestone_config_retains_operation_timeout_only(tmp_path):
+    from omegaconf import OmegaConf
+    from config import Config
+    cfg = matrix.make_config(ROOT, tmp_path, tmp_path / "public", "nlp-getting-started", "conservative", 3600, 1, "deepseek-flash", milestone=True)
+    parsed = OmegaConf.merge(OmegaConf.structured(Config), cfg)
+    assert parsed.agent.time_limit is None
+    assert cfg["agent"]["time_limit"] is None
+    assert cfg["agent"]["stop_after_valid_nodes"] == 1
+    assert cfg["exec"]["timeout"] == 3600
+    assert cfg["exp_id"] == "nlp-getting-started"
+
+
+@pytest.mark.parametrize("competition,training", [("new-york-city-taxi-fare-prediction", "labels.csv"), ("mlsp-2013-birds", "essential_data/labels.csv")])
+def test_nonstandard_prepared_layouts(tmp_path, competition, training):
+    (tmp_path / "description.md").write_text("task")
+    (tmp_path / "test.csv").write_text("id\n1\n")
+    assert not matrix.public_data_ready(tmp_path, competition)
+    path = tmp_path / training
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("id,label\n1,0\n")
+    assert matrix.public_data_ready(tmp_path, competition)
+
+
+def test_wait_without_overall_deadline():
+    process = subprocess.Popen([sys.executable, "-c", "pass"], start_new_session=True)
+    descendants = set()
+    try:
+        assert matrix.wait_bounded(process, None, descendants) == 0
+    finally:
+        matrix.stop_group(process, descendants)
+
+
 def test_timeout_cleans_process():
     process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], start_new_session=True)
     descendants = set()
