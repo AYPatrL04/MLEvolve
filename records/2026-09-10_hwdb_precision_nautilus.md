@@ -558,3 +558,36 @@ not the stale trigger timestamp.
   Secret or held-out labels in agent pods. Deployment is pending at this entry.
 - Hourly automation updated to the milestone objective and explicitly forbidden
   from resuming the suspended legacy comparison.
+
+## Milestone Deployment: 2026-09-12 14:06 UTC
+
+- Fixes pushed to fork branch `hwdb-precision-guidance`, source commit
+  `1465a0c4b2e6c79823a9166d65a1b048e992ed11`.
+- CPU Job `hwdb-milestone-20260912-prepare` completed in 4m56s. Its remote
+  regression log reports **253 passed in 107.69s**, including the real Linux
+  multi-input embedding adapter. DeepSeek live generation and structured review
+  both passed. The checksummed replacement runtime archive is 3.23 GiB.
+- Monitoring/turn continuation was delayed after CPU preparation; at 14:05 UTC
+  the replacement GPU Job was still absent. No GPU was allocated for that gap.
+  On fresh verification of both gates, the authorized launcher created
+  `hwdb-milestone-20260912-run` at approximately 14:06 UTC.
+- Pod `hwdb-milestone-20260912-run-hvshc` is Running with zero restarts on
+  `gpu-06.nrp.mghpcc.org`. nvidia-smi confirms **NVIDIA A10**, 23028 MiB.
+  Job has no activeDeadlineSeconds; historical `hwdb-deepseek-20260911-run`
+  still has suspend=true. Old results are untouched.
+- At 14:07 UTC startup was reading the new runtime archive for SHA256
+  verification (about 3.07 GB read). GPU use was 0%, and the matrix/API smoke
+  had not initialized yet. This is storage/bootstrap work, not training or a
+  milestone success. Continue checking actual runner state and diagnostics.
+- Hourly monitor now targets this replacement Job and its source-pinned
+  artifacts under `/experiment/milestone-20260912/`. It must not restart an
+  existing Job, resume the old comparison, or count synthetic tests as success.
+
+- Follow-up at approximately 14:17 UTC: runtime and MLE-bench source checksums
+  passed; live DeepSeek generation/review smoke passed again. Matrix is running
+  with `goal=first_valid_node`, `node_budget=null`, `wall_seconds=null`.
+  All three generation stages completed and merged; first candidate
+  `859596c5b28c489bbfb51c1a90381926` was produced at 14:16:45 UTC. Recent API
+  responses are HTTP 200. No verified end-to-end success reported yet.
+  One monitoring command's automatic approval review timed out; the single
+  permitted retry succeeded. This was not a model/API or cluster failure.
