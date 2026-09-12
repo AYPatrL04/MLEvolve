@@ -691,3 +691,42 @@ not the stale trigger timestamp.
   selective-FP16 quality/efficiency comparison is still untested. Remaining work
   includes annotation-aware validators, clearer scheduler API repair diagnostics,
   abstract/meta preflight warnings, and accurate optional-format-service reporting.
+
+## Controlled Disaster Tweets Comparison: 2026-09-12
+
+- User selected the controlled Disaster Tweets comparison, not resumption of all
+  12 datasets. Both historical GPU jobs remain suspended, with evidence intact.
+- Tightened scheduler diagnostics to explain individual unproven static contracts
+  and reject unsupported `payload=` or additional positional safe-point arguments.
+  The frozen first successful candidate contains an extra positional `None` in
+  generated scheduler calls and suppresses those exceptions. Its real GPU training
+  and submission remain valid evidence, but do not prove working cooperative
+  pause/resume. New prompts state the actual keyword-only API and prohibit
+  suppressing control-hook exceptions. Typed literal batch/LR declarations now
+  parse via AST, rejecting conflicting/dynamic values instead of false absence.
+- New credential-free CPU/GPU jobs: `hwdb-disaster-compare-20260912-prepare/run`.
+  CPU regression tests and a real update of the checksum-pinned frozen candidate
+  gate GPU allocation. Local targeted suite: **168 passed**; shell syntax and
+  diff whitespace checks passed. Remote tests/results are not yet claimed.
+- Study: first successful DeepSeek candidate source hash above; shared training
+  runner, three paired initialization seeds 42/43/44, fixed stratified split 42,
+  identical initial weights, data order, model and hyperparameters in each pair.
+  Batch size 32, no scheduler batch auto-tuning, 15-epoch maximum with patience 4.
+  These controlled raw settings are not an exact replay of historical F1 0.747532.
+- Conservative: strict FP32, no TF32. Normal: eligible training forward operations
+  autocast to FP16 with GradScaler; FP32 parameters, loss, optimizer state and
+  validation/test inference. No BF16 or TF32. Actual output dtype, precision
+  diagnostics, skips and successful optimizer calls checked at runtime.
+- Full training/validation wall time is separate from equal-work throughput:
+  fresh identically initialized model, same GPU-resident batch, 10 warmup and
+  100 timed updates with CUDA synchronization. This is instrumented step
+  throughput, not uninstrumented kernel performance or end-to-end speedup.
+  Alternating mode order reduces systematic first-run bias. Three seeds and one
+  internal validation split do not justify a general hardware recommendation.
+- A quality-first provisional choice is emitted only after all three pairs pass,
+  and not when any update was skipped. Lower validation F1 loses even if faster.
+  No held-out labels, leaderboard submission or fresh agent API calls are used:
+  this isolates precision execution, not agent policy-selection quality.
+- Results are remote under `/experiment/disaster-compare-20260912/results`.
+  Each training operation retains a 1-hour guard, but there is no overall 3-hour
+  shutdown or retry loop. Six finite paired runs finish naturally or report failure.

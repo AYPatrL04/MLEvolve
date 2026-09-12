@@ -6,7 +6,8 @@ import ast
 import re
 
 from agents.review_contracts import ReviewDecision, ReviewIssue
-from engine.script_introspection import introspect_training_script, supports_cooperative_trial
+from engine.script_introspection import introspect_training_script, cooperative_trial_missing_contracts
+from engine.scheduler_contract import SCHEDULER_SAFE_POINT_INSTRUCTION
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
 
 
@@ -33,19 +34,21 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
         if not {"TrainingDiagnostics", "after_update", "report"} <= calls:
             issues.append(_issue(
                 category="training_runtime_diagnostics",
-                evidence="PyTorch training lacks observed precision and optimizer-update diagnostics.",
+                evidence="Static inspection cannot verify direct runtime-diagnostics calls: " + ", ".join(sorted({"TrainingDiagnostics", "after_update", "report"} - calls)),
                 instruction=TRAINING_DIAGNOSTICS_INSTRUCTION,
             ))
-    if require_scheduler_hooks and has_neural_training and "torch" in lowered and not supports_cooperative_trial(code):
+    missing_scheduler = cooperative_trial_missing_contracts(code) if require_scheduler_hooks and has_neural_training and "torch" in lowered else ()
+    if missing_scheduler:
         issues.append(_issue(
             category="scheduler_step_control",
-            evidence="Scheduled PyTorch training lacks cooperative step/checkpoint control.",
+            evidence="Static scheduler contract is unproven: " + "; ".join(missing_scheduler),
             instruction=(
                 "Call script_scheduler_context() inside the training entrypoint before CUDA allocation. "
                 "Restore context.load_resume_checkpoint(), then call context.control_hook.safe_point "
                 "with SafePointType.STEP after each completed optimizer update, steps_per_epoch, "
                 "global_step, epoch, and a state_factory preserving model, optimizer, scaler, LR scheduler, "
-                "RNG, and data position. Emit EPOCH safe points and keep hooks inactive when context is None."
+                "RNG, and data position. Emit EPOCH safe points and keep hooks inactive when context is None. "
+                + SCHEDULER_SAFE_POINT_INSTRUCTION
             ),
         ))
     if has_neural_training and physical_batch is not None and not metadata.get(
@@ -55,8 +58,8 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
             _issue(
                 category="batch_quality_envelope",
                 evidence=(
-                    "The script chooses a physical batch but does not define "
-                    "QUALITY_SAFE_PHYSICAL_BATCH_SIZES."
+                    "The script chooses a physical batch but QUALITY_SAFE_PHYSICAL_BATCH_SIZES "
+                    "is missing, conflicting or not a statically resolvable positive-integer list."
                 ),
                 instruction=(
                     "Define an explicit agent-approved list of quality-safe physical batch sizes, "
@@ -70,7 +73,7 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
         issues.append(
             _issue(
                 category="batch_optimizer_coupling",
-                evidence="The batch contract does not declare BATCH_LR_SCALING_POLICY.",
+                evidence="BATCH_LR_SCALING_POLICY is missing, conflicting or not a statically resolvable supported string.",
                 instruction=(
                     "Declare BATCH_LR_SCALING_POLICY as fixed, linear, or sqrt so dispatch-time "
                     "batch changes resolve learning rate deterministically."

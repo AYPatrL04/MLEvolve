@@ -8,6 +8,7 @@ from agents.runtime_dependencies import advertised_package_names
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
 from utils.precision_policy import precision_mode_instruction
 from engine.preflight_contract import PREFLIGHT_BATCH_CONTRACT
+from engine.scheduler_contract import SCHEDULER_SAFE_POINT_INSTRUCTION
 
 
 def get_impl_guideline_from_agent(agent):
@@ -119,6 +120,7 @@ def get_impl_guideline(
         "□ Did I use the COMPLETE training dataset (not a tiny subset)?",
         "□ Is execution behind the main guard and is CandidateAdapter complete and CPU-safe?",
         "□ Does scheduled PyTorch training use script_scheduler_context, load_resume_checkpoint, and STEP/EPOCH safe_point calls with steps_per_epoch and a complete state_factory? Preserve these hooks during merges and repairs; keep setup inside the training entrypoint and hooks inactive when the context is None.",
+        SCHEDULER_SAFE_POINT_INSTRUCTION,
     ]
     if tot_time_remaining is None:
         impl_guideline[0] = (

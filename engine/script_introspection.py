@@ -237,13 +237,6 @@ _WARMUP_STEPS_PARAM_PATTERN = re.compile(
 _SCHEDULER_TOTAL_STEPS_PARAM_PATTERN = re.compile(
     rf"\b(?:{'|'.join(re.escape(name) for name in SCHEDULER_TOTAL_STEPS_PARAM_NAMES)})\b\s*=\s*(\d+)"
 )
-_QUALITY_SAFE_BATCH_PARAM_PATTERN = re.compile(
-    rf"\b(?:{'|'.join(re.escape(name) for name in QUALITY_SAFE_BATCH_PARAM_NAMES)})\b\s*=\s*[\[\(]([^\]\)]*)[\]\)]"
-)
-_LEARNING_RATE_SCALING_POLICY_PATTERN = re.compile(
-    rf"\b(?:{'|'.join(re.escape(name) for name in LEARNING_RATE_SCALING_POLICY_PARAM_NAMES)})\b\s*=\s*['\"](fixed|linear|sqrt|square_root)['\"]",
-    re.IGNORECASE,
-)
 _NUM_WORKERS_PARAM_PATTERN = re.compile(
     rf"\b(?:{'|'.join(re.escape(name) for name in NUM_WORKERS_PARAM_NAMES)})\b\s*=\s*(\d+)"
 )
@@ -683,22 +676,22 @@ def analyze_training_batch_contract(code: str) -> TrainingBatchContract:
     )
 
 
-def supports_cooperative_trial(code: str) -> bool:
-    """Recognize the explicit script-side safe-step/checkpoint integration."""
+def cooperative_trial_missing_contracts(code: str) -> tuple[str, ...]:
+    """Explain unproven syntactic contracts without claiming all hooks are absent."""
     try:
         tree = ast.parse(code)
     except SyntaxError:
-        return False
+        return ("valid Python syntax",)
     calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)]
     attributes = [call.func.attr for call in calls if isinstance(call.func, ast.Attribute)]
     state_writers = {ast.dump(call.func.value) for call in calls if isinstance(call.func, ast.Attribute) and call.func.attr == "state_dict"}
     state_loaders = {ast.dump(call.func.value) for call in calls if isinstance(call.func, ast.Attribute) and call.func.attr == "load_state_dict"}
     safe_points = [call for call in calls if isinstance(call.func, ast.Attribute) and call.func.attr == "safe_point"]
     checkpoint_keys = {key.value for node in ast.walk(tree) if isinstance(node, ast.Dict) for key in node.keys if isinstance(key, ast.Constant) and isinstance(key.value, str)}
-    return (
-        any(isinstance(call.func, ast.Name) and call.func.id == "script_scheduler_context" for call in calls)
-        and any(isinstance(call.func, ast.Attribute) and call.func.attr == "load_resume_checkpoint" for call in calls)
-        and any(
+    checks = {
+        "direct script_scheduler_context() call": any(isinstance(call.func, ast.Name) and call.func.id == "script_scheduler_context" for call in calls),
+        "load_resume_checkpoint() call": any(isinstance(call.func, ast.Attribute) and call.func.attr == "load_resume_checkpoint" for call in calls),
+        "direct SafePointType.STEP call with epoch/global_step/steps_per_epoch/state_factory keyword arguments": any(
             isinstance(call.func, ast.Attribute) and call.func.attr == "safe_point"
             and any(keyword.arg == "state_factory" for keyword in call.keywords)
             and any(keyword.arg == "steps_per_epoch" for keyword in call.keywords)
@@ -706,14 +699,26 @@ def supports_cooperative_trial(code: str) -> bool:
             and any(keyword.arg == "epoch" for keyword in call.keywords)
             and any(isinstance(arg, ast.Attribute) and arg.attr == "STEP" for arg in call.args)
             for call in calls
-        )
-        and all(any(any(isinstance(arg, ast.Attribute) and arg.attr == point for arg in call.args) for call in safe_points) for point in ("BEFORE_TRAIN", "EPOCH"))
-        and len(state_writers) >= 2 and state_writers <= state_loaders
-        and "get_rng_state" in attributes and "set_rng_state" in attributes
-        and "global_step" in checkpoint_keys
-        and bool(checkpoint_keys & {"step_in_epoch", "sampler_state", "data_state"})
-        and any(isinstance(node, ast.Attribute) and node.attr == "max_epochs" for node in ast.walk(tree))
-    )
+        ),
+        "direct BEFORE_TRAIN and EPOCH safe points": all(any(any(isinstance(arg, ast.Attribute) and arg.attr == point for arg in call.args) for call in safe_points) for point in ("BEFORE_TRAIN", "EPOCH")),
+        "matching state_dict/load_state_dict receivers for model and optimizer state": len(state_writers) >= 2 and state_writers <= state_loaders,
+        "get_rng_state/set_rng_state calls": "get_rng_state" in attributes and "set_rng_state" in attributes,
+        "global_step checkpoint key": "global_step" in checkpoint_keys,
+        "step_in_epoch, sampler_state or data_state checkpoint key": bool(checkpoint_keys & {"step_in_epoch", "sampler_state", "data_state"}),
+        "scheduler max_epochs contract": any(isinstance(node, ast.Attribute) and node.attr == "max_epochs" for node in ast.walk(tree)),
+    }
+    missing = [name for name, present in checks.items() if not present]
+    for call in safe_points:
+        if len(call.args) > 1:
+            missing.append(f"line {call.lineno}: safe_point accepts only the SafePointType positional argument; epoch/global_step must be keywords")
+        if any(k.arg == "payload" for k in call.keywords):
+            missing.append(f"line {call.lineno}: safe_point does not accept payload=; pass epoch=, global_step= and steps_per_epoch= directly")
+    return tuple(missing)
+
+
+def supports_cooperative_trial(code: str) -> bool:
+    """Recognize the explicit script-side safe-step/checkpoint integration."""
+    return not cooperative_trial_missing_contracts(code)
 
 
 def normalized_mlevolve_script_signature(code: str) -> str:
@@ -985,22 +990,43 @@ def detect_scheduler_total_steps(code: str) -> int | None:
     return _safe_int(match.group(1))
 
 
+def _literal_assignment_values(code: str, names: tuple[str, ...]) -> list[Any] | None:
+    try:
+        tree = ast.parse(code or "")
+    except SyntaxError:
+        return None
+    allowed = {name.lower() for name in names}
+    values = []
+    for node in ast.walk(tree):
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
+        if not any(isinstance(target, ast.Name) and target.id.lower() in allowed for target in targets):
+            continue
+        if node.value is None:
+            continue
+        try:
+            values.append(ast.literal_eval(node.value))
+        except (ValueError, TypeError, SyntaxError):
+            return None
+    return values or None
+
+
 def detect_quality_safe_physical_batch_sizes(code: str) -> list[int] | None:
     """Read the agent-approved physical-batch envelope when it is explicit."""
-    match = _QUALITY_SAFE_BATCH_PARAM_PATTERN.search(code or "")
-    if not match:
+    values = _literal_assignment_values(code, QUALITY_SAFE_BATCH_PARAM_NAMES)
+    if not values:
         return None
-    values = []
-    for token in match.group(1).split(","):
-        parsed = _safe_int(token.strip())
-        if parsed is not None and parsed > 0:
-            values.append(parsed)
-    return sorted(set(values)) or None
+    if any(not isinstance(v, (list, tuple)) or not v or any(type(n) is not int or n <= 0 for n in v) for v in values):
+        return None
+    normalized = [sorted(set(v)) for v in values]
+    return normalized[0] if all(v == normalized[0] for v in normalized) else None
 
 
 def detect_learning_rate_scaling_policy(code: str) -> str | None:
-    match = _LEARNING_RATE_SCALING_POLICY_PATTERN.search(code or "")
-    return match.group(1).lower() if match else None
+    values = _literal_assignment_values(code, LEARNING_RATE_SCALING_POLICY_PARAM_NAMES)
+    if not values or any(not isinstance(v, str) or v.lower() not in {"fixed", "linear", "sqrt", "square_root"} for v in values):
+        return None
+    normalized = {v.lower() for v in values}
+    return next(iter(normalized)) if len(normalized) == 1 else None
 
 
 def detect_validation_early_stopping(code: str) -> bool:

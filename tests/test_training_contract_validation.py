@@ -62,3 +62,30 @@ def make_val_split(frame):
     issues = validate_training_contract(code)
 
     assert {issue.category for issue in issues} == {"identifier_index_split"}
+
+
+def test_scheduler_repair_names_unsupported_payload_argument():
+    code = '''
+import torch
+optimizer.step()
+context.control_hook.safe_point(SafePointType.STEP, payload={"epoch": epoch, "global_step": step})
+'''
+    issue = next(i for i in validate_training_contract(code, require_scheduler_hooks=True) if i.category == "scheduler_step_control")
+    assert "does not accept payload=" in issue.evidence
+    assert "epoch=epoch, global_step=global_step" in issue.repair_instruction
+    assert "do not catch and suppress" in issue.repair_instruction
+    assert "lacks cooperative" not in issue.evidence
+
+
+def test_cooperative_contract_keeps_known_working_runner_and_rejects_bad_signature():
+    from pathlib import Path
+    from localml_scheduler.examples import cold_start_runner
+    from engine.script_introspection import supports_cooperative_trial, cooperative_trial_missing_contracts
+    code = Path(cold_start_runner.__file__).read_text()
+    assert supports_cooperative_trial(code)
+    bad = code + "\ncontext.control_hook.safe_point(SafePointType.STEP, payload={})\n"
+    assert not supports_cooperative_trial(bad)
+    assert any("payload=" in reason for reason in cooperative_trial_missing_contracts(bad))
+    extra_positional = code + "\ncontext.control_hook.safe_point(SafePointType.STEP, None, epoch=1, global_step=1)\n"
+    assert not supports_cooperative_trial(extra_positional)
+    assert any("only the SafePointType positional" in reason for reason in cooperative_trial_missing_contracts(extra_positional))

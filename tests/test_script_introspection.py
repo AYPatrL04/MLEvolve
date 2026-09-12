@@ -141,6 +141,31 @@ for epoch in range(NUM_EPOCHS):
     assert metadata["has_validation_early_stopping"] is True
 
 
+def test_annotated_batch_contract_matches_plain_constants():
+    metadata = introspect_training_script('''
+QUALITY_SAFE_PHYSICAL_BATCH_SIZES: list[int] = [16, 32, 64]
+BATCH_LR_SCALING_POLICY: str = "fixed"
+''')
+    assert metadata["quality_safe_physical_batch_sizes"] == [16, 32, 64]
+    assert metadata["learning_rate_scaling_policy"] == "fixed"
+
+
+def test_batch_contract_does_not_accept_comments_strings_or_conflicts():
+    for code in (
+        '# QUALITY_SAFE_PHYSICAL_BATCH_SIZES = [16,32]\n# BATCH_LR_SCALING_POLICY = "fixed"',
+        'doc = \'QUALITY_SAFE_PHYSICAL_BATCH_SIZES = [16,32]; BATCH_LR_SCALING_POLICY = "fixed"\'',
+        'QUALITY_SAFE_PHYSICAL_BATCH_SIZES = [16]\nQUALITY_SAFE_PHYSICAL_BATCH_SIZES = [32]\nBATCH_LR_SCALING_POLICY = "fixed"\nBATCH_LR_SCALING_POLICY = "linear"',
+    ):
+        metadata = introspect_training_script(code)
+        assert metadata.get("quality_safe_physical_batch_sizes") is None
+        assert metadata.get("learning_rate_scaling_policy") is None
+
+
+def test_dynamic_and_invalid_batch_contracts_remain_unproven():
+    for value in ("[True]", "[0, 16]", "[16, unknown]", "make_batches()"):
+        assert introspect_training_script("QUALITY_SAFE_PHYSICAL_BATCH_SIZES = " + value).get("quality_safe_physical_batch_sizes") is None
+
+
 def test_training_batch_contract_detects_alias_and_minimum() -> None:
     code = """
 BASE_BATCH_SIZE = 64
