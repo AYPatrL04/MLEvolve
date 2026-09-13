@@ -121,3 +121,63 @@ attributing a result to the HWDB content difference.
   to this experiment, cannot resume historical jobs, and must not hot-patch
   one arm or relabel unadjudicated rejections as genuine bugs. GPU utilization
   can legitimately be low during agent generation/review; report the real phase.
+
+## Interim Inspection: First Cell Complete
+
+Read-only inspection after approximately five hours of job runtime on September
+13 UTC. The experiment remains pinned to `7f3a36d`; no arm was patched or restarted.
+
+| Cell | Finished primary attempts | Review rejected | GPU submitted | Verified valid |
+| --- | ---: | ---: | ---: | ---: |
+| Seed 42, conservative, original | 10 | 4 | 6 | 4 |
+| Seed 42, conservative, revised | 2 | 2 | 0 finished; attempt 3 submitted | 0 |
+
+The other six cells remain queued. The original cell required no extension and
+reached its first verified valid node after 4230 seconds (70.5 minutes) from the
+generation-loop origin. Its four verified nodes reported FP32 parameters and
+optimizer state, disabled autocast/TF32, completed CUDA updates, and validated
+submission artifacts. Their F1 scores were 0.754967, 0.158730, 0.196621 and
+0.757835: passing the execution contract does not establish useful model quality.
+
+The two unverified original-cell GPU results are materially different:
+
+- Attempt 2, node `fd84e0e443c84de2a95f98d4243c5db6`, crashed inside
+  `utils/training_diagnostics.py:122` when reading `torch.backends.cudnn.allow_tf32`.
+  Generated code selected newer `fp32_precision` controls; the installed PyTorch
+  rejected the legacy aggregate getter because cuDNN conv/RNN precision flags
+  differed. This is an observed precision-control/diagnostics integration failure,
+  not evidence that FP32 training itself failed or that HWDB content caused it.
+- Attempt 10, node `3fd780283faf4b048827e79f6b6c9975`, completed with F1 0.772313
+  and a validated submission artifact, but lacked runtime diagnostics proving
+  completed CUDA optimizer updates and actual precision. It is not a confirmed
+  runtime crash and does not meet this study's GPU-verification objective.
+
+Both initial revised-cell rejections name the same unproven checkpoint-receiver
+contract. Source inspection found model/optimizer save and restore calls in both.
+The checker in `engine/script_introspection.py:704` actually requires every
+syntactic `state_dict` receiver to appear among `load_state_dict` receivers,
+including diagnostics objects, not just model/optimizer as its message says:
+
+- `d9c994f082384da69533dcb4cf19ede6`: an extra `diagnostics.state_dict()` save,
+  while the restoration helper uses `diag.load_state_dict()`.
+- `6e58a48bb00b4ed0a33aadf6a3b66c6b`: saves through
+  `diagnostics_holder['obj']`, restores through `diagnostics`, and explicitly
+  assigns the diagnostics object to that holder.
+
+This identifies a literal-name/alias limitation in the rejection rationale.
+It does not prove either entire rejected program is bug-free or establish an
+overall false-positive rate; neither was executed by bypassing admission.
+Three of four original-cell rejections also include this receiver check; one of
+those additionally reports a TF32-policy violation. The remaining rejection
+includes missing diagnostics and scheduler/RNG/data-position contracts.
+
+First-candidate prompt text hashes in both arms were recomputed and matched the
+saved audit. Original/revised graph identities matched their assigned arms;
+revised audit entries contain nonempty rendered hardware prompts and filtered
+contexts. Comprehensive prompt-content attribution remains part of final analysis.
+
+The A10 utilization snapshot was 0% with 351 MiB allocated while revised attempt
+3 was awaiting/completing scheduler execution; a snapshot alone does not diagnose
+a hang. The job was Running and the third candidate had been submitted. Hourly
+monitoring remains active. No comparative HWDB benefit or reduced bug rate can
+yet be inferred from these incomplete, framework-confounded results.
