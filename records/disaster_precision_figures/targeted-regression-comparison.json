@@ -1,0 +1,64 @@
+{
+  "scope": "Three selected regression checks, not a random sample of agent bugs or an end-to-end benchmark.",
+  "baseline": "Original captured JustinLinKK hardware-awared checkout; not upstream main or latest remote HEAD.",
+  "versions": [
+    {
+      "revision": "93371dd64b8e2b888c1bde7cb9d90d7c03ac4e5d",
+      "checks": [
+        {
+          "name": "Typed batch-size declaration",
+          "expected": [
+            16,
+            32,
+            64
+          ],
+          "observed": null,
+          "pass": false
+        },
+        {
+          "name": "Typed learning-rate policy",
+          "expected": "fixed",
+          "observed": null,
+          "pass": false
+        },
+        {
+          "name": "GPU provenance after partial update",
+          "expected": 1,
+          "observed": null,
+          "pass": false
+        }
+      ]
+    },
+    {
+      "revision": "032609a207e086e73b6d6e1a7354973ab153dc65",
+      "checks": [
+        {
+          "name": "Typed batch-size declaration",
+          "expected": [
+            16,
+            32,
+            64
+          ],
+          "observed": [
+            16,
+            32,
+            64
+          ],
+          "pass": true
+        },
+        {
+          "name": "Typed learning-rate policy",
+          "expected": "fixed",
+          "observed": "fixed",
+          "pass": true
+        },
+        {
+          "name": "GPU provenance after partial update",
+          "expected": 1,
+          "observed": 1,
+          "pass": true
+        }
+      ]
+    }
+  ]
+}
