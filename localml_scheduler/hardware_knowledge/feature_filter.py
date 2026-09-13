@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -240,7 +242,12 @@ def query_hardware_features(
 # ---------------------------------------------------------------------------
 
 def _load_graph(graph_path: str | Path | None = None) -> dict[str, Any]:
-    path = Path(graph_path) if graph_path else _DEFAULT_GRAPH_PATH
+    override = os.environ.get("MLEVOLVE_HWDB_GRAPH_PATH") if graph_path is None else None
+    path = Path(graph_path or override or _DEFAULT_GRAPH_PATH)
+    if override:
+        expected = os.environ.get("MLEVOLVE_HWDB_GRAPH_SHA256")
+        if not expected or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            raise ValueError("Experiment HWDB override requires a matching SHA256")
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 

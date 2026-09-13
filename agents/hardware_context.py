@@ -6,6 +6,7 @@ import copy
 import hashlib
 import logging
 import json
+import os
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -2631,6 +2632,12 @@ def _record_hardware_prompt_audit(node: Any, context: HardwarePromptContext) -> 
         "filtered_context": copy.deepcopy(getattr(context, "filtered_context", None)),
         "precision_policy": copy.deepcopy(context.compact_context.get("precision_policy")),
     }
+    if os.environ.get("MLEVOLVE_HWDB_GRAPH_PATH"):
+        entry["experiment_graph"] = {
+            "path": os.environ["MLEVOLVE_HWDB_GRAPH_PATH"],
+            "sha256": os.environ.get("MLEVOLVE_HWDB_GRAPH_SHA256"),
+            "arm": os.environ.get("MLEVOLVE_HWDB_ARM"),
+        }
     audit = list(getattr(node, "hardware_prompt_audit", None) or [])
     if entry not in audit:
         audit.append(entry)

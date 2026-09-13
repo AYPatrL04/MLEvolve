@@ -199,6 +199,7 @@ class AgentConfig:
     hardware_context_mode: str = "full"
     precision_optimization_mode: str = "normal"
     stop_after_valid_nodes: int = 0
+    ablation_primary_attempts: int = 0
     review: ReviewConfig = field(default_factory=ReviewConfig)
     cuda_docs: CudaDocsConfig = field(default_factory=CudaDocsConfig)
 

@@ -155,6 +155,13 @@ def _run_scheduler_rounds(
     save_callback=save_run,
 ) -> int:
     """Submit ready candidates immediately while generation continues."""
+    if getattr(cfg.agent, "ablation_primary_attempts", 0):
+        from engine.hwdb_ablation import run_ablation_rounds
+        return run_ablation_rounds(
+            agent=agent, interpreter=interpreter, cfg=cfg, journal=journal,
+            logger=logger, save_callback=save_callback,
+            ensure_capacity=_ensure_scheduler_generation_capacity,
+        )
     if getattr(cfg.agent, "stop_after_valid_nodes", 0):
         return _run_milestone_rounds(
             agent=agent, interpreter=interpreter, cfg=cfg, journal=journal,
@@ -470,6 +477,8 @@ def run():
         total_steps = cfg.agent.steps
         initial_draft_count = cfg.agent.initial_drafts
         scheduler_enabled = scheduler_client is not None
+        if getattr(cfg.agent, "ablation_primary_attempts", 0) and not scheduler_enabled:
+            raise ValueError("HWDB ablation requires the GPU scheduler")
         if getattr(cfg.agent, "stop_after_valid_nodes", 0) and not scheduler_enabled:
             raise ValueError("End-to-end milestone mode requires the GPU scheduler")
         if scheduler_enabled:
