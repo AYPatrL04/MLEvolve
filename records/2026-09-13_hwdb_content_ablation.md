@@ -96,3 +96,28 @@ Graph hashes and pre-filter contrast evidence live in `graph_manifest.json` and
 `guidance_contrast.json`. The post-filter rendered prompt is retained in each
 candidate's `hardware_prompt_audit`; actual injection must be checked before
 attributing a result to the HWDB content difference.
+
+## Launch Verification
+
+- Experiment code pushed to fork at
+  `7f3a36da257c0545db0196555051c416fdf54ad9`; both jobs pin this exact revision.
+- CPU pod `hwdb-content-ablation-20260913-prepare-rbp7j` completed on
+  `node-1-3.sdsc.optiputer.net`. **186 Linux tests passed in 116.68 seconds**;
+  filtered-content contrasts, live DeepSeek smoke and model CPU sanity also
+  passed. No GPU was requested for preparation.
+- Original graph SHA256:
+  `1922daa288aa8286dd59a5240ca3803a4e40e379efa24d423de4cfe47231c57f`.
+  Revised graph SHA256:
+  `a9a0b501879f609bd11f896de99091cac4f774584cbb3aecf3ca1c87e5734af5`.
+- GPU pod `hwdb-content-ablation-20260913-run-54jfv` is Running on
+  `gpu-15.nrp.mghpcc.org`; nvidia-smi confirms **NVIDIA A10**, 23028 MiB.
+  Runtime, updated repository and MLE-bench source checksums passed.
+- First cell `42-conservative-original` initialized run
+  `20260913_072038_nlp-getting-started_conservative`. DeepSeek metric-direction
+  query succeeded, correctly maximizing binary F1. Global memory is disabled;
+  six per-search context packs were prepared. This is startup/agent evidence,
+  not yet a completed candidate or a measured HWDB benefit.
+- Hourly thread monitor `hwdb-agent-ablation-checks` is active. It is restricted
+  to this experiment, cannot resume historical jobs, and must not hot-patch
+  one arm or relabel unadjudicated rejections as genuine bugs. GPU utilization
+  can legitimately be low during agent generation/review; report the real phase.
