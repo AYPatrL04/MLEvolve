@@ -759,3 +759,40 @@ not the stale trigger timestamp.
   specific jobs and remote results. It reports the explicitly requested hourly
   status/log checks, preserves old evidence, does not resume the 12-dataset matrix,
   and deletes itself after completion or a terminal blocker is reported.
+
+## Controlled Comparison Completed: 2026-09-12
+
+- All six runs completed with exit code 0 on **NVIDIA A10**, using the pinned
+  experiment commit. The GPU job is Complete, not active; historical jobs remain
+  suspended. Training trials ran approximately 19:51-19:54 UTC after image startup.
+- Read-only CPU report job `hwdb-disaster-compare-20260912-report` verified
+  saved results, matching initialization hashes within each pair, one common
+  split hash, and all six submission hashes. Each submission has the expected
+  id/target columns, 1523 rows and binary predictions. No held-out labels accessed.
+- Internal validation F1 by seed (FP32 / selective FP16):
+  - 42: 0.762484775 / 0.755186722
+  - 43: 0.758620690 / 0.754813864
+  - 44: 0.740259740 / 0.744186047
+- Mean F1: **0.753788402 FP32**, **0.751395544 selective FP16**. FP32 won two
+  of three pairs; the mean FP16-minus-FP32 difference is -0.002392857. This is
+  modest, mixed-seed pilot evidence, not a statistically established general rule.
+- Median paired equal-work FP16/FP32 throughput ratio: **0.913809**, about 8.6%
+  lower throughput for FP16 in this instrumented fixed-batch microbenchmark.
+  All three ratios were below 1 (0.913809, 0.845861, 0.944187). Do not conflate
+  this with training wall time or claim a general A10 performance disadvantage.
+- Mean training-plus-validation wall time: **15.958 s FP32**, **18.265 s FP16**.
+  Epoch counts were 6/7/6 for FP32 and 6/7/7 for FP16, so total wall time includes
+  different early-stopping work. Completed training updates: 3078 FP32 and 3240
+  FP16; **zero skipped or unaccounted updates** in every run. Each separate
+  throughput measurement additionally completed 100 timed updates after warmup.
+- Runtime confirmed FP32 parameters/optimizer state in both modes, TF32 matmul
+  and cuDNN disabled, no BF16, autocast disabled for conservative and actual FP16
+  forward execution with GradScaler for normal. Training peak allocated memory
+  was 56.715 MiB FP32 versus 46.086 MiB FP16, about 18.7% lower in the latter.
+- Provisional quality-first choice for this model/batch/data split: **FP32**.
+  Normal mode must keep FP32 as a valid choice; hardware FP16 support alone is
+  not a reason to force mixed precision. These runs establish feasibility of
+  both precision paths, not that agents autonomously choose the better policy.
+- Small verified metric artifact: `records/2026-09-12_disaster_precision_results.json`.
+  Original remote checkpoints, logs and submissions remain untouched. Deleted
+  hourly monitor `disaster-tweets-precision-checks` after verified completion.

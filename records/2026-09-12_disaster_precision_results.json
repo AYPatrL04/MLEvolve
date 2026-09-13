@@ -1,0 +1,440 @@
+{
+  "source_commit": "861ddb041393366642dbf2cdaf68dabc8f00d841",
+  "remote_root": "/experiment/disaster-compare-20260912/results",
+  "verification_job": "hwdb-disaster-compare-20260912-report",
+  "scope": "Frozen DeepSeek-produced model; three paired initialization seeds on one internal validation split, not independent agent searches or held-out leaderboard evaluation.",
+  "runs": [
+    {
+      "seed": 42,
+      "mode": "conservative",
+      "gpu": "NVIDIA A10",
+      "source_sha256": "6e309b76170c598bcc57f1a1c5a6c9ecbadd8a5de3ba2ae68798b14505bff0a2",
+      "initial_weights_sha256": "5f99610160cdcc0a1b5c9104e51f5e7beff8565bed5ab81fed9ee57dfa37a90d",
+      "split_sha256": "c267de735b8af1ab2b837c5e4ca79d2b78057f5268d0ed846b4d47cd2428975c",
+      "best_validation_f1": 0.7624847746650426,
+      "best_threshold": 0.30999999999999994,
+      "training_wall_seconds": 14.701016067992896,
+      "peak_allocated_mib": 56.71484375,
+      "fixed_work_benchmark": {
+        "warmup_updates": 10,
+        "timed_updates": 100,
+        "seconds": 0.808688502991572,
+        "samples_per_second": 3957.0242289364533,
+        "peak_allocated_mib": 56.71484375
+      },
+      "runtime": {
+        "schema_version": 1,
+        "session_id": "9e71994993ec4be0a551b2925b9951e3",
+        "timestamp": 1789242709.521806,
+        "elapsed_seconds": 14.701436281204224,
+        "status": "completed",
+        "exception_type": null,
+        "epoch": null,
+        "settings": {
+          "model_family": "small_transformer_text_v1",
+          "split_seed": 42,
+          "initialization_seed": 42,
+          "physical_batch_size": 32,
+          "effective_batch_size": 32,
+          "planned_epochs": 15,
+          "steps_per_epoch": 162,
+          "precision": "conservative",
+          "precision_reason": "paired strict IEEE FP32"
+        },
+        "gpu": "NVIDIA A10",
+        "device": "cuda:0",
+        "torch_version": "2.12.0a0+0291f960b6.nv26.04.48445190",
+        "torch_seed": 42,
+        "tf32_matmul_allowed": false,
+        "tf32_cudnn_allowed": false,
+        "autocast_dtypes_observed": [
+          "disabled"
+        ],
+        "parameter_dtypes": [
+          "torch.float32"
+        ],
+        "optimizer_state_dtypes": [
+          "torch.float32"
+        ],
+        "learning_rates": [
+          0.000375
+        ],
+        "grad_scaler_enabled": false,
+        "grad_scale": 1,
+        "unaccounted_optimizer_calls": 0,
+        "attempted_updates": 972,
+        "completed_updates": 972,
+        "skipped_updates": 0
+      },
+      "epoch_count": 6,
+      "training_only_seconds": 9.957997777150013,
+      "submission_hash_verified": true,
+      "submission_columns": [
+        "id",
+        "target"
+      ],
+      "submission_rows": 1523,
+      "binary_predictions": true
+    },
+    {
+      "seed": 42,
+      "mode": "normal",
+      "gpu": "NVIDIA A10",
+      "source_sha256": "6e309b76170c598bcc57f1a1c5a6c9ecbadd8a5de3ba2ae68798b14505bff0a2",
+      "initial_weights_sha256": "5f99610160cdcc0a1b5c9104e51f5e7beff8565bed5ab81fed9ee57dfa37a90d",
+      "split_sha256": "c267de735b8af1ab2b837c5e4ca79d2b78057f5268d0ed846b4d47cd2428975c",
+      "best_validation_f1": 0.7551867219917012,
+      "best_threshold": 0.3999999999999999,
+      "training_wall_seconds": 16.603510568966158,
+      "peak_allocated_mib": 46.0859375,
+      "fixed_work_benchmark": {
+        "warmup_updates": 10,
+        "timed_updates": 100,
+        "seconds": 0.8849643759895116,
+        "samples_per_second": 3615.9647629001574,
+        "peak_allocated_mib": 45.9072265625
+      },
+      "runtime": {
+        "schema_version": 1,
+        "session_id": "da71f712db4c4b1f8321f12f0b627405",
+        "timestamp": 1789242738.0291913,
+        "elapsed_seconds": 16.603890419006348,
+        "status": "completed",
+        "exception_type": null,
+        "epoch": null,
+        "settings": {
+          "model_family": "small_transformer_text_v1",
+          "split_seed": 42,
+          "initialization_seed": 42,
+          "physical_batch_size": 32,
+          "effective_batch_size": 32,
+          "planned_epochs": 15,
+          "steps_per_epoch": 162,
+          "precision": "normal",
+          "precision_reason": "paired controlled forward-only FP16 AMP"
+        },
+        "gpu": "NVIDIA A10",
+        "device": "cuda:0",
+        "torch_version": "2.12.0a0+0291f960b6.nv26.04.48445190",
+        "torch_seed": 42,
+        "tf32_matmul_allowed": false,
+        "tf32_cudnn_allowed": false,
+        "autocast_dtypes_observed": [
+          "torch.float16"
+        ],
+        "parameter_dtypes": [
+          "torch.float32"
+        ],
+        "optimizer_state_dtypes": [
+          "torch.float32"
+        ],
+        "learning_rates": [
+          0.000375
+        ],
+        "grad_scaler_enabled": true,
+        "grad_scale": 1024,
+        "unaccounted_optimizer_calls": 0,
+        "attempted_updates": 972,
+        "completed_updates": 972,
+        "skipped_updates": 0
+      },
+      "epoch_count": 6,
+      "training_only_seconds": 11.5253810249269,
+      "submission_hash_verified": true,
+      "submission_columns": [
+        "id",
+        "target"
+      ],
+      "submission_rows": 1523,
+      "binary_predictions": true
+    },
+    {
+      "seed": 43,
+      "mode": "conservative",
+      "gpu": "NVIDIA A10",
+      "source_sha256": "6e309b76170c598bcc57f1a1c5a6c9ecbadd8a5de3ba2ae68798b14505bff0a2",
+      "initial_weights_sha256": "40cd3e50e7ed2ceee642bd52e0a88ebdac333ea9a62ae6064f195e9c1f89fa6f",
+      "split_sha256": "c267de735b8af1ab2b837c5e4ca79d2b78057f5268d0ed846b4d47cd2428975c",
+      "best_validation_f1": 0.7586206896551724,
+      "best_threshold": 0.3499999999999999,
+      "training_wall_seconds": 18.067340509034693,
+      "peak_allocated_mib": 56.71484375,
+      "fixed_work_benchmark": {
+        "warmup_updates": 10,
+        "timed_updates": 100,
+        "seconds": 0.781573165091686,
+        "samples_per_second": 4094.3063847702724,
+        "peak_allocated_mib": 56.71484375
+      },
+      "runtime": {
+        "schema_version": 1,
+        "session_id": "47574e16cdf74106b63f85d761883b7e",
+        "timestamp": 1789242801.589828,
+        "elapsed_seconds": 18.06768560409546,
+        "status": "completed",
+        "exception_type": null,
+        "epoch": null,
+        "settings": {
+          "model_family": "small_transformer_text_v1",
+          "split_seed": 42,
+          "initialization_seed": 43,
+          "physical_batch_size": 32,
+          "effective_batch_size": 32,
+          "planned_epochs": 15,
+          "steps_per_epoch": 162,
+          "precision": "conservative",
+          "precision_reason": "paired strict IEEE FP32"
+        },
+        "gpu": "NVIDIA A10",
+        "device": "cuda:0",
+        "torch_version": "2.12.0a0+0291f960b6.nv26.04.48445190",
+        "torch_seed": 43,
+        "tf32_matmul_allowed": false,
+        "tf32_cudnn_allowed": false,
+        "autocast_dtypes_observed": [
+          "disabled"
+        ],
+        "parameter_dtypes": [
+          "torch.float32"
+        ],
+        "optimizer_state_dtypes": [
+          "torch.float32"
+        ],
+        "learning_rates": [
+          0.0003217008081777726
+        ],
+        "grad_scaler_enabled": false,
+        "grad_scale": 1,
+        "unaccounted_optimizer_calls": 0,
+        "attempted_updates": 1134,
+        "completed_updates": 1134,
+        "skipped_updates": 0
+      },
+      "epoch_count": 7,
+      "training_only_seconds": 11.828207738813944,
+      "submission_hash_verified": true,
+      "submission_columns": [
+        "id",
+        "target"
+      ],
+      "submission_rows": 1523,
+      "binary_predictions": true
+    },
+    {
+      "seed": 43,
+      "mode": "normal",
+      "gpu": "NVIDIA A10",
+      "source_sha256": "6e309b76170c598bcc57f1a1c5a6c9ecbadd8a5de3ba2ae68798b14505bff0a2",
+      "initial_weights_sha256": "40cd3e50e7ed2ceee642bd52e0a88ebdac333ea9a62ae6064f195e9c1f89fa6f",
+      "split_sha256": "c267de735b8af1ab2b837c5e4ca79d2b78057f5268d0ed846b4d47cd2428975c",
+      "best_validation_f1": 0.754813863928113,
+      "best_threshold": 0.3,
+      "training_wall_seconds": 19.025402480037883,
+      "peak_allocated_mib": 46.0859375,
+      "fixed_work_benchmark": {
+        "warmup_updates": 10,
+        "timed_updates": 100,
+        "seconds": 0.9239966889144853,
+        "samples_per_second": 3463.215873380858,
+        "peak_allocated_mib": 45.9072265625
+      },
+      "runtime": {
+        "schema_version": 1,
+        "session_id": "f6e34316304c4346b4352f4976aac8a4",
+        "timestamp": 1789242770.6211712,
+        "elapsed_seconds": 19.02579092979431,
+        "status": "completed",
+        "exception_type": null,
+        "epoch": null,
+        "settings": {
+          "model_family": "small_transformer_text_v1",
+          "split_seed": 42,
+          "initialization_seed": 43,
+          "physical_batch_size": 32,
+          "effective_batch_size": 32,
+          "planned_epochs": 15,
+          "steps_per_epoch": 162,
+          "precision": "normal",
+          "precision_reason": "paired controlled forward-only FP16 AMP"
+        },
+        "gpu": "NVIDIA A10",
+        "device": "cuda:0",
+        "torch_version": "2.12.0a0+0291f960b6.nv26.04.48445190",
+        "torch_seed": 43,
+        "tf32_matmul_allowed": false,
+        "tf32_cudnn_allowed": false,
+        "autocast_dtypes_observed": [
+          "torch.float16"
+        ],
+        "parameter_dtypes": [
+          "torch.float32"
+        ],
+        "optimizer_state_dtypes": [
+          "torch.float32"
+        ],
+        "learning_rates": [
+          0.0003217008081777726
+        ],
+        "grad_scaler_enabled": true,
+        "grad_scale": 1024,
+        "unaccounted_optimizer_calls": 0,
+        "attempted_updates": 1134,
+        "completed_updates": 1134,
+        "skipped_updates": 0
+      },
+      "epoch_count": 7,
+      "training_only_seconds": 13.169083973043598,
+      "submission_hash_verified": true,
+      "submission_columns": [
+        "id",
+        "target"
+      ],
+      "submission_rows": 1523,
+      "binary_predictions": true
+    },
+    {
+      "seed": 44,
+      "mode": "conservative",
+      "gpu": "NVIDIA A10",
+      "source_sha256": "6e309b76170c598bcc57f1a1c5a6c9ecbadd8a5de3ba2ae68798b14505bff0a2",
+      "initial_weights_sha256": "8389143c72e861760e3e634a125ff591f092cb3b906b49f0ea08be78f90eb175",
+      "split_sha256": "c267de735b8af1ab2b837c5e4ca79d2b78057f5268d0ed846b4d47cd2428975c",
+      "best_validation_f1": 0.7402597402597403,
+      "best_threshold": 0.26999999999999996,
+      "training_wall_seconds": 15.104922564001754,
+      "peak_allocated_mib": 56.71484375,
+      "fixed_work_benchmark": {
+        "warmup_updates": 10,
+        "timed_updates": 100,
+        "seconds": 0.8173271410632879,
+        "samples_per_second": 3915.200951037811,
+        "peak_allocated_mib": 56.71484375
+      },
+      "runtime": {
+        "schema_version": 1,
+        "session_id": "5e3572acd9db48f89f7e2b16d83380e5",
+        "timestamp": 1789242830.4780116,
+        "elapsed_seconds": 15.10527491569519,
+        "status": "completed",
+        "exception_type": null,
+        "epoch": null,
+        "settings": {
+          "model_family": "small_transformer_text_v1",
+          "split_seed": 42,
+          "initialization_seed": 44,
+          "physical_batch_size": 32,
+          "effective_batch_size": 32,
+          "planned_epochs": 15,
+          "steps_per_epoch": 162,
+          "precision": "conservative",
+          "precision_reason": "paired strict IEEE FP32"
+        },
+        "gpu": "NVIDIA A10",
+        "device": "cuda:0",
+        "torch_version": "2.12.0a0+0291f960b6.nv26.04.48445190",
+        "torch_seed": 44,
+        "tf32_matmul_allowed": false,
+        "tf32_cudnn_allowed": false,
+        "autocast_dtypes_observed": [
+          "disabled"
+        ],
+        "parameter_dtypes": [
+          "torch.float32"
+        ],
+        "optimizer_state_dtypes": [
+          "torch.float32"
+        ],
+        "learning_rates": [
+          0.000375
+        ],
+        "grad_scaler_enabled": false,
+        "grad_scale": 1,
+        "unaccounted_optimizer_calls": 0,
+        "attempted_updates": 972,
+        "completed_updates": 972,
+        "skipped_updates": 0
+      },
+      "epoch_count": 6,
+      "training_only_seconds": 10.145782088977285,
+      "submission_hash_verified": true,
+      "submission_columns": [
+        "id",
+        "target"
+      ],
+      "submission_rows": 1523,
+      "binary_predictions": true
+    },
+    {
+      "seed": 44,
+      "mode": "normal",
+      "gpu": "NVIDIA A10",
+      "source_sha256": "6e309b76170c598bcc57f1a1c5a6c9ecbadd8a5de3ba2ae68798b14505bff0a2",
+      "initial_weights_sha256": "8389143c72e861760e3e634a125ff591f092cb3b906b49f0ea08be78f90eb175",
+      "split_sha256": "c267de735b8af1ab2b837c5e4ca79d2b78057f5268d0ed846b4d47cd2428975c",
+      "best_validation_f1": 0.7441860465116279,
+      "best_threshold": 0.09,
+      "training_wall_seconds": 19.165421757032163,
+      "peak_allocated_mib": 46.0859375,
+      "fixed_work_benchmark": {
+        "warmup_updates": 10,
+        "timed_updates": 100,
+        "seconds": 0.8656408609822392,
+        "samples_per_second": 3696.6831676233173,
+        "peak_allocated_mib": 45.9072265625
+      },
+      "runtime": {
+        "schema_version": 1,
+        "session_id": "5a5d11ad7aa04217a74999eeab398913",
+        "timestamp": 1789242863.2579858,
+        "elapsed_seconds": 19.1658034324646,
+        "status": "completed",
+        "exception_type": null,
+        "epoch": null,
+        "settings": {
+          "model_family": "small_transformer_text_v1",
+          "split_seed": 42,
+          "initialization_seed": 44,
+          "physical_batch_size": 32,
+          "effective_batch_size": 32,
+          "planned_epochs": 15,
+          "steps_per_epoch": 162,
+          "precision": "normal",
+          "precision_reason": "paired controlled forward-only FP16 AMP"
+        },
+        "gpu": "NVIDIA A10",
+        "device": "cuda:0",
+        "torch_version": "2.12.0a0+0291f960b6.nv26.04.48445190",
+        "torch_seed": 44,
+        "tf32_matmul_allowed": false,
+        "tf32_cudnn_allowed": false,
+        "autocast_dtypes_observed": [
+          "torch.float16"
+        ],
+        "parameter_dtypes": [
+          "torch.float32"
+        ],
+        "optimizer_state_dtypes": [
+          "torch.float32"
+        ],
+        "learning_rates": [
+          0.0003217008081777726
+        ],
+        "grad_scaler_enabled": true,
+        "grad_scale": 1024,
+        "unaccounted_optimizer_calls": 0,
+        "attempted_updates": 1134,
+        "completed_updates": 1134,
+        "skipped_updates": 0
+      },
+      "epoch_count": 7,
+      "training_only_seconds": 13.314751087105833,
+      "submission_hash_verified": true,
+      "submission_columns": [
+        "id",
+        "target"
+      ],
+      "submission_rows": 1523,
+      "binary_predictions": true
+    }
+  ]
+}
