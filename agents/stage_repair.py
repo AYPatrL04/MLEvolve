@@ -71,9 +71,9 @@ def _normalize_patch_response(response: str) -> str:
 
 
 def is_hardware_aware(agent: Any) -> bool:
-    experiment = getattr(getattr(agent, "cfg", None), "experiment", None)
-    mode = str(getattr(experiment, "mode", "hardware_aware") or "hardware_aware").lower().replace("-", "_")
-    return mode not in {"origin", "baseline"}
+    from agents.hardware_context import _hardware_context_enabled
+
+    return _hardware_context_enabled(agent)
 
 
 def _review_config(agent: Any) -> Any:
@@ -84,7 +84,9 @@ def group_repair_issues(agent: Any, issues: Iterable[ReviewIssue]) -> dict[str, 
     grouped: dict[str, list[ReviewIssue]] = {}
     hardware_aware = is_hardware_aware(agent)
     for issue in issues:
-        if issue.severity != "critical":
+        if issue.severity != "critical" and not (
+            issue.source == "model_preflight" and issue.category == "preflight_fix001"
+        ):
             continue
         owner = issue.owner
         if owner == "datatype_precision" and not hardware_aware:
@@ -95,7 +97,10 @@ def group_repair_issues(agent: Any, issues: Iterable[ReviewIssue]) -> dict[str, 
 
 
 def _stage_ownership(agent: Any, stage: str) -> tuple[str, Sequence[str]]:
-    for step_agent in create_default_step_agents(hardware_aware=is_hardware_aware(agent)):
+    for step_agent in create_default_step_agents(
+        hardware_aware=is_hardware_aware(agent),
+        scheduler_enabled=getattr(agent, "scheduler_client", None) is not None,
+    ):
         if step_agent.name == stage:
             return step_agent.description, step_agent.guidelines
     if stage == "integration":
@@ -147,8 +152,15 @@ def _build_repair_prompt(
         "ownership_guidelines": list(guidelines),
         "merged_script": code,
     }
+    from engine.preflight import preflight_enabled
+
+    if not preflight_enabled(agent.cfg):
+        payload["ownership_guidelines"] = [item for item in guidelines if "CandidateAdapter" not in item]
+        payload["component_constraints"] = "CPU model preflight is disabled; do not require or add a CandidateAdapter."
+    if getattr(agent, "scheduler_client", None) is None:
+        payload["execution_backend"] = "Direct subprocess execution; no scheduler hooks or scheduler-owned controls are required."
     return (
-        "Repair only the assigned stage-owned critical issues in the complete merged Python script below. "
+        "Repair only the assigned stage-owned issues in the complete merged Python script below. "
         "Preserve every other stage's behavior and public variables/interfaces. Return one or more raw "
         "SEARCH/REPLACE blocks and no prose or markdown fences. Every SEARCH block must be non-empty and "
         "copied exactly from the merged script. Keep each SEARCH span as small as safely possible. "

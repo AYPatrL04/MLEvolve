@@ -44,6 +44,11 @@ class AgentSearch:
         self.task_desc = clean_task_desc(task_desc, cfg)
         self.journal = journal
         resuming = bool(journal.nodes)
+        from knowledge.runtime import pin_version
+
+        self.design_knowledge_version = pin_version(
+            cfg.workspace_dir, getattr(self.acfg, "design_knowledge_version", "v2"), resuming=resuming
+        )
         self.data_preview: str | None = None
         self.current_step = 0
         self.current_node: SearchNode | None = None
@@ -60,7 +65,7 @@ class AgentSearch:
         self.journal_lock = threading.Lock()
         self.save_node_lock = threading.Lock()
         self.start_time = time.time()
-        self.use_stepwise_generation = True
+        self.use_stepwise_generation = False
 
         self.next_branch_id = 1
         self.branch_all_nodes: Dict[int, List[SearchNode]] = {}
@@ -69,6 +74,7 @@ class AgentSearch:
         self.use_coldstart = cfg.coldstart.use_coldstart
         self.coldstart_description = cfg.coldstart.description
         self.scheduler_client = None
+        self.hardware_knowledge_client = None
         self.lesson_profile_client = None
         self.hardware_cache_status: dict | None = None
         self.cuda_docs_service = None
@@ -120,6 +126,7 @@ class AgentSearch:
                     embedding_model_path=self.acfg.memory_embedding_model_path,
                     embedding_device=self.acfg.memory_embedding_device,
                     similarity_threshold=self.acfg.memory_similarity_threshold,
+                    knowledge_version=self.design_knowledge_version,
                 )
                 logger.info(f"[AgentSearch] Global memory enabled and initialized at {memory_dir}")
             except Exception as e:
@@ -135,6 +142,27 @@ class AgentSearch:
         self.scheduler_client = scheduler_client
         self.hardware_cache_status = self._prewarm_current_hardware_context(scheduler_client)
         self.cuda_docs_status = self._attach_cuda_docs(scheduler_client)
+
+    def attach_hardware_knowledge(self) -> None:
+        """Attach optional hardware evidence independently of job execution."""
+        self.hardware_knowledge_client = None
+        if not self._hardware_context_enabled():
+            self.hardware_cache_status = {"ok": False, "reason": "hardware knowledge disabled"}
+            return
+        from hardware_knowledge_graph.client import HardwareKnowledgeClient
+
+        configured = getattr(self.cfg, "hardware_knowledge", None) or {}
+        settings = dict(configured.get("settings") or {})
+        settings.setdefault("runtime_root", str(self.cfg.workspace_dir / "hardware_knowledge"))
+        client = HardwareKnowledgeClient(
+            settings,
+            include_profile_evidence=bool(configured.get("include_profile_evidence", True)),
+            probe_timeout_seconds=float(configured.get("probe_timeout_seconds", 10)),
+        )
+        client.attach_scheduler_client(self.scheduler_client)
+        self.hardware_knowledge_client = client
+        if self.scheduler_client is None:
+            self.hardware_cache_status = self._prewarm_current_hardware_context(client)
 
     def restore_search_state(self, journal: Journal) -> None:
         """Rebuild runtime-only search indexes from a persisted journal.
@@ -291,11 +319,9 @@ class AgentSearch:
         self.lesson_profile_client = lesson_profile_client
 
     def _hardware_context_enabled(self) -> bool:
-        experiment = getattr(self.cfg, "experiment", None)
-        mode = str(getattr(experiment, "mode", "") or "").strip().lower().replace("-", "_")
-        if mode in {"origin", "baseline"}:
-            return False
-        return bool(getattr(self.acfg, "hardware_context_enabled", True))
+        from agents.hardware_context import _hardware_context_enabled
+
+        return _hardware_context_enabled(self)
 
     def _prewarm_current_hardware_context(self, scheduler_client) -> dict:
         if not self._hardware_context_enabled():
@@ -518,8 +544,8 @@ class AgentSearch:
                     record_pipeline_node_action(self, result_node, "candidate_action_selected",
                                                 payload=result_node.diagnostics["selection"])
                     self.refresh_hardware_context(result_node)
-                    if init_solution_path:
-                        logger.info(f"Node {result_node.id} from init_solution, skipping code review")
+                    if init_solution_path or (result_node.diagnostics or {}).get("execution_retry"):
+                        logger.info(f"Node {result_node.id} reuses supplied or retry code, skipping code review")
                     else:
                         review_outcome = code_review_agent.review_and_repair(self, result_node)
                         if review_outcome.code.strip() != result_node.code.strip():
@@ -528,7 +554,8 @@ class AgentSearch:
                             self.refresh_hardware_context(result_node)
                         else:
                             logger.info(f"Node {result_node.id} passed code review without changes")
-                    self._review_training_parameters_before_submission(result_node)
+                    if not (result_node.diagnostics or {}).get("execution_retry"):
+                        self._review_training_parameters_before_submission(result_node)
                     if result_node.review_status != "rejected":
                         self._run_node_preflight(result_node, generated=not bool(init_solution_path))
                     self._validate_node_precision_before_execution(result_node)
@@ -636,10 +663,22 @@ class AgentSearch:
         from utils.pipeline_logging import log_pipeline_event, record_pipeline_node_action
 
         node.preflight_generated = bool(generated)
-        if not preflight_enabled(self.cfg):
+        if not preflight_enabled(getattr(self, "cfg", None)):
+            previously_rejected = getattr(node, "preflight_admitted", None) is False
             node.preflight_status = "SKIPPED"
             node.preflight_mode = "disabled"
             node.preflight_admitted = True
+            node.preflight_code_hash = None
+            node.preflight_gpu_check_required = False
+            node.preflight_diagnostic_codes = []
+            node.preflight_report_path = None
+            node.preflight_summary_path = None
+            node.preflight_repair_count = 0
+            node.review_issues = [issue for issue in (node.review_issues or []) if issue.get("source") != "model_preflight"]
+            if previously_rejected and node.review_status == "rejected" and not any(
+                issue.get("severity") == "critical" for issue in node.review_issues
+            ):
+                node.review_status = "approved"
             return True
 
         gate = ModelPreflightGate(self.cfg)
@@ -662,8 +701,8 @@ class AgentSearch:
         max_rounds = max(0, int(getattr(self.cfg.preflight, "max_repair_rounds", 1) or 0))
         while (
             allow_repair
-            and outcome.status == "FAIL"
-            and bool(outcome.issues)
+            and outcome.status in {"FAIL", "INCONCLUSIVE"}
+            and any(issue.severity == "critical" or issue.category == "preflight_fix001" for issue in outcome.issues)
             and repair_count < max_rounds
         ):
             from agents.stage_repair import repair_selected_stages
@@ -714,7 +753,7 @@ class AgentSearch:
         from utils.pipeline_logging import log_pipeline_event
 
         if not preflight_enabled(self.cfg):
-            return True
+            return self._run_node_preflight(node, generated=bool(getattr(node, "preflight_generated", True)), allow_repair=False)
         if not is_fresh_preflight(node):
             log_pipeline_event(
                 self,
@@ -749,7 +788,8 @@ class AgentSearch:
                 context=precision_context,
             )
             training_contract_issues = validate_training_contract(
-                node.code, require_scheduler_hooks=getattr(self, "scheduler_client", None) is not None
+                node.code, require_scheduler_hooks=getattr(self, "scheduler_client", None) is not None,
+                scheduler_enabled=getattr(self, "scheduler_client", None) is not None,
             )
             policy_issues = tuple([*precision_issues, *training_contract_issues])
             if not policy_issues:
@@ -814,6 +854,8 @@ class AgentSearch:
 
     def _review_training_parameters_before_submission(self, node: SearchNode) -> None:
         """Apply the live scheduler/graph contract to every execution path once."""
+        if (getattr(node, "diagnostics", None) or {}).get("execution_retry"):
+            return
         if getattr(node, "_pre_submit_training_reviewed", False):
             return
         if getattr(self, "scheduler_client", None) is None:
@@ -896,6 +938,10 @@ class AgentSearch:
         logger.info(f"Executing deferred node {node.id}")
         parent_node = node.parent
 
+        from engine.preflight import preflight_enabled
+
+        if not preflight_enabled(getattr(self, "cfg", None)):
+            self._run_node_preflight(node, generated=bool(getattr(node, "preflight_generated", True)), allow_repair=False)
         self._review_training_parameters_before_submission(node)
         if node.review_status != "rejected":
             self._ensure_node_preflight_before_execution(node)
@@ -975,6 +1021,11 @@ class AgentSearch:
         pending_nodes = [node for node in nodes if getattr(node, "pending_execution", False)]
         if not pending_nodes:
             return []
+        from engine.preflight import preflight_enabled
+
+        if not preflight_enabled(getattr(self, "cfg", None)):
+            for node in pending_nodes:
+                self._run_node_preflight(node, generated=bool(getattr(node, "preflight_generated", True)), allow_repair=False)
         rejected_nodes = [node for node in pending_nodes if node.review_status == "rejected"]
         runnable_nodes = [node for node in pending_nodes if node.review_status != "rejected"]
         executed_nodes: list[SearchNode] = []
@@ -988,7 +1039,9 @@ class AgentSearch:
         try:
             from agents.hardware_context import optimize_training_parameters_for_round
 
-            decisions = optimize_training_parameters_for_round(self, runnable_nodes)
+            decisions = optimize_training_parameters_for_round(
+                self, [node for node in runnable_nodes if not (node.diagnostics or {}).get("execution_retry")]
+            )
             if decisions:
                 from utils.pipeline_logging import log_pipeline_event
 
@@ -1057,7 +1110,7 @@ class AgentSearch:
                         term_out=["Scheduler round did not return a result for this node."],
                         exec_time=0.0,
                         exc_type="RuntimeError",
-                        exc_info={"message": "missing scheduler round result"},
+                        exc_info={"message": "missing scheduler round result", "failure_origin": "scheduler"},
                         exc_stack=[],
                     )
                 node = result_parse_agent.run(self, node=node, exec_result=exe_res)

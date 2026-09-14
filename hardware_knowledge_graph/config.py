@@ -133,12 +133,17 @@ class HardwareKnowledgeSettings:
     device_index: int = 0
     sqlite_busy_timeout_ms: int = 10_000
     python_executable: str = field(default_factory=lambda: sys.executable)
+    code_knowledge: Any = field(default_factory=lambda: {"enabled": False})
 
     db_dir: Path = field(init=False)
     db_path: Path = field(init=False)
     gpu_scheduler: _HardwareGpuSettings = field(init=False)
 
     def __post_init__(self) -> None:
+        from localml_scheduler.config.models import HardwareFeatureDBSettings
+
+        if isinstance(self.code_knowledge, dict):
+            self.code_knowledge = HardwareFeatureDBSettings(**self.code_knowledge)
         if self.graph is None:
             self.graph = HardwareKnowledgeGraphSettings()
         if isinstance(self.graph, dict):
@@ -168,6 +173,10 @@ class HardwareKnowledgeSettings:
         self.runtime_root.mkdir(parents=True, exist_ok=True)
         self.db_dir.mkdir(parents=True, exist_ok=True)
 
+    @property
+    def hardware_feature_db(self):
+        return self.code_knowledge
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "runtime_root": str(self.runtime_root),
@@ -176,4 +185,5 @@ class HardwareKnowledgeSettings:
             "device_index": self.device_index,
             "sqlite_busy_timeout_ms": self.sqlite_busy_timeout_ms,
             "python_executable": self.python_executable,
+            "code_knowledge": self.code_knowledge.to_dict(),
         }

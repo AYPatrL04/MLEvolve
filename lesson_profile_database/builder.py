@@ -95,6 +95,7 @@ class LessonBuilder:
                     "Use only the supplied deterministic facts.",
                     "Do not add measurements, paths, credentials, dataset rows, or code.",
                     "Every lesson must cite one or more supplied evidence_refs.",
+                    "Write one actionable fact per lesson in a few short sentences; preserve applicability, restrictions, fallbacks and uncertainty. Omit narrative, logs and repeated facts.",
                     "For multi_change deltas, describe association and never causality.",
                 ],
                 "Deterministic facts": dict(draft),
@@ -116,8 +117,6 @@ class LessonBuilder:
         known_numbers = _known_numeric_tokens(evidence)
         change_scope = str((evidence.get("delta") or {}).get("change_scope") or "")
         baseline_summary = str(result.get("baseline_summary") or "").strip()
-        if len(baseline_summary) > self.settings.builder.max_summary_chars:
-            raise ValueError("Builder baseline summary exceeds configured limit")
         for number in _NUMBER.findall(baseline_summary):
             if number not in known_numbers:
                 raise ValueError(f"Unsupported numeric claim in builder summary: {number}")
@@ -139,7 +138,7 @@ class LessonBuilder:
                     raise ValueError(f"Unsupported numeric claim in lesson: {number}")
             normalized.append({
                 "lesson_type": str(item.get("lesson_type") or "modification"),
-                "lesson": text[: self.settings.builder.max_summary_chars],
+                "lesson": text,
                 "evidence_refs": refs,
             })
         return {"baseline_summary": baseline_summary, "lesson_summaries": normalized}
@@ -222,7 +221,7 @@ class LessonBuilder:
                 lesson_id="",
                 lesson_type="failure_warning",
                 agent_audiences=["debug", "review"],
-                content={"lesson": symptom[:700], "outcome": evidence.get("outcome")},
+                content={"lesson": f"Observed {evidence.get('outcome') or 'failure'} for this family and runtime; revalidate the failed path before reusing it.", "terminal_excerpt": symptom, "outcome": evidence.get("outcome")},
                 confidence=min(confidence, 0.65),
                 evidence_refs=refs,
                 change_signature=signature,
@@ -273,7 +272,7 @@ class LessonBuilder:
             if isinstance(issue, Mapping):
                 check = issue.get("repair_instruction") or issue.get("evidence")
                 if check:
-                    checks.append(str(check)[:400])
+                    checks.append(str(check))
         if not checks:
             checks = [
                 "Preserve the validated data, optimizer, evaluation, and submission interfaces when reusing this change."

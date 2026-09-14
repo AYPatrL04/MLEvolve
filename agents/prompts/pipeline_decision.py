@@ -470,7 +470,9 @@ def _collect_evidence_state(hardware_contexts: list[Any]) -> dict[str, Any]:
         )
         if not isinstance(compact, dict) or not compact:
             continue
-        if compact.get("hardware_context_mode") == "compact":
+        if "design_records_v2" in compact:
+            compact_contexts.append({"prompt_section": getattr(context, "prompt_section", ""), "knowledge_version": "v2"})
+        elif compact.get("hardware_context_mode") == "compact":
             from agents.hardware_context import format_compact_hardware_prompt_section
 
             section = getattr(context, "prompt_section", "") or format_compact_hardware_prompt_section(compact, stage="pipeline_decision")

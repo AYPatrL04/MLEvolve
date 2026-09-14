@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from agents.prompts import impl_guideline
+from config import PreflightConfig
 
 
 def _agent(*, exec_timeout: int | None) -> SimpleNamespace:
@@ -13,6 +14,7 @@ def _agent(*, exec_timeout: int | None) -> SimpleNamespace:
         ),
         cfg=SimpleNamespace(
             exec=SimpleNamespace(timeout=exec_timeout),
+            preflight=PreflightConfig(),
             pretrain_model_dir="",
         ),
         current_step=2,

@@ -166,8 +166,13 @@ def _build_scheduler_preload_source(scheduler_cfg: Any) -> dict[str, str] | None
     }
 
 
-def _scheduler_preflight_rejection(code: str, node_context: Any | None) -> str | None:
+def _scheduler_preflight_rejection(code: str, node_context: Any | None, cfg: Any | None = None) -> str | None:
     """Defensively reject an explicitly denied or stale preflight record."""
+    if getattr(cfg, "preflight", None) is not None:
+        from engine.preflight import preflight_enabled
+
+        if not preflight_enabled(cfg):
+            return None
     if node_context is None:
         return None
     if getattr(node_context, "preflight_admitted", None) is False:
@@ -715,6 +720,9 @@ class Interpreter:
         Returns:
             ExecutionResult: output, exec_time, exc_type, exc_info, exc_stack.
         """
+        reason = _scheduler_preflight_rejection(code, node_context, self.cfg)
+        if reason is not None:
+            return _preflight_rejected_result(reason)
         if self.scheduler_client is not None:
             return self._run_scheduler_job(code=code, id=id, working_dir=working_dir, node_context=node_context)
         return self._run_subprocess(code=code, id=id, working_dir=working_dir)
@@ -759,7 +767,7 @@ class Interpreter:
         preflight_results: dict[str, ExecutionResult] = {}
         admitted_items: list[dict[str, Any]] = []
         for item in normalized_items:
-            reason = _scheduler_preflight_rejection(item["code"], item.get("node_context"))
+            reason = _scheduler_preflight_rejection(item["code"], item.get("node_context"), self.cfg)
             if reason is None:
                 admitted_items.append(item)
             else:
@@ -793,7 +801,9 @@ class Interpreter:
 
             candidates = [dict(prepared_job.job_metadata) for prepared_job in prepared]
             packet_context: dict[str, Any] = {}
-            if hasattr(self.scheduler_client, "plan_job_packet"):
+            if hasattr(self.scheduler_client, "plan_job_packet") and bool(
+                (getattr(self.cfg, "hardware_knowledge", None) or {}).get("enabled", True)
+            ):
                 try:
                     packet_context = self.scheduler_client.plan_job_packet(candidates=candidates)
                 except Exception as exc:
@@ -906,7 +916,7 @@ class Interpreter:
                     ],
                     exec_time=exec_time,
                     exc_type="TimeoutError",
-                    exc_info={"message": "scheduler wait timeout", "job_id": job_id},
+                    exc_info={"message": "scheduler wait timeout", "job_id": job_id, "failure_origin": "scheduler"},
                     exc_stack=[],
                 )
 
@@ -931,7 +941,7 @@ class Interpreter:
                         term_out=[f"Scheduler round execution error: {str(e)}", error_trace],
                         exec_time=time.time() - prepared_job.start_time,
                         exc_type="RuntimeError",
-                        exc_info={"error": str(e)},
+                        exc_info={"error": str(e), "failure_origin": "scheduler"},
                         exc_stack=[],
                     ),
                 )
@@ -1282,7 +1292,7 @@ class Interpreter:
             term_out=[f"Scheduler job {job_id} finished without an execution result: {reason}\n"],
             exec_time=time.time() - prepared_job.start_time,
             exc_type="RuntimeError",
-            exc_info={"message": reason, "job_id": job_id},
+            exc_info={"message": reason, "job_id": job_id, "failure_origin": "scheduler"},
             exc_stack=[],
         )
 
@@ -1335,7 +1345,7 @@ class Interpreter:
         if self.scheduler_client is None:
             return self._run_subprocess(code=code, id=id, working_dir=working_dir)
 
-        preflight_rejection = _scheduler_preflight_rejection(code, node_context)
+        preflight_rejection = _scheduler_preflight_rejection(code, node_context, self.cfg)
         if preflight_rejection is not None:
             logger.warning("Scheduler submission avoided for node %s: %s", id, preflight_rejection)
             return _preflight_rejected_result(preflight_rejection)
@@ -1645,7 +1655,7 @@ class Interpreter:
                     ],
                     exec_time=exec_time,
                     exc_type="TimeoutError",
-                    exc_info={"message": "scheduler wait timeout", "job_id": job_id},
+                    exc_info={"message": "scheduler wait timeout", "job_id": job_id, "failure_origin": "scheduler"},
                     exc_stack=[],
                 )
 
@@ -1718,7 +1728,7 @@ class Interpreter:
                 term_out=[f"Scheduler job {job_id} finished without an execution result: {reason}\n"],
                 exec_time=time.time() - start_time,
                 exc_type="RuntimeError",
-                exc_info={"message": reason, "job_id": job_id},
+                exc_info={"message": reason, "job_id": job_id, "failure_origin": "scheduler"},
                 exc_stack=[],
             )
         except Exception as e:
@@ -1738,7 +1748,7 @@ class Interpreter:
                 term_out=[f"Scheduler execution error: {str(e)}", error_trace],
                 exec_time=time.time() - start_time,
                 exc_type="RuntimeError",
-                exc_info={"error": str(e)},
+                exc_info={"error": str(e), "failure_origin": "scheduler"},
                 exc_stack=[],
             )
         finally:
@@ -1948,7 +1958,7 @@ class Interpreter:
                 term_out=[f"Subprocess execution error: {str(e)}", error_trace],
                 exec_time=exec_time,
                 exc_type="RuntimeError",
-                exc_info={"error": str(e)},
+                exc_info={"error": str(e), "failure_origin": "executor"},
                 exc_stack=[],
             )
         finally:

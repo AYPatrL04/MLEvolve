@@ -30,10 +30,12 @@ class GlobalMemoryLayer:
         embedding_model_path: str = "",
         embedding_device: str = "cpu",
         similarity_threshold: float = 0.7,
+        knowledge_version: str = "v1",
     ):
         self.memory_dir = Path(memory_dir)
         self.memory_dir.mkdir(parents=True, exist_ok=True)
         self.similarity_threshold = similarity_threshold
+        self.knowledge_version = knowledge_version
 
         self.embedding_model = EmbeddingModel(
             model_type="local",
@@ -73,6 +75,14 @@ class GlobalMemoryLayer:
                 label=label,
                 timestamp=timestamp,
             )
+            from knowledge.records import from_source
+            import re
+
+            approach = re.split(r"(?<=[.!?])\s+", str(node.plan or "Recorded candidate"), maxsplit=1)[0]
+            record.design_records_v2 = from_source({
+                "summary": f"Previous {node.stage} attempt: {approach} Observed metric={current_metric}; buggy={node.is_buggy}.",
+                "evidence_refs": [f"node:{node.id}"], "verification_status": "advisory",
+            }, domain="history", source_id=record.record_id, topics=["architecture", "evaluation"])
 
             metadata = {
                 "exec_time": exec_time,
@@ -161,6 +171,12 @@ class GlobalMemoryLayer:
             filtered_results = [(record, score) for record, score in all_results if score >= min_score]
 
         result = filtered_results[:top_k]
+        if self.knowledge_version == "v2":
+            from dataclasses import replace
+            from knowledge.records import render_records
+
+            result = [(replace(record, description=render_records(record.design_records_v2), method=""), score)
+                      for record, score in result if record.design_records_v2]
         logger.info(
             f"[GlobalMemory] Retrieved {len(result)} records "
             f"(dissimilar={dissimilar}, label_filter={label_filter}, stage_filter={stage_filter}, min_score={min_score}, "
@@ -336,6 +352,15 @@ class GlobalMemoryLayer:
                         metadata[key] = item.pop(key)
 
                 record = MemRecord.from_dict(item)
+                if self.knowledge_version == "v2" and not record.design_records_v2:
+                    from knowledge.records import from_source
+                    import re
+
+                    approach = re.split(r"(?<=[.!?])\s+", record.description.strip(), maxsplit=1)[0]
+                    record.design_records_v2 = from_source({
+                        "summary": f"Previous {self._extract_stage_from_record(record)} proposal: {approach} Recorded metric={metadata.get('current_metric')}.",
+                        "evidence_refs": [f"memory:{record.record_id}"], "verification_status": "advisory",
+                    }, domain="history", source_id=record.record_id, topics=["architecture", "evaluation"])
                 self.records.append(record)
                 if metadata:
                     self.node_metadata_map[record.record_id] = metadata

@@ -125,6 +125,15 @@ CREATE TABLE IF NOT EXISTS lessons (
 
 CREATE INDEX IF NOT EXISTS idx_lessons_retrieval ON lessons(profile_key, active, lesson_type, confidence);
 
+CREATE TABLE IF NOT EXISTS design_knowledge_v2 (
+    profile_key TEXT NOT NULL,
+    revision_number INTEGER NOT NULL,
+    record_id TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    PRIMARY KEY(profile_key, revision_number, record_id),
+    FOREIGN KEY(profile_key, revision_number) REFERENCES profile_revisions(profile_key, revision_number)
+);
+
 CREATE TABLE IF NOT EXISTS qdrant_outbox (
     outbox_id TEXT PRIMARY KEY,
     profile_key TEXT NOT NULL,
@@ -608,6 +617,14 @@ class LessonProfileRegistry:
                 "maturity": maturity,
                 "lessons": [self._lesson_row_payload(row) for row in lesson_rows],
             }
+            from knowledge.lessons import publication_records
+
+            payload["design_records_v2"] = publication_records(payload)
+            for record in payload["design_records_v2"]:
+                connection.execute(
+                    "INSERT INTO design_knowledge_v2 VALUES (?, ?, ?, ?)",
+                    (profile_key, revision_number, record["record_id"], self._dumps(record)),
+                )
             outbox_id = uuid.uuid5(
                 uuid.NAMESPACE_URL, f"mlevolve-qdrant-outbox:{profile_key}:{revision_number}"
             ).hex
@@ -628,6 +645,19 @@ class LessonProfileRegistry:
             "state": "pending",
             "payload": payload,
         }
+
+    def design_knowledge(self, profile_key: str, revision: int) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT payload_json FROM design_knowledge_v2 WHERE profile_key=? AND revision_number=? ORDER BY record_id",
+                (profile_key, revision),
+            ).fetchall()
+        return [self._loads(row["payload_json"], {}) for row in rows]
+
+    def active_identities(self) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute("SELECT identity_json FROM profiles WHERE active_revision IS NOT NULL ORDER BY profile_key").fetchall()
+        return [self._loads(row["identity_json"], {}) for row in rows]
 
     def _lesson_row_payload(self, row: sqlite3.Row | Mapping[str, Any]) -> dict[str, Any]:
         item = dict(row)

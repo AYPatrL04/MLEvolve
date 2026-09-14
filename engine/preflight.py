@@ -712,9 +712,16 @@ def diagnostic_to_review_issue(diagnostic: Mapping[str, Any]) -> ReviewIssue | N
     """Convert confirmed candidate failures into targeted repair input."""
 
     unavailable_pretrained_dependency = _is_uncached_pretrained_dependency(diagnostic)
+    fixture_failure = (
+        diagnostic.get("code") == "FIX001"
+        and diagnostic.get("classification") == "inconclusive"
+        and bool(diagnostic.get("exception_type"))
+        and not unavailable_pretrained_dependency
+    )
     if (
         diagnostic.get("classification") != "confirmed_candidate_failure"
         and not unavailable_pretrained_dependency
+        and not fixture_failure
     ):
         return None
     code = str(diagnostic.get("code") or "CHK001")
@@ -797,13 +804,24 @@ def diagnostic_to_review_issue(diagnostic: Mapping[str, Any]) -> ReviewIssue | N
     location = ""
     if diagnostic.get("file"):
         location = f" ({diagnostic['file']}:{diagnostic.get('line') or '?'})"
+    evidence = f"[{code}] {message}{location}"
+    if diagnostic.get("scenario"):
+        evidence += "\nFailing scenario: " + json.dumps(diagnostic["scenario"], sort_keys=True, default=str)[:1500]
+    if stack_trace:
+        evidence += "\nCandidate traceback:\n" + stack_trace[-4000:]
+    if diagnostic.get("reproduction"):
+        evidence += "\nReproduction: " + str(diagnostic["reproduction"])[:500]
     return ReviewIssue(
         source="model_preflight",
-        severity="critical",
+        severity="warning" if fixture_failure else "critical",
         category=f"preflight_{code.lower()}",
         owner=diagnostic_owner(code, stage),
-        evidence=f"[{code}] {message}{location}",
+        evidence=evidence,
         repair_instruction=(
+            "The CPU adapter batch could not be constructed; this does not establish a model defect. "
+            "Check the reported scenario against the real data contract and repair the batch builder if it is wrong. "
+            "Preserve the selected model and do not substitute mock training behavior."
+            if fixture_failure else
             f"Repair the confirmed {stage} defect [{code}] and preserve the CandidateAdapter contract; "
             "do not suppress the check or replace real training behavior with mocks."
             f"{targeted_guidance}"

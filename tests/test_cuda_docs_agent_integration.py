@@ -117,7 +117,11 @@ def test_agent_prompt_assembly_orders_hardware_docs_pipeline_then_instructions()
 ):
     from agents import debug_agent, draft_agent, improve_agent
 
-    for module in (draft_agent, improve_agent):
+    draft_source = inspect.getsource(draft_agent.run)
+    assert "select_records(cuda_records(cuda_docs_ctx)" in draft_source
+    assert r"{knowledge_section}\n{instructions}" in draft_source
+    assert "build_pipeline_decision" not in draft_source
+    for module in (improve_agent,):
         source = inspect.getsource(module.run)
         assembly = source[source.find("user_prompt =") :]
         hardware = assembly.find("hardware_section")

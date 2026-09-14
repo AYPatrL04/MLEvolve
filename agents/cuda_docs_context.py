@@ -25,6 +25,9 @@ def get_cuda_docs_context(
     service = getattr(agent, "cuda_docs_service", None)
     if service is None:
         return CudaDocsContext.unavailable(reason="service_unavailable")
+    from knowledge.runtime import version_for
+
+    service.design_knowledge_version = version_for(agent)
     try:
         if role == "draft":
             return service.get_run_backend_brief(role="draft")
@@ -66,6 +69,11 @@ def format_cuda_docs_prompt_section(
 ) -> str:
     if not context.applicable or not context.evidence_chunks:
         return ""
+    if getattr(service, "design_knowledge_version", "v1") == "v2":
+        from agents.design_knowledge import cuda_records
+        from knowledge.records import render_records
+
+        return render_records(cuda_records(context))
     settings = getattr(service, "settings", None)
     char_limit = max(
         0,

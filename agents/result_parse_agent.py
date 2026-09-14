@@ -58,8 +58,9 @@ _RUNTIME_ISSUE_SCHEMA = {
 
 
 def _hardware_aware(agent) -> bool:
-    mode = str(getattr(getattr(agent.cfg, "experiment", None), "mode", "hardware_aware") or "hardware_aware")
-    return mode.strip().lower().replace("-", "_") not in {"origin", "baseline"}
+    from agents.hardware_context import _hardware_context_enabled
+
+    return _hardware_context_enabled(agent)
 
 
 def _append_runtime_issue(
@@ -310,6 +311,9 @@ def _save_code_summary(agent, node: SearchNode, response: dict):
 
 def _determine_buggy(node: SearchNode, response: dict, has_csv_submission: bool):
     """Set execution validity from hard result signals, not quality opinions."""
+    if (node.exc_info or {}).get("failure_origin") in {"scheduler", "executor"}:
+        node.is_buggy = True
+        return
     failure_reasons = []
     if response["is_bug"]:
         failure_reasons.append("execution error detected")
@@ -705,6 +709,20 @@ def _recover_completed_result_without_llm(agent, node: SearchNode) -> bool:
 
 
 def run(agent, node: SearchNode, exec_result: ExecutionResult) -> SearchNode:
+    if (exec_result.exc_info or {}).get("failure_origin") in {"scheduler", "executor"}:
+        node.absorb_exec_result(exec_result)
+        node.analysis = "Execution backend was unavailable; no candidate code defect was established. " + str(
+            (exec_result.exc_info or {}).get("message") or (exec_result.exc_info or {}).get("error") or node.term_out
+        )
+        node.metric = WorstMetricValue()
+        node.is_buggy = True
+        node.is_valid = False
+        _append_runtime_issue(
+            node, category="execution_backend_unavailable", owner="unclassified",
+            evidence=node.analysis, severity="warning",
+            repair_instruction="Retry execution of the same candidate after backend recovery; do not change model, metric, or submission code without candidate failure evidence.",
+        )
+        return node
     max_retries = 3
     for retry_idx in range(max_retries):
         try:
@@ -718,6 +736,9 @@ def run(agent, node: SearchNode, exec_result: ExecutionResult) -> SearchNode:
                 "Implementation": wrap_code(node.code),
                 "Execution output": wrap_code(node.term_out, lang=""),
             }
+            preflight_issues = [issue for issue in (node.review_issues or []) if issue.get("source") == "model_preflight"]
+            if preflight_issues:
+                prompt["CPU preflight evidence"] = preflight_issues
             stable_prompt = {"Introduction": prompt["Introduction"]}
             dynamic_prompt = {
                 key: value for key, value in prompt.items() if key != "Introduction"

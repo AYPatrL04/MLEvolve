@@ -153,6 +153,19 @@ def run(agent: object, parent_node: SearchNode) -> SearchNode | None:
         )
         return None
 
+    if (parent_node.exc_info or {}).get("failure_origin") in {"scheduler", "executor"}:
+        new_node = SearchNode(
+            plan="Retry unchanged candidate after execution backend failure.",
+            code=parent_node.code, parent=parent_node, stage="debug",
+            local_best_node=parent_node.local_best_node,
+            bug_report=parent_node.analysis,
+            fix_report="Retry execution; no code repair is justified by backend failure alone.",
+        )
+        new_node.pipeline_decision = getattr(parent_node, "pipeline_decision", None)
+        new_node.diagnostics = {"execution_retry": True}
+        register_node(agent, new_node, {"execution_retry": True}, parent_node=parent_node)
+        return new_node
+
     hardware_ctx = get_hardware_context_for_stage(
         agent, "debug", parent_node=parent_node
     )

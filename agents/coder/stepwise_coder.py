@@ -445,7 +445,7 @@ class MetaAgent:
             "- Remove duplicate imports and definitions",
             conflict_rule,
             f"- Ensure the execution flow is logical: {execution_flow}",
-            "- No module-level side effects: keep only imports, constants, classes, and helper definitions at import time. Put data access, environment reads, CUDA/TF32 and logging configuration, model/loss instantiation, DataLoader construction, training, evaluation, and submission writing in one `if __name__ == '__main__':` execution path; keep CandidateAdapter CPU-safe.",
+            "- No module-level side effects: keep only imports, constants, classes, and helper definitions at import time. Put data access, environment reads, CUDA/TF32 and logging configuration, model/loss instantiation, DataLoader construction, training, evaluation, and submission writing in one `if __name__ == '__main__':` execution path.",
             "- Make sure the final code prints validation metric (must match task's Evaluation section) and saves submission.csv",
             "- The code should be a single-file Python program that can be executed as-is",
             "- Assume previous steps have NOT been executed; do not skip execution steps and only read files or outputs.",
@@ -531,20 +531,19 @@ class MetaAgent:
 
 
 def _hardware_reasoning_enabled(agent_instance) -> bool:
-    cfg = getattr(agent_instance, "cfg", None)
-    experiment = getattr(cfg, "experiment", None)
-    mode = str(getattr(experiment, "mode", "") or "").strip().lower().replace("-", "_")
-    if mode in {"origin", "baseline"}:
-        return False
-    acfg = getattr(agent_instance, "acfg", None)
-    return bool(getattr(acfg, "hardware_context_enabled", True))
+    from agents.hardware_context import _hardware_context_enabled
+
+    return _hardware_context_enabled(agent_instance)
 
 
 def create_default_step_agents(
     *,
     hardware_aware: bool = True,
     pipeline_decision_aware: bool = True,
+    scheduler_enabled: bool | None = None,
 ) -> List[StepAgent]:
+    if scheduler_enabled is None:
+        scheduler_enabled = hardware_aware
     model_guidelines = [
         "Your responsibility: Stage 1 model-design candidate construction. Load data from `./input`, clean it, create features/preprocessing/augmentation, create train/validation/test splits, then define the model architecture or available pretrained model family, loss function, output interface, and criterion.",
         "CRITICAL: This stage MUST include data loading, feature engineering, and model design together. Do NOT split them into a separate data-processing stage.",
@@ -600,7 +599,7 @@ def create_default_step_agents(
             "Use the Hardware/Profile Optimization Context to choose among fp32, tf32, fp16, bf16, TE FP8/MXFP8/NVFP4, or disabled AMP. Prefer low-precision TE modes only when hardware, framework/package availability, and model structure evidence support them; keep fp32 fallback for fragile losses or unsupported devices.",
             hardware_node_rule,
             "Note board: record how the precision policy and any precision-required adapter support the Stage 1 target and which feature keys drove the choice.",
-            "Keep precision configurable and valid for the canonical effective backend. Do not hardcode scheduler backend selection or implement scheduler-owned launch and resource controls.",
+            "Keep precision configurable and valid for the canonical effective backend. Do not hardcode scheduler backend selection or implement scheduler-owned launch and resource controls." if scheduler_enabled else "Keep precision configurable and valid for the detected hardware, with a full-precision fallback.",
             "Expose simple variables/utilities and any adapted model object that the training_evaluation step can consume directly, and include lightweight logging of selected precision without batch-level noise.",
         ]
         training_guidelines = [
@@ -615,10 +614,7 @@ def create_default_step_agents(
             "CRITICAL: Validation metric computation must use the same prediction method as test inference, using training data only as reference, to avoid data leakage and ensure the metric reflects true generalization performance.",
             "CRITICAL CONSISTENCY REQUIREMENT: Ensure that validation and test inference use IDENTICAL processing logic. Any differences in how validation and test data are handled can cause large performance gaps between validation and test sets.",
             "CRITICAL: You MUST actively prevent overfitting. Use appropriate regularization, early stopping, and validation discipline without overfitting to the validation set.",
-            "CRITICAL SCHEDULER CONTRACT: For iterative neural training, implement validation-metric-based early stopping with patience and best-checkpoint restore. Emit one parseable line per completed epoch as `MLEVOLVE_EPOCH_METRIC {\"epoch\": one_based_epoch_number, \"metric\": validation_metric, \"metric_name\": metric_name}` so planned, completed, and best epochs remain distinct.",
-            "SCHEDULER STEP CONTROL: Inside the training entrypoint, before CUDA allocations, import and call script_scheduler_context from localml_scheduler.execution.script_context. It returns None outside scheduled execution. When a context exists, restore context.load_resume_checkpoint()['state'] and call context.control_hook.safe_point(SafePointType.BEFORE_TRAIN, ...) after initialization, SafePointType.STEP after each complete optimizer update (not accumulation microbatches), and SafePointType.EPOCH after each epoch. Supply epoch, global_step, steps_per_epoch and state_factory preserving model, optimizer, GradScaler, LR scheduler, Python/NumPy/Torch/CUDA RNG, and exact sampler/data position. Import SafePointType from localml_scheduler.domain. Restore data position before continuing and do not replay completed updates. Set context.job.max_epochs and context.job.config.max_epochs to the actual training budget and context.store.save_job(context.job) before the first safe point. The scheduler owns yielding, measurement and memory limits; do not implement custom process signals or change training semantics for a trial.",
             "CRITICAL CHECKPOINT COMPATIBILITY: When restoring a checkpoint written by this candidate and its payload includes optimizer state, metadata, NumPy values, or configuration dictionaries, call `torch.load(checkpoint_path, map_location=device, weights_only=False)`. Use this only for the candidate's own trusted local checkpoint; do not load arbitrary external files.",
-            "CRITICAL BATCH CONTRACT: Define `QUALITY_SAFE_PHYSICAL_BATCH_SIZES` as the physical batch sizes you judge quality-safe, including the proposed batch. Also define `BATCH_LR_SCALING_POLICY` as `fixed`, `linear`, or `sqrt`. The scheduler may choose only inside this envelope and will jointly resolve accumulation, effective batch, learning rate, warmup, and scheduler steps.",
             "Do not reduce epoch count merely because physical batch increases. Keep planned epochs tied to data exposure and let validation early stopping reduce completed epochs; preserve effective batch through accumulation when possible.",
             "CRITICAL: You MUST implement the exact evaluation metric as specified in the task description's 'Evaluation' section. Do not use dummy, simplified, or approximate metrics.",
             "CRITICAL: The final line must be: `print(f'Final Validation Score: {score}')`. This is required for the score parser.",
@@ -627,9 +623,17 @@ def create_default_step_agents(
             [
                 "Hardware-aware training: optimize runtime at fixed modeling intent. Do NOT increase epochs, folds, model size, input resolution, ensemble count, TTA, dataset size, or validation workload as a hardware-only optimization unless the user explicitly asks for score improvement.",
                 "Allowed hardware optimizations in this stage: physical batch size, gradient accumulation while preserving effective batch size, dataloader workers, pin_memory, persistent_workers, channels_last, safe torch.compile, checkpointing, and runtime logging. Precision choices and precision-required model adapters must consume the datatype_precision policy.",
-                "Scheduler-aware training: run as an independent subprocess and follow the one canonical effective backend in the Hardware/Profile Optimization Context. Keep scheduler-owned launch and resource controls out of job code, and never integrate with or launch sibling jobs.",
                 "Hardware-aware training: use the hardware/profile context to choose physical batch size, accumulation, checkpoint cadence, and dataloader settings. If choosing a riskier setting for score reasons, include an explicit fallback path for OOM/timeout such as smaller batch size, accumulation, lower resolution, fewer epochs, or checkpoint resume.",
                 "When feasible, log resolved batch size, selected precision, elapsed time, throughput, and peak CUDA memory so later scheduler graph evidence can learn from this run.",
+            ]
+        )
+    if scheduler_enabled:
+        training_guidelines.extend(
+            [
+                "CRITICAL SCHEDULER CONTRACT: For iterative neural training, implement validation-metric-based early stopping with patience and best-checkpoint restore. Emit one parseable line per completed epoch as `MLEVOLVE_EPOCH_METRIC {\"epoch\": one_based_epoch_number, \"metric\": validation_metric, \"metric_name\": metric_name}` so planned, completed, and best epochs remain distinct.",
+                "SCHEDULER STEP CONTROL: Inside the training entrypoint, before CUDA allocations, import and call script_scheduler_context from localml_scheduler.execution.script_context. It returns None outside scheduled execution. When a context exists, restore context.load_resume_checkpoint()['state'] and call context.control_hook.safe_point(SafePointType.BEFORE_TRAIN, ...) after initialization, SafePointType.STEP after each complete optimizer update (not accumulation microbatches), and SafePointType.EPOCH after each epoch. Supply epoch, global_step, steps_per_epoch and state_factory preserving model, optimizer, GradScaler, LR scheduler, Python/NumPy/Torch/CUDA RNG, and exact sampler/data position. Import SafePointType from localml_scheduler.domain. Restore data position before continuing and do not replay completed updates. Set context.job.max_epochs and context.job.config.max_epochs to the actual training budget and context.store.save_job(context.job) before the first safe point. The scheduler owns yielding, measurement and memory limits; do not implement custom process signals or change training semantics for a trial.",
+                "CRITICAL BATCH CONTRACT: Define `QUALITY_SAFE_PHYSICAL_BATCH_SIZES` as the physical batch sizes you judge quality-safe, including the proposed batch. Also define `BATCH_LR_SCALING_POLICY` as `fixed`, `linear`, or `sqrt`. The scheduler may choose only inside this envelope and will jointly resolve accumulation, effective batch, learning rate, warmup, and scheduler steps.",
+                "Scheduler-aware training: run as an independent subprocess under the configured scheduler backend. Keep scheduler-owned launch and resource controls out of job code, and never integrate with or launch sibling jobs.",
             ]
         )
     if pipeline_decision_aware:
@@ -885,6 +889,7 @@ def stepwise_plan_and_code_query(
     step_agents = create_default_step_agents(
         hardware_aware=hardware_aware,
         pipeline_decision_aware=bool(stepwise_context.pipeline_decision_section),
+        scheduler_enabled=getattr(agent_instance, "scheduler_client", None) is not None,
     )
     meta_agent = MetaAgent()
 

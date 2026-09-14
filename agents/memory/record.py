@@ -5,7 +5,7 @@ Used by GlobalMemoryLayer for storing and retrieving node-level experience
 (plan, code summary, stage, label).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
 
 
@@ -18,6 +18,7 @@ class MemRecord:
     method: str      # code summary
     label: int       # 1 success, 0 neutral, -1 failure
     timestamp: Optional[str] = None
+    design_records_v2: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "MemRecord":
@@ -29,6 +30,7 @@ class MemRecord:
             method=data.get("method", ""),
             label=data.get("label", 0),
             timestamp=data.get("timestamp"),
+            design_records_v2=list(data.get("design_records_v2") or []),
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -42,4 +44,6 @@ class MemRecord:
         }
         if self.timestamp is not None:
             d["timestamp"] = self.timestamp
+        if self.design_records_v2:
+            d["design_records_v2"] = self.design_records_v2
         return d

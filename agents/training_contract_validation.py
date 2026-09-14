@@ -10,7 +10,7 @@ from engine.script_introspection import introspect_training_script, supports_coo
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
 
 
-def validate_training_contract(code: str, *, require_scheduler_hooks: bool = False) -> tuple[ReviewIssue, ...]:
+def validate_training_contract(code: str, *, require_scheduler_hooks: bool = False, scheduler_enabled: bool = True) -> tuple[ReviewIssue, ...]:
     metadata = introspect_training_script(code or "")
     lowered = (code or "").lower()
     has_neural_training = (
@@ -36,7 +36,7 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
                 evidence="PyTorch training lacks observed precision and optimizer-update diagnostics.",
                 instruction=TRAINING_DIAGNOSTICS_INSTRUCTION,
             ))
-    if require_scheduler_hooks and has_neural_training and "torch" in lowered and not supports_cooperative_trial(code):
+    if scheduler_enabled and require_scheduler_hooks and has_neural_training and "torch" in lowered and not supports_cooperative_trial(code):
         issues.append(_issue(
             category="scheduler_step_control",
             evidence="Scheduled PyTorch training lacks cooperative step/checkpoint control.",
@@ -48,7 +48,7 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
                 "RNG, and data position. Emit EPOCH safe points and keep hooks inactive when context is None."
             ),
         ))
-    if has_neural_training and physical_batch is not None and not metadata.get(
+    if scheduler_enabled and has_neural_training and physical_batch is not None and not metadata.get(
         "quality_safe_physical_batch_sizes"
     ):
         issues.append(
@@ -64,7 +64,7 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
                 ),
             )
         )
-    if has_neural_training and physical_batch is not None and not metadata.get(
+    if scheduler_enabled and has_neural_training and physical_batch is not None and not metadata.get(
         "learning_rate_scaling_policy"
     ):
         issues.append(
@@ -99,7 +99,7 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
                 or re.search(r"MLEVOLVE_EPOCH_METRIC\s*\{", code or "")
             )
         )
-        if not has_structured_epoch_marker:
+        if scheduler_enabled and not has_structured_epoch_marker:
             issues.append(
                 _issue(
                     category="epoch_progress_reporting",
