@@ -1,0 +1,36 @@
+{
+  "preflight_started_unix": 1789409891.0782223,
+  "preflight_finished_unix": 1789409907.6435533,
+  "syntax_valid": true,
+  "adapter_complete": true,
+  "precision_issues": [],
+  "preflight_admitted": false,
+  "preflight_status": "FAIL",
+  "whole_model_half_cast_lines": [],
+  "training_entrypoint_executed": false,
+  "gpu_executed": false,
+  "parameter_dtypes": [
+    "torch.float32"
+  ],
+  "gradient_dtypes": [
+    "torch.float32"
+  ],
+  "all_gradients_finite": true,
+  "parameter_count": 42857,
+  "optimizer_updates_parameters": true,
+  "floating_optimizer_state_dtypes": [
+    "torch.float32"
+  ],
+  "cpu_training_loss_dtype": "torch.float32",
+  "cpu_training_loss_finite": true,
+  "cpu_validation_loss_dtype": "torch.float32",
+  "cpu_validation_loss_finite": true,
+  "installed_rmse_api_compatible": false,
+  "rmse_api_error": "got an unexpected keyword argument 'squared'",
+  "host_versions": {
+    "torch": "2.11.0+cu130",
+    "sklearn": "1.9.0"
+  },
+  "cpu_smoke_started_unix": 1789409907.64601,
+  "cpu_smoke_finished_unix": 1789409908.6549568
+}

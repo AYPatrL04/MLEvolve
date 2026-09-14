@@ -1,0 +1,221 @@
+{
+  "hardware": [
+    {
+      "schema_version": "hardware_knowledge_graph_v1",
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "name": "NVIDIA Tesla V100 32GB",
+      "name_key": "nvidia volta tesla v100 32gb spec",
+      "aliases": [
+        "v100",
+        "tesla_v100",
+        "nvidia_v100",
+        "v100_32gb"
+      ],
+      "vendor": "nvidia",
+      "hardware_type": "GPU",
+      "architecture": "",
+      "description": "",
+      "design_summary": "",
+      "memory_gb": null,
+      "memory_type": "",
+      "supported_precisions": [],
+      "software_stack": [],
+      "created_at": "",
+      "updated_at": ""
+    }
+  ],
+  "features": [
+    {
+      "schema_version": "hardware_knowledge_graph_v1",
+      "feature_id": "amp",
+      "name": "amp",
+      "category": "precision",
+      "description": "PyTorch Automatic Mixed Precision (torch.amp) for training. Use autocast for Tensor Core-friendly forward and loss computation with FP16 or BF16, keep numerically sensitive reductions/metrics/export in FP32, and use GradScaler for FP16 so small gradients remain representable.",
+      "design_summary": "Use supported FP16/BF16 autocast for training, GradScaler for FP16, and FP32 for sensitive reductions, metrics and exports.",
+      "how_to_use": "PyTorch Automatic Mixed Precision (torch.amp) for training. Use autocast for Tensor Core-friendly forward and loss computation with FP16 or BF16, keep numerically sensitive reductions/metrics/export in FP32, and use GradScaler for FP16 so small gradients remain representable.",
+      "recommended_patterns": [
+        "Wrap forward and loss computation in torch.amp.autocast for FP16 or BF16 mixed precision.",
+        "Use GradScaler for FP16 training; keep it optional or disabled for BF16.",
+        "Keep validation metrics, sklearn/NumPy/pandas work, and submission exports in FP32."
+      ],
+      "avoid_patterns": [
+        "Do not treat FP8, FP4, INT8, or FP64 as the default AMP training-speed path.",
+        "Do not call .cpu().numpy() directly on low-precision prediction tensors; cast prediction/logit/probability tensors to float32 first."
+      ],
+      "min_compute_capability": "7.0",
+      "optimization_modes": [
+        "normal",
+        "aggressive"
+      ],
+      "model_shape_limitations": "The autocast dtype must itself be allowed for the target architecture.",
+      "when_to_use": "",
+      "when_not_to_use": "",
+      "sample_code": "import torch\nimport torch.nn as nn\ndevice = 'cuda' if torch.cuda.is_available() else 'cpu'\nmodel = nn.Linear(64, 32).to(device)\nopt = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device)\ny = torch.randn(8, 32, device=device)\nopt.zero_grad(set_to_none=True)\nwith torch.autocast(device_type='cuda' if device == 'cuda' else 'cpu', dtype=torch.bfloat16):\n    out = model(x)\n    loss = (out - y).pow(2).mean()\nloss.backward()\nopt.step()",
+      "frameworks": [],
+      "maturity": "production"
+    },
+    {
+      "schema_version": "hardware_knowledge_graph_v1",
+      "feature_id": "fp16",
+      "name": "fp16",
+      "category": "precision",
+      "description": "Hardware-native FP16 Tensor Core mixed-precision training. Use AMP/autocast for forward and backward computation, framework-managed FP32 optimizer state, and loss scaling when gradients would otherwise underflow.",
+      "design_summary": "Use supported FP16 autocast with FP32 optimizer state and loss scaling when needed to prevent gradient underflow.",
+      "how_to_use": "Hardware-native FP16 Tensor Core mixed-precision training. Use AMP/autocast for forward and backward computation, framework-managed FP32 optimizer state, and loss scaling when gradients would otherwise underflow.",
+      "recommended_patterns": [
+        "Use FP16 through AMP/autocast rather than manually converting the whole training loop to half precision.",
+        "Use GradScaler or framework automatic loss scaling for FP16 training.",
+        "Keep reductions, fragile losses, validation metrics, and export paths in FP32 when needed for accuracy."
+      ],
+      "avoid_patterns": [
+        "Do not run optimizer updates only on FP16 weights when FP32 master weights or optimizer state are needed for accuracy.",
+        "Do not skip loss scaling for FP16 networks that show underflow, NaNs, divergence, or accuracy loss."
+      ],
+      "min_compute_capability": "7.0",
+      "optimization_modes": [
+        "normal",
+        "aggressive"
+      ],
+      "model_shape_limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+      "when_to_use": "",
+      "when_not_to_use": "",
+      "sample_code": "import torch\ncc = torch.cuda.get_device_capability()\ngeneration = {\n    (7, 0): '1gen (Volta)',     (7, 5): '2gen (Turing)',\n    (8, 0): '3gen (Ampere DC)', (8, 6): '3gen (Ampere)',\n    (8, 9): '4gen (Ada)',       (9, 0): '4gen (Hopper)',\n    (10, 0): '5gen (Blackwell DC)', (12, 0): '5gen (Blackwell GeForce)',\n}.get(cc, f'unknown (CC {cc[0]}.{cc[1]})')\nprint(f'GPU CC={cc[0]}.{cc[1]}, tensor core {generation}')\nprint(f'compiled archs: {torch.cuda.get_arch_list()}')",
+      "frameworks": [],
+      "maturity": "production"
+    },
+    {
+      "schema_version": "hardware_knowledge_graph_v1",
+      "feature_id": "tensor_cores",
+      "name": "tensor_cores",
+      "category": "tensor_core",
+      "description": "Set torch.backends.cudnn.benchmark=True so that when a cuDNN\nconvolution is called with a new set of size parameters, cuDNN runs\nmultiple algorithms, benchmarks them to find the fastest one, and\nreuses it for the rest of the process for the same size parameters.\nDisabling it (benchmark=False) makes cuDNN deterministically select\nan algorithm, possibly at the cost of reduced performance. The\nseparate torch.backends.cudnn.deterministic flag controls\nreproducibility and is distinct from the benchmark setting; combine\nit with seeded RNGs (Python, NumPy, PyTorch) when you need\nreproducible runs.",
+      "design_summary": "For repeated convolution shapes, cuDNN benchmark mode can reuse a selected algorithm; deterministic execution is a separate setting and must follow the task reproducibility requirements.",
+      "how_to_use": "Set torch.backends.cudnn.benchmark=True so that when a cuDNN\nconvolution is called with a new set of size parameters, cuDNN runs\nmultiple algorithms, benchmarks them to find the fastest one, and\nreuses it for the rest of the process for the same size parameters.\nDisabling it (benchmark=False) makes cuDNN deterministically select\nan algorithm, possibly at the cost of reduced performance. The\nseparate torch.backends.cudnn.deterministic flag controls\nreproducibility and is distinct from the benchmark setting; combine\nit with seeded RNGs (Python, NumPy, PyTorch) when you need\nreproducible runs.",
+      "recommended_patterns": [],
+      "avoid_patterns": [],
+      "min_compute_capability": "",
+      "optimization_modes": [],
+      "model_shape_limitations": "",
+      "when_to_use": "",
+      "when_not_to_use": "",
+      "sample_code": "import torch\ncc = torch.cuda.get_device_capability()\ngeneration = {\n    (7, 0): '1gen (Volta)',     (7, 5): '2gen (Turing)',\n    (8, 0): '3gen (Ampere DC)', (8, 6): '3gen (Ampere)',\n    (8, 9): '4gen (Ada)',       (9, 0): '4gen (Hopper)',\n    (10, 0): '5gen (Blackwell DC)', (12, 0): '5gen (Blackwell GeForce)',\n}.get(cc, f'unknown (CC {cc[0]}.{cc[1]})')\nprint(f'GPU CC={cc[0]}.{cc[1]}, tensor core {generation}')\nprint(f'compiled archs: {torch.cuda.get_arch_list()}')",
+      "frameworks": [],
+      "maturity": "production"
+    },
+    {
+      "schema_version": "hardware_knowledge_graph_v1",
+      "feature_id": "sm_70",
+      "name": "CUDA compute capability 7.0",
+      "category": "compute_capability",
+      "description": "CUDA compute capability 7.0 kernel target and device capability marker.",
+      "design_summary": "SM 7.0 is a CUDA kernel target and device capability marker.",
+      "how_to_use": "CUDA compute capability 7.0 kernel target and device capability marker.",
+      "recommended_patterns": [],
+      "avoid_patterns": [],
+      "min_compute_capability": "",
+      "optimization_modes": [],
+      "model_shape_limitations": "",
+      "when_to_use": "",
+      "when_not_to_use": "",
+      "sample_code": "",
+      "frameworks": [],
+      "maturity": "production"
+    },
+    {
+      "schema_version": "hardware_knowledge_graph_v1",
+      "feature_id": "fp64",
+      "name": "fp64",
+      "category": "precision",
+      "description": "FP64 hardware capability for scientific and reference workloads. It remains queryable as a hardware fact but is hidden from datatype training-speed optimization.",
+      "design_summary": "FP64 remains available for scientific/reference workloads but is excluded from datatype training-speed recommendations.",
+      "how_to_use": "FP64 hardware capability for scientific and reference workloads. It remains queryable as a hardware fact but is hidden from datatype training-speed optimization.",
+      "recommended_patterns": [],
+      "avoid_patterns": [],
+      "min_compute_capability": "",
+      "optimization_modes": [],
+      "model_shape_limitations": "Use only when the workload requires double-precision numerical behavior.",
+      "when_to_use": "",
+      "when_not_to_use": "",
+      "sample_code": "",
+      "frameworks": [],
+      "maturity": "production"
+    }
+  ],
+  "relationships": [
+    {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "feature_id": "amp",
+      "support_level": "supported",
+      "recommended": true,
+      "performance_impact": "low",
+      "min_driver_version": "",
+      "min_framework_version": "",
+      "software_requirements": [],
+      "limitations": "The autocast dtype must itself be allowed for the target architecture.",
+      "hardware_specific_how_to_use": "PyTorch Automatic Mixed Precision (torch.amp) for training. Use autocast for Tensor Core-friendly forward and loss computation with FP16 or BF16, keep numerically sensitive reductions/metrics/export in FP32, and use GradScaler for FP16 so small gradients remain representable.",
+      "hardware_specific_sample_code": "import torch\nimport torch.nn as nn\ndevice = 'cuda' if torch.cuda.is_available() else 'cpu'\nmodel = nn.Linear(64, 32).to(device)\nopt = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device)\ny = torch.randn(8, 32, device=device)\nopt.zero_grad(set_to_none=True)\nwith torch.autocast(device_type='cuda' if device == 'cuda' else 'cpu', dtype=torch.bfloat16):\n    out = model(x)\n    loss = (out - y).pow(2).mean()\nloss.backward()\nopt.step()",
+      "verified": true,
+      "last_verified_at": ""
+    },
+    {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "feature_id": "fp16",
+      "support_level": "supported",
+      "recommended": true,
+      "performance_impact": "low",
+      "min_driver_version": "",
+      "min_framework_version": "",
+      "software_requirements": [],
+      "limitations": "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations.",
+      "hardware_specific_how_to_use": "Hardware-native FP16 Tensor Core mixed-precision training. Use AMP/autocast for forward and backward computation, framework-managed FP32 optimizer state, and loss scaling when gradients would otherwise underflow.",
+      "hardware_specific_sample_code": "import torch\ncc = torch.cuda.get_device_capability()\ngeneration = {\n    (7, 0): '1gen (Volta)',     (7, 5): '2gen (Turing)',\n    (8, 0): '3gen (Ampere DC)', (8, 6): '3gen (Ampere)',\n    (8, 9): '4gen (Ada)',       (9, 0): '4gen (Hopper)',\n    (10, 0): '5gen (Blackwell DC)', (12, 0): '5gen (Blackwell GeForce)',\n}.get(cc, f'unknown (CC {cc[0]}.{cc[1]})')\nprint(f'GPU CC={cc[0]}.{cc[1]}, tensor core {generation}')\nprint(f'compiled archs: {torch.cuda.get_arch_list()}')",
+      "verified": true,
+      "last_verified_at": ""
+    },
+    {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "feature_id": "fp64",
+      "support_level": "supported",
+      "recommended": false,
+      "performance_impact": "low",
+      "min_driver_version": "",
+      "min_framework_version": "",
+      "software_requirements": [],
+      "limitations": "Use only when the workload requires double-precision numerical behavior.",
+      "hardware_specific_how_to_use": "FP64 hardware capability for scientific and reference workloads. It remains queryable as a hardware fact but is hidden from datatype training-speed optimization.",
+      "hardware_specific_sample_code": "",
+      "verified": true,
+      "last_verified_at": ""
+    },
+    {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "feature_id": "tensor_cores",
+      "support_level": "supported",
+      "recommended": true,
+      "performance_impact": "low",
+      "min_driver_version": "",
+      "min_framework_version": "",
+      "software_requirements": [],
+      "limitations": "",
+      "hardware_specific_how_to_use": "Set torch.backends.cudnn.benchmark=True so that when a cuDNN\nconvolution is called with a new set of size parameters, cuDNN runs\nmultiple algorithms, benchmarks them to find the fastest one, and\nreuses it for the rest of the process for the same size parameters.\nDisabling it (benchmark=False) makes cuDNN deterministically select\nan algorithm, possibly at the cost of reduced performance. The\nseparate torch.backends.cudnn.deterministic flag controls\nreproducibility and is distinct from the benchmark setting; combine\nit with seeded RNGs (Python, NumPy, PyTorch) when you need\nreproducible runs.",
+      "hardware_specific_sample_code": "import torch\ncc = torch.cuda.get_device_capability()\ngeneration = {\n    (7, 0): '1gen (Volta)',     (7, 5): '2gen (Turing)',\n    (8, 0): '3gen (Ampere DC)', (8, 6): '3gen (Ampere)',\n    (8, 9): '4gen (Ada)',       (9, 0): '4gen (Hopper)',\n    (10, 0): '5gen (Blackwell DC)', (12, 0): '5gen (Blackwell GeForce)',\n}.get(cc, f'unknown (CC {cc[0]}.{cc[1]})')\nprint(f'GPU CC={cc[0]}.{cc[1]}, tensor core {generation}')\nprint(f'compiled archs: {torch.cuda.get_arch_list()}')",
+      "verified": true,
+      "last_verified_at": ""
+    },
+    {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "feature_id": "sm_70",
+      "support_level": "supported",
+      "recommended": true,
+      "performance_impact": "low",
+      "min_driver_version": "",
+      "min_framework_version": "",
+      "software_requirements": [],
+      "limitations": "",
+      "hardware_specific_how_to_use": "CUDA compute capability 7.0 kernel target and device capability marker.",
+      "hardware_specific_sample_code": "",
+      "verified": true,
+      "last_verified_at": ""
+    }
+  ]
+}

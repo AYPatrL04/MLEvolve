@@ -1,0 +1,32 @@
+{
+  "prepared_unix": 1789409705.7150578,
+  "knowledge_version": "v2",
+  "precision_mode": "normal",
+  "model": "gpt-5.6-terra",
+  "hardware": "NVIDIA Tesla V100 32GB",
+  "source": "schema/hardware_knowledge_graph.json",
+  "source_sha256": "b159abbc416e2b3fc764b04a26bd8e19192ac6dab1ce9ce32ce3979f58d1b537",
+  "knowledge_record_count": 14,
+  "prompt_chars": 20721,
+  "storage": "isolated in-memory graph I/O, production ingestion/client/filter/projection/prompt assembly",
+  "historical_runs_read": false,
+  "lesson_profiles_enabled": false,
+  "qdrant_code_index_enabled": false,
+  "scheduler_enabled": false,
+  "training_entrypoint_executed": false,
+  "repo_commit": "59c1df2c42267e815f76a6f97f47e09e359c19eb",
+  "source_code_sha256": {
+    "agents/draft_agent.py": "9ad87b4ae1914af5abf53f60a6a7056321b801331cbbb2e31fc744732199ac35",
+    "agents/design_knowledge.py": "e291005723e87c68338fde37027f87f2ed9dab59f10b7e57e6cabc83e666d3d5",
+    "agents/hardware_context.py": "c318a4f9f601b60a811c547024a490f70f5ac515c3456d080341043845bb8b0c",
+    "agents/precision_validation.py": "dafc2702b8592611a2204aab236559519c60b6cf2c8c9bf510506c68021267f5",
+    "hardware_knowledge_graph/client.py": "0ccc71eafcaa64b2ea49e93551af83a6d90403cbb766709fa7f5a4ae8d7827ef",
+    "knowledge/records.py": "13aa20ff13bcd14399b2088726bd49f3f92c9f0138ab757d563206ebad6809e0",
+    "localml_scheduler/hardware_knowledge/store.py": "abeb962165016c84da231c3f45ecb46c671229218d3fb9f79996f8c6ddb59c21"
+  },
+  "response_sha256": "9939dd44562ada29ec0bfe3f71ad97e63df3b1b807b84258b2e00cbb07e78224",
+  "prompt_ready_unix": 1789409705.7932692,
+  "response_saved_unix": 1789409800.2827487,
+  "response_turnaround_seconds": 94.48947954177856,
+  "transport_note": "One fresh Terra subagent response consumed by one MLEvolve generation entrypoint; no extraction retries. Internal orchestrator inference count and token usage are unavailable."
+}

@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "dry_run": false,
+  "written": {
+    "hardware": 1,
+    "features": 5,
+    "relationships": 5
+  },
+  "schema": {
+    "ok": true,
+    "constraints": 10
+  },
+  "recreate": false
+}

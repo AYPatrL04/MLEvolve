@@ -1,0 +1,564 @@
+{
+  "candidate_hash": "sha256:f7c4f33868513b3ab6174479c2d7f4ed86d64b5b22cdea9664ef504b8a0eba6d",
+  "candidate_id": "f1359b05b8d341059324571ffa5958c0",
+  "checker_version": "0.1.0",
+  "diagnostics": [
+    {
+      "classification": "inconclusive",
+      "code": "GPU003",
+      "file": "candidate.py",
+      "line": 45,
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "operation": "torch.cuda.is_available",
+      "reproduction": "model-preflight check preflight.yaml --only static_source",
+      "severity": "warning",
+      "stage": "static_source"
+    },
+    {
+      "classification": "inconclusive",
+      "code": "GPU003",
+      "file": "candidate.py",
+      "line": 192,
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "operation": "torch.cuda.is_available",
+      "reproduction": "model-preflight check preflight.yaml --only static_source",
+      "severity": "warning",
+      "stage": "static_source"
+    },
+    {
+      "classification": "inconclusive",
+      "code": "GPU003",
+      "file": "candidate.py",
+      "line": 308,
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "operation": "torch.cuda.is_available",
+      "reproduction": "model-preflight check preflight.yaml --only static_source",
+      "severity": "warning",
+      "stage": "static_source"
+    }
+  ],
+  "environment": {
+    "conda_environment": "base",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2+-x86_64-with-glibc2.39",
+    "python_implementation": "CPython",
+    "python_version": "3.11.15",
+    "torch_version": "2.11.0",
+    "worker_python": "/home/justin/MLEvolve/.venv/bin/python"
+  },
+  "gpu_check_required": true,
+  "gpu_submission_recommended": true,
+  "normalized_manifest": {
+    "candidate": {
+      "adapter": "candidate:CandidateAdapter",
+      "id": "f1359b05b8d341059324571ffa5958c0",
+      "root": "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/after_fix/workspace/working/preflight/f1359b05b8d341059324571ffa5958c0/candidate"
+    },
+    "execution": {
+      "abstract_timeout_seconds": 15.0,
+      "allow_real_cpu_abstract_fallback": false,
+      "cache": false,
+      "cpu_timeout_seconds": 20.0,
+      "disable_network": true,
+      "maximum_cpu_memory_mb": 8192,
+      "maximum_output_bytes": 1000000,
+      "maximum_processes": 32
+    },
+    "policy": {
+      "memory_high_risk_fraction": 0.9,
+      "memory_warning_fraction": 0.7,
+      "mode": "balanced"
+    },
+    "scenarios": {
+      "boundary_shapes": {},
+      "fixture": {
+        "image": [
+          3,
+          256,
+          256
+        ],
+        "tabular": [
+          12
+        ]
+      },
+      "input_shapes": {
+        "image": [
+          3,
+          256,
+          256
+        ]
+      },
+      "last_batch_size": 1,
+      "precision": [
+        "fp32"
+      ],
+      "run_validation": true,
+      "stateful_two_steps": false,
+      "test_last_batch": true,
+      "train_batch_sizes": [
+        1,
+        2,
+        4
+      ]
+    },
+    "schema_version": 1,
+    "target": {
+      "profile": "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/after_fix/v100_32gb.yaml"
+    },
+    "task": {
+      "drop_last": false,
+      "input_rank": 3,
+      "name": "petfinder-pawpularity-score",
+      "target_dtype": "float32"
+    }
+  },
+  "overall_status": "INCONCLUSIVE",
+  "report_schema_version": 1,
+  "resource_estimate": {
+    "estimated_risk": "low",
+    "estimated_total_bytes": 45908920,
+    "gradient_bytes_exact": 171428,
+    "is_gpu_oom_guarantee": false,
+    "optimizer_state_bytes_estimated": 342856,
+    "parameter_bytes_exact": 171428,
+    "safety_margin_bytes": 5988120,
+    "saved_activation_bytes_estimated": 39235088,
+    "target_vram_bytes": 34359738368,
+    "target_vram_fraction": 0.001336,
+    "uncertainty_sources": [
+      "allocator fragmentation",
+      "tensor lifetime overlap",
+      "cuDNN and compiler workspaces",
+      "custom kernels",
+      "activation checkpointing"
+    ]
+  },
+  "stages": [
+    {
+      "diagnostics": [
+        {
+          "classification": "inconclusive",
+          "code": "GPU003",
+          "file": "candidate.py",
+          "line": 45,
+          "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+          "operation": "torch.cuda.is_available",
+          "reproduction": "model-preflight check preflight.yaml --only static_source",
+          "severity": "warning",
+          "stage": "static_source"
+        },
+        {
+          "classification": "inconclusive",
+          "code": "GPU003",
+          "file": "candidate.py",
+          "line": 192,
+          "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+          "operation": "torch.cuda.is_available",
+          "reproduction": "model-preflight check preflight.yaml --only static_source",
+          "severity": "warning",
+          "stage": "static_source"
+        },
+        {
+          "classification": "inconclusive",
+          "code": "GPU003",
+          "file": "candidate.py",
+          "line": 308,
+          "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+          "operation": "torch.cuda.is_available",
+          "reproduction": "model-preflight check preflight.yaml --only static_source",
+          "severity": "warning",
+          "stage": "static_source"
+        }
+      ],
+      "duration_seconds": 0.004831,
+      "evidence": {
+        "python_files_scanned": 1
+      },
+      "name": "static_source",
+      "status": "INCONCLUSIVE"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 3e-06,
+      "evidence": {
+        "architecture": "volta",
+        "compute_capability": "7.0",
+        "name": "Tesla V100 32GB",
+        "profile": "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/after_fix/v100_32gb.yaml",
+        "profile_schema_version": 1,
+        "vram_bytes": 34359738368
+      },
+      "name": "hardware",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 2.92939,
+      "evidence": {
+        "model_type": "candidate.ImageTabularRegressor",
+        "optimizer_type": "torch.optim.adamw.AdamW",
+        "parameter_bytes": 171428,
+        "parameter_count": 42857,
+        "parameter_tensors": 37,
+        "trainable_parameter_bytes": 171428,
+        "trainable_parameter_count": 42857,
+        "trainable_parameter_tensors": 37
+      },
+      "name": "construction",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 2.294656,
+      "evidence": {
+        "batch": {
+          "items": {
+            "image": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                3,
+                256,
+                256
+              ],
+              "type": "tensor"
+            },
+            "tabular": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                12
+              ],
+              "type": "tensor"
+            },
+            "target": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1
+              ],
+              "type": "tensor"
+            }
+          },
+          "type": "dict"
+        }
+      },
+      "name": "data_contract",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 6.590341,
+      "evidence": {
+        "scenarios": [
+          {
+            "backend": "meta",
+            "batch": {
+              "items": {
+                "image": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    1,
+                    3,
+                    256,
+                    256
+                  ],
+                  "type": "tensor"
+                },
+                "tabular": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    1,
+                    12
+                  ],
+                  "type": "tensor"
+                },
+                "target": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    1
+                  ],
+                  "type": "tensor"
+                }
+              },
+              "type": "dict"
+            },
+            "duration_seconds": 2.274706,
+            "estimated_forward_activation_bytes": 9808772,
+            "loss": {
+              "device": "meta",
+              "dtype": "float32",
+              "requires_grad": true,
+              "shape": [],
+              "type": "tensor"
+            },
+            "status": "PASS",
+            "torch_export_attempted": true,
+            "torch_export_error": "TypeError: missing a required argument: 'tabular'",
+            "torch_export_succeeded": false
+          },
+          {
+            "backend": "meta",
+            "batch": {
+              "items": {
+                "image": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    2,
+                    3,
+                    256,
+                    256
+                  ],
+                  "type": "tensor"
+                },
+                "tabular": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    2,
+                    12
+                  ],
+                  "type": "tensor"
+                },
+                "target": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    2
+                  ],
+                  "type": "tensor"
+                }
+              },
+              "type": "dict"
+            },
+            "duration_seconds": 2.102614,
+            "estimated_forward_activation_bytes": 19617544,
+            "loss": {
+              "device": "meta",
+              "dtype": "float32",
+              "requires_grad": true,
+              "shape": [],
+              "type": "tensor"
+            },
+            "status": "PASS",
+            "torch_export_attempted": true,
+            "torch_export_error": "TypeError: missing a required argument: 'tabular'",
+            "torch_export_succeeded": false
+          },
+          {
+            "backend": "meta",
+            "batch": {
+              "items": {
+                "image": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    4,
+                    3,
+                    256,
+                    256
+                  ],
+                  "type": "tensor"
+                },
+                "tabular": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    4,
+                    12
+                  ],
+                  "type": "tensor"
+                },
+                "target": {
+                  "device": "meta",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    4
+                  ],
+                  "type": "tensor"
+                }
+              },
+              "type": "dict"
+            },
+            "duration_seconds": 2.21302,
+            "estimated_forward_activation_bytes": 39235088,
+            "loss": {
+              "device": "meta",
+              "dtype": "float32",
+              "requires_grad": true,
+              "shape": [],
+              "type": "tensor"
+            },
+            "status": "PASS",
+            "torch_export_attempted": true,
+            "torch_export_error": "TypeError: missing a required argument: 'tabular'",
+            "torch_export_succeeded": false
+          }
+        ]
+      },
+      "name": "abstract_forward",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 2.166867,
+      "evidence": {
+        "scenarios": [
+          {
+            "batch": {
+              "items": {
+                "image": {
+                  "device": "cpu",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    1,
+                    3,
+                    256,
+                    256
+                  ],
+                  "type": "tensor"
+                },
+                "tabular": {
+                  "device": "cpu",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    1,
+                    12
+                  ],
+                  "type": "tensor"
+                },
+                "target": {
+                  "device": "cpu",
+                  "dtype": "float32",
+                  "requires_grad": false,
+                  "shape": [
+                    1
+                  ],
+                  "type": "tensor"
+                }
+              },
+              "type": "dict"
+            },
+            "duration_seconds": 2.166867,
+            "loss": 0.0009647043189033866,
+            "model_type": "candidate.ImageTabularRegressor",
+            "optimizer_type": "torch.optim.adamw.AdamW",
+            "parameter_bytes": 171428,
+            "parameter_count": 42857,
+            "parameter_tensors": 37,
+            "parameters_with_gradients": 37,
+            "status": "PASS",
+            "steps": 1,
+            "trainable_parameter_bytes": 171428,
+            "trainable_parameter_count": 42857,
+            "trainable_parameter_tensors": 37
+          }
+        ]
+      },
+      "name": "cpu_training",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 2.25311,
+      "evidence": {
+        "batch": {
+          "items": {
+            "image": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                3,
+                256,
+                256
+              ],
+              "type": "tensor"
+            },
+            "tabular": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                12
+              ],
+              "type": "tensor"
+            },
+            "target": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1
+              ],
+              "type": "tensor"
+            }
+          },
+          "type": "dict"
+        },
+        "model_type": "candidate.ImageTabularRegressor",
+        "parameter_bytes": 171428,
+        "parameter_count": 42857,
+        "parameter_tensors": 37,
+        "trainable_parameter_bytes": 171428,
+        "trainable_parameter_count": 42857,
+        "trainable_parameter_tensors": 37,
+        "validation_output": {
+          "device": "cpu",
+          "dtype": "float32",
+          "requires_grad": false,
+          "shape": [],
+          "type": "tensor"
+        }
+      },
+      "name": "validation",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 0.0,
+      "evidence": {
+        "estimated_risk": "low",
+        "estimated_total_bytes": 45908920,
+        "gradient_bytes_exact": 171428,
+        "is_gpu_oom_guarantee": false,
+        "optimizer_state_bytes_estimated": 342856,
+        "parameter_bytes_exact": 171428,
+        "safety_margin_bytes": 5988120,
+        "saved_activation_bytes_estimated": 39235088,
+        "target_vram_bytes": 34359738368,
+        "target_vram_fraction": 0.001336,
+        "uncertainty_sources": [
+          "allocator fragmentation",
+          "tensor lifetime overlap",
+          "cuDNN and compiler workspaces",
+          "custom kernels",
+          "activation checkpointing"
+        ]
+      },
+      "name": "memory",
+      "status": "PASS"
+    }
+  ]
+}

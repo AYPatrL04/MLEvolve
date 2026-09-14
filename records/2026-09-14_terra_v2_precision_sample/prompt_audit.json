@@ -1,0 +1,55 @@
+{
+  "records": 14,
+  "unique_summaries": 11,
+  "topics": [
+    "architecture",
+    "evaluation",
+    "precision",
+    "runtime",
+    "training"
+  ],
+  "checks": {
+    "fp16_amp_guidance_present": true,
+    "fp32_sensitive_islands_present": true,
+    "whole_model_half_prohibition_present": false,
+    "quality_priority_present": true,
+    "history_empty": true,
+    "record_summaries_complete": true
+  },
+  "repeated_summaries": [
+    {
+      "summary": "Keep batch size and input dimensions configurable and benchmark Tensor Core-friendly shapes.",
+      "copies": 3,
+      "record_ids": [
+        "hardware:89ce8a9a8e53922fe80993dc8a64e966dd05ae791b2939a8b47dd127347d14a9:61eaca85ed9fbd05",
+        "hardware:94ff247c46a09c0531e2cfd457964871dbc6122c0db4c8590cc88787e9ebcf23:61eaca85ed9fbd05",
+        "hardware:c1f1abc75fd97aa4b6303390256c1153e8bbbe56c81c8dd89334aa97e8eb8333:61eaca85ed9fbd05"
+      ],
+      "restriction_sets": [
+        [
+          "Do not select FP8, MXFP8, NVFP4, generic FP4, or FP6 for training on this architecture."
+        ],
+        [
+          "Do not select FP8, MXFP8, NVFP4, generic FP4, or FP6 for training on this architecture.",
+          "Do not treat integer Tensor Core capability as a general training recommendation."
+        ],
+        []
+      ]
+    },
+    {
+      "summary": "Use FP16 through AMP/autocast with loss scaling and retain an FP32 fallback.",
+      "copies": 2,
+      "record_ids": [
+        "hardware:94ff247c46a09c0531e2cfd457964871dbc6122c0db4c8590cc88787e9ebcf23:7f1c2f8455e08c03",
+        "hardware:c1f1abc75fd97aa4b6303390256c1153e8bbbe56c81c8dd89334aa97e8eb8333:7f1c2f8455e08c03"
+      ],
+      "restriction_sets": [
+        [
+          "Do not select FP8, MXFP8, NVFP4, generic FP4, or FP6 for training on this architecture.",
+          "Do not treat integer Tensor Core capability as a general training recommendation."
+        ],
+        []
+      ]
+    }
+  ]
+}

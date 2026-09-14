@@ -1,0 +1,21 @@
+{
+  "graph_projected_records_valid": 5,
+  "prompt_records": 17,
+  "graph_evidence_in_prompt": true,
+  "new_llm_calls": 0,
+  "candidate_origin": "local correction of archived Terra output",
+  "preflight_status": "INCONCLUSIVE",
+  "preflight_admitted": true,
+  "preflight_started": 1789411222.4913385,
+  "preflight_finished": 1789411238.8086865,
+  "fallback_finished": 1789411239.8100574,
+  "execution_finished": 1789411242.5442352,
+  "numerical_fallback_matches_fp32": true,
+  "submission_rows": 4,
+  "synthetic_rmse": 50.9872911363398,
+  "best_epoch": 2,
+  "selected_precision": "fp32",
+  "quality_status": "unverified",
+  "gpu_training": false,
+  "task_quality_validated": false
+}

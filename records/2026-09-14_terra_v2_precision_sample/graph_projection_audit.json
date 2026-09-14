@@ -1,0 +1,48 @@
+{
+  "raw_record_count": 5,
+  "projected_record_count": 5,
+  "failures": [
+    {
+      "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:tensor_cores:879e05dbc3db3281",
+      "error": "Incomplete design knowledge record",
+      "dropped_fields": [
+        "applies_when",
+        "fallbacks",
+        "restrictions"
+      ]
+    },
+    {
+      "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:sm_70:dbfd5502b1f6f903",
+      "error": "Incomplete design knowledge record",
+      "dropped_fields": [
+        "applies_when",
+        "fallbacks",
+        "restrictions"
+      ]
+    },
+    {
+      "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:fp16:6b4b4de663f8caf4",
+      "error": "Incomplete design knowledge record",
+      "dropped_fields": [
+        "applies_when",
+        "fallbacks"
+      ]
+    },
+    {
+      "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:amp:ec0eda6d4071a5e7",
+      "error": "Incomplete design knowledge record",
+      "dropped_fields": [
+        "applies_when",
+        "fallbacks"
+      ]
+    },
+    {
+      "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:fp64:21dbaa73d1ab3845",
+      "error": "Incomplete design knowledge record",
+      "dropped_fields": [
+        "applies_when",
+        "fallbacks"
+      ]
+    }
+  ]
+}
