@@ -1,0 +1,8 @@
+{
+  "commit": "329b042c3ac66380ea661a4ebf3312a917041e77",
+  "submodules": " b9b6d48dafa7fac8e48f7b36a2a70deed6e795ca PerfSeer-predictor (Generated-labels-on-A10-20-gb9b6d48)\n d90852756346976c3f4e488ff8daffe172801ac6 nn-model-preflight-checker (d908527)\n",
+  "working_tree": "?? deployments/bootstrap_full_a10.sh\n?? deployments/launch_full_a10.py\n?? deployments/run_full_a10.py\n?? records/mlevolve-full-a10-s42-20260914/\n?? tests/test_full_a10_deployment.py\n",
+  "sha256": "3d40142712415916dea1527a569f7644136cb901df3923feb066b9b57e626846",
+  "files": 1451,
+  "root": "/experiment/mlevolve-full-a10-s42-20260914"
+}

@@ -1,0 +1,109 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "name": "mlevolve-full-a10-s42-20260914-prepare",
+    "namespace": "ecepxie"
+  },
+  "spec": {
+    "backoffLimit": 0,
+    "activeDeadlineSeconds": 10800,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "mlevolve-full-a10-s42-20260914",
+          "phase": "prepare"
+        }
+      },
+      "spec": {
+        "restartPolicy": "Never",
+        "automountServiceAccountToken": false,
+        "containers": [
+          {
+            "name": "matrix",
+            "image": "nvcr.io/nvidia/pytorch@sha256:192d749b4d773610ec9e01c0443a9df545d196c412b7b8fd33bfa3da362a49e7",
+            "command": [
+              "bash",
+              "/launcher/bootstrap_full_a10.sh",
+              "prepare"
+            ],
+            "env": [
+              {
+                "name": "SOURCE_SHA256",
+                "value": "3d40142712415916dea1527a569f7644136cb901df3923feb066b9b57e626846"
+              },
+              {
+                "name": "DEEPSEEK_API_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "name": "hwdb-deepseek-20260911",
+                    "key": "api-key"
+                  }
+                }
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "8",
+                "memory": "24Gi",
+                "ephemeral-storage": "24Gi"
+              },
+              "limits": {
+                "cpu": "8",
+                "memory": "24Gi",
+                "ephemeral-storage": "32Gi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "workspace",
+                "mountPath": "/experiment",
+                "subPath": "aypatrl04-hwdb-deepseek-20260911"
+              },
+              {
+                "name": "runtime",
+                "mountPath": "/runtime"
+              },
+              {
+                "name": "launcher",
+                "mountPath": "/launcher",
+                "readOnly": true
+              },
+              {
+                "name": "shm",
+                "mountPath": "/dev/shm"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "workspace",
+            "persistentVolumeClaim": {
+              "claimName": "yuze-li-vol"
+            }
+          },
+          {
+            "name": "runtime",
+            "emptyDir": {
+              "sizeLimit": "24Gi"
+            }
+          },
+          {
+            "name": "launcher",
+            "configMap": {
+              "name": "mlevolve-full-a10-s42-20260914-launcher"
+            }
+          },
+          {
+            "name": "shm",
+            "emptyDir": {
+              "medium": "Memory",
+              "sizeLimit": "1Gi"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
