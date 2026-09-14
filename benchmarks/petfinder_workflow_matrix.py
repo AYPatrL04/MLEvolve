@@ -288,13 +288,14 @@ def run_cell(precision, hardware, root):
 
 
 def plot(results, path):
-    from PIL import Image, ImageDraw
+    from PIL import Image, ImageDraw, ImageFont
 
-    image = Image.new("RGB", (1400, 760), "white")
+    image = Image.new("RGB", (1400, 800), "white")
     draw = ImageDraw.Draw(image)
     draw.text((25, 15), "PetFinder agent workflow: measured stage durations; CPU checks only", fill="black")
     colors = {"draft": "#609ed4", "draft_preflight": "#a5d79b", "injected_preflight": "#db9291",
-              "feedback": "#9a84c9", "debug": "#f2b56a", "repaired_preflight": "#63b596"}
+              "feedback": "#9a84c9", "debug": "#f2b56a", "repaired_preflight": "#63b596",
+              "resume_preflight": "gray"}
     maximum = max([result["duration_seconds"] for result in results] or [1])
     for index, result in enumerate(results):
         y = 70 + index * 70
@@ -315,7 +316,21 @@ def plot(results, path):
         draw.text((x - 50, 600), f"Initial draft calls: {result.get('initial_generation_calls', '?')}", fill="black")
         draw.text((x - 50, 625), f"CPU gate: {result.get('repaired_preflight_status', 'incomplete')}", fill="black")
         draw.text((x - 50, 650), "CPU adapter: PASS; GPU: unverified" if result.get("cpu_stage_statuses", {}).get("cpu_training") == "PASS" else "CPU adapter: check report", fill="black")
-    draw.text((25, 700), "Blue=draft; light green=initial CPU gate; red=injected gate; purple=feedback; orange=debug; green=recheck; gray=resume gate", fill="black")
+    legend = [
+        ("draft", "Draft generation"),
+        ("draft_preflight", "Initial CPU preflight"),
+        ("injected_preflight", "Injected-failure preflight"),
+        ("feedback", "Result feedback"),
+        ("debug", "Debug and repair"),
+        ("repaired_preflight", "Preflight after repair"),
+        ("resume_preflight", "Preflight on resume"),
+    ]
+    legend_font = ImageFont.load_default(size=15)
+    draw.text((25, 680), "Process legend", fill="black", font=legend_font)
+    for index, (stage, label) in enumerate(legend):
+        x, y = 25 + (index % 4) * 340, 713 + (index // 4) * 36
+        draw.rectangle((x, y, x + 22, y + 16), fill=colors[stage], outline="#555555")
+        draw.text((x + 32, y), label, fill="black", font=legend_font)
     image.save(path)
 
 
