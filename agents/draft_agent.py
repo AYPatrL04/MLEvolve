@@ -51,6 +51,9 @@ def model_preflight_generation_instructions() -> list[str]:
         "as the training pipeline; do not use mock tensors or a different toy model. "
         "Its batch builders must honor `scenario['batch_size']` and return all inputs "
         "required by the model plus a target.",
+        "- `scenario['fixture']` describes input shapes and may omit the target. "
+        "Construct the target separately according to the task's target contract "
+        "in every fixture and fallback batch path.",
         "- Keep imports, constants, class/function definitions, and read-only device "
         "configuration import-safe. Put all training, validation, prediction, and "
         "submission side effects under `if __name__ == '__main__':`.",
@@ -115,6 +118,9 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
     knowledge_records += select_records(cuda_records(cuda_docs_ctx), runtime_scope(hardware_ctx)) + history_records(agent)
     knowledge_records += lesson_records(lesson_ctx)
     knowledge_records = select_records(knowledge_records, {}, already_filtered=True)
+    from utils.feedback import scheduler_feedback
+    if operational := scheduler_feedback(agent):
+        prompt["Instructions"]["Scheduler execution constraints"] = operational
     prompt["Instructions"] |= prompt_resp_fmt()
     prompt["Instructions"] |= hardware_context_instructions(hardware_ctx)
     if "Hardware/Profile reasoning rule" in prompt["Instructions"]:

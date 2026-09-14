@@ -3,9 +3,47 @@
 from __future__ import annotations
 
 import re
+import json
 from typing import Any, Mapping
 
 from knowledge.records import STAGE_TOPICS, from_source, select_records, strings
+
+
+def scheduler_records(raw: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Project operational facts without promoting estimates to measurements."""
+    records = []
+    limits = (raw.get("hardware_context") or {}).get("scheduler_limits") or {}
+    facts = {key: limits[key] for key in ("safe_vram_budget_mb", "vram_role", "placement_objective", "packing_backend", "runner_contract", "exclusive_fallback_enabled") if limits.get(key) is not None}
+    if facts:
+        records += from_source({"summary": "Scheduler constraints: " + json.dumps(facts, sort_keys=True) + ". The scheduler owns admission and concurrency; a memory budget is not a throughput target.",
+                                "strength": "hard", "verified": True, "confidence": 1.0,
+                                "evidence_refs": ["runtime:scheduler_limits"]}, domain="hardware", source_id="scheduler_limits", topics=["runtime"])
+    estimate = raw.get("runtime_estimate") or {}
+    if estimate:
+        profile = estimate.get("profile") or {}
+        values = {key: estimate.get(key, profile.get(key)) for key in ("found", "reason", "source", "match_reason", "matched_exact_batch_size", "seconds_per_epoch", "estimated_total_runtime_seconds")}
+        values = {key: value for key, value in values.items() if value is not None}
+        records += from_source({"summary": "Runtime estimate: " + json.dumps(values, sort_keys=True) + ". This is an estimate, not a measured runtime for the new candidate; missing evidence does not establish a fit.",
+                                "evidence_refs": strings(raw.get("evidence_refs")) or ["runtime:runtime_estimate"]},
+                               domain="hardware", source_id="runtime_estimate", topics=["runtime"])
+    diagnosis = raw.get("derived_diagnosis") or {}
+    seen = set()
+    for field, label, values in (
+        ("risk", "Reported risk", raw.get("risk_flags")),
+        ("symptom", "Profile symptom", diagnosis.get("profile_symptoms")),
+        ("target", "Suggested optimization target", diagnosis.get("optimization_targets")),
+        ("recommendation", "Conditional recommendation", raw.get("recommendations")),
+    ):
+        for value in strings(values):
+            if value in seen:
+                continue
+            seen.add(value)
+            records += from_source({"summary": f"{label}: {value}", "verification_status": "advisory",
+                                    "warnings": ["Verify this risk before assuming safe execution; it is not a confirmed candidate defect."] if field in {"risk", "symptom"} else [],
+                                    "when_to_use": "Revalidate applicability to this candidate; preserve task and precision constraints.",
+                                    "evidence_refs": strings(raw.get("evidence_refs")) or [f"runtime:{field}"]},
+                                   domain="hardware", source_id=f"scheduler_{field}", topics=["training", "runtime"])
+    return records
 
 
 def runtime_scope(context: Any) -> dict[str, Any]:
@@ -48,6 +86,7 @@ def hardware_records(context: Any, *, role: str = "draft") -> list[dict[str, Any
     policy = resolve_precision_policy(policy_data, mode=policy_data.get("mode", "normal"))
     scope = runtime_scope(context)
     records: list[dict[str, Any]] = []
+    records += scheduler_records(raw or compact)
     local = (compact.get("hardware_context") or {}).get("hardware") or {}
     if local:
         summary = "Hardware: " + "; ".join(f"{k}={local[k]}" for k in ("name", "gpu_name", "architecture", "compute_capability", "total_vram_mb") if local.get(k) is not None) + "."
@@ -96,12 +135,21 @@ def hardware_records(context: Any, *, role: str = "draft") -> list[dict[str, Any
         ref = profile.get("ref") or profile.get("evidence_ref")
         if not ref:
             continue
-        values = [f"{key}={profile[key]}" for key in ("resolved_batch_size", "epoch_seconds", "runtime_seconds", "peak_vram_mb", "avg_sm_utilization_pct") if profile.get(key) is not None]
-        summary = "Measured matching profile: " + str(profile.get("summary_text") or "")
-        if values:
-            summary += " " + "; ".join(values) + "."
-        add({"summary": summary, "record_id": ref, "evidence_refs": [ref], "verified": True,
-             "when_to_use": "A measured observation, not a guaranteed numeric default; preserve the current task budget and remeasure after changes."}, ["training", "runtime"])
+        data = profile.get("data") or profile
+        values = {key: data[key] for key in ("resolved_batch_size", "epoch_seconds", "epoch_1_seconds", "seconds_per_epoch", "startup_seconds", "avg_step_time_ms", "steps_per_epoch", "runtime_seconds", "peak_vram_mb", "peak_vram_mib", "avg_sm_utilization_pct", "backend_name", "precision", "hardware_key", "model_family", "strategy", "observations") if data.get(key) is not None}
+        summary = "Matching profile observation: " + json.dumps(values, sort_keys=True) + "."
+        if data.get("estimated_total_runtime_seconds") is not None:
+            summary += f" Estimated total runtime (not measured): {data['estimated_total_runtime_seconds']} seconds."
+        if not values:
+            continue
+        add({"summary": summary, "record_id": ref, "evidence_refs": [ref],
+             "verified": data.get("verified") is True or (type(data.get("observations")) is int and data["observations"] > 0),
+             "confidence": data.get("confidence", 0.0),
+             "when_to_use": "Historical evidence, not a guaranteed numeric default; preserve the current task budget and remeasure after changes.",
+             "warnings": strings(profile.get("transferability")),
+             "backend_modes": [data["backend_name"]] if data.get("backend_name") else [],
+             "hardware_keys": [data["hardware_key"]] if data.get("hardware_key") else [],
+             "model_families": [data["model_family"]] if data.get("model_family") else []}, ["training", "runtime"])
     for option in raw.get("model_options") or []:
         if not option.get("evidence_refs") or not option.get("confidence"):
             continue

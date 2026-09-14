@@ -9,6 +9,7 @@ from engine.search_node import SearchNode
 from engine.executor import ExecutionResult
 from utils.metric import MetricValue, WorstMetricValue
 from utils.response import wrap_code
+from utils.feedback import preflight_feedback, raw_execution_output, render_execution_feedback
 from engine.validation import call_validate, _validate_submission_with_retry, validate_submission_content_quality
 from agents import data_leakage_agent
 from agents.triggers import should_check_data_leakage
@@ -272,6 +273,8 @@ def _build_introduction(agent) -> str:
         "- \"issues\": (array) Stage-owned issues with source, severity, category, owner, evidence, and repair_instruction. Use [] on success.\n"
         "  Optimizer/scheduler/batch/training-loop/metric/submission issues belong to training_evaluation; cross-stage interface failures belong to integration.\n"
         "  A completed run with a finite metric and valid submission is NOT buggy merely because it underfits, overfits, fails to improve its parent, or uses resources poorly. Record those findings as warnings and preserve the metric.\n"
+        "  Execution feedback summarizes the complete referenced log. Missing measurements are unknown, not zero; execution_returned alone does not prove success.\n"
+        "  Keep preflight risks and inconclusive checks advisory unless candidate failure evidence confirms a defect. CPU admission does not prove GPU compatibility or memory fit.\n"
     )
     if use_memory:
         intro += (
@@ -602,7 +605,7 @@ def _completed_metric_from_contract(agent, node: SearchNode) -> float | None:
     """Read a finite final score only from a completed job with a submission."""
     if node.exc_type is not None:
         return None
-    matches = _FINAL_VALIDATION_SCORE_RE.findall(node.term_out)
+    matches = _FINAL_VALIDATION_SCORE_RE.findall(raw_execution_output(node))
     if not matches:
         return None
     try:
@@ -734,11 +737,10 @@ def run(agent, node: SearchNode, exec_result: ExecutionResult) -> SearchNode:
             prompt = {
                 "Introduction": introduction,
                 "Implementation": wrap_code(node.code),
-                "Execution output": wrap_code(node.term_out, lang=""),
+                "Execution output": render_execution_feedback(node),
             }
-            preflight_issues = [issue for issue in (node.review_issues or []) if issue.get("source") == "model_preflight"]
-            if preflight_issues:
-                prompt["CPU preflight evidence"] = preflight_issues
+            if preflight := preflight_feedback(node):
+                prompt["CPU preflight evidence"] = preflight
             stable_prompt = {"Introduction": prompt["Introduction"]}
             dynamic_prompt = {
                 key: value for key, value in prompt.items() if key != "Introduction"

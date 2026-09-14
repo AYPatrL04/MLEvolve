@@ -4,6 +4,7 @@ import logging
 from typing import Any, List
 
 from llm import compile_prompt_to_md
+from utils.feedback import render_execution_feedback
 from engine.search_node import SearchNode
 from utils.response import wrap_code
 from agents.hardware_context import (
@@ -89,7 +90,7 @@ def fuse_two_nodes(agent, source_node: SearchNode, target_node: SearchNode) -> S
         hardware_contexts=[hardware_ctx],
         parent_pipeline_decision=getattr(source_node, "pipeline_decision", None),
         previous_code=source_node.code,
-        execution_output=source_node.term_out,
+        execution_output=render_execution_feedback(source_node),
         stage_context=(
             f"{reference_trajectory}\n"
             f"Reference pipeline decision: {getattr(target_node, 'pipeline_decision', None)}"
@@ -270,7 +271,7 @@ def _fuse_with_multiple_references(
         hardware_contexts=[hardware_ctx],
         parent_pipeline_decision=getattr(parent_node, "pipeline_decision", None),
         previous_code=parent_node.code,
-        execution_output=parent_node.term_out,
+        execution_output=render_execution_feedback(parent_node),
         stage_context=f"{reference_memory}\nReference pipeline decisions: {reference_decisions}",
     )
     apply_lesson_context_to_pipeline_decision(pipeline_decision, lesson_ctx)

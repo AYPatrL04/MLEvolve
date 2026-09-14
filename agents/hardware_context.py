@@ -1999,7 +1999,8 @@ def _safe_node_term_out(node: Any | None) -> str:
     if node is None:
         return ""
     try:
-        return str(getattr(node, "term_out", "") or "")
+        from utils.feedback import raw_execution_output
+        return raw_execution_output(node)
     except Exception as exc:
         logger.debug("Skipping parent execution output in hardware context: %s", exc)
         return ""
@@ -2142,6 +2143,7 @@ def _compact_runtime_estimate(estimate: dict[str, Any]) -> dict[str, Any]:
         estimate,
         (
             "found",
+            "reason",
             "source",
             "match_reason",
             "matched_exact_batch_size",

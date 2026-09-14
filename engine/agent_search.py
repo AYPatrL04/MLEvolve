@@ -544,7 +544,10 @@ class AgentSearch:
                     record_pipeline_node_action(self, result_node, "candidate_action_selected",
                                                 payload=result_node.diagnostics["selection"])
                     self.refresh_hardware_context(result_node)
-                    if init_solution_path or (result_node.diagnostics or {}).get("execution_retry"):
+                    self._run_node_preflight(result_node, generated=not bool(init_solution_path))
+                    if result_node.review_status == "rejected":
+                        logger.info(f"Node {result_node.id} was rejected by CPU preflight, skipping code review")
+                    elif init_solution_path or (result_node.diagnostics or {}).get("execution_retry"):
                         logger.info(f"Node {result_node.id} reuses supplied or retry code, skipping code review")
                     else:
                         review_outcome = code_review_agent.review_and_repair(self, result_node)
@@ -554,10 +557,10 @@ class AgentSearch:
                             self.refresh_hardware_context(result_node)
                         else:
                             logger.info(f"Node {result_node.id} passed code review without changes")
-                    if not (result_node.diagnostics or {}).get("execution_retry"):
+                    if result_node.review_status != "rejected" and not (result_node.diagnostics or {}).get("execution_retry"):
                         self._review_training_parameters_before_submission(result_node)
                     if result_node.review_status != "rejected":
-                        self._run_node_preflight(result_node, generated=not bool(init_solution_path))
+                        self._ensure_node_preflight_before_execution(result_node)
                     self._validate_node_precision_before_execution(result_node)
                     if result_node.review_status != "rejected":
                         self._validate_node_dependencies_before_execution(result_node)
@@ -663,8 +666,8 @@ class AgentSearch:
         from utils.pipeline_logging import log_pipeline_event, record_pipeline_node_action
 
         node.preflight_generated = bool(generated)
+        previously_rejected = getattr(node, "preflight_admitted", None) is False
         if not preflight_enabled(getattr(self, "cfg", None)):
-            previously_rejected = getattr(node, "preflight_admitted", None) is False
             node.preflight_status = "SKIPPED"
             node.preflight_mode = "disabled"
             node.preflight_admitted = True
@@ -674,6 +677,7 @@ class AgentSearch:
             node.preflight_report_path = None
             node.preflight_summary_path = None
             node.preflight_repair_count = 0
+            (node.diagnostics or {}).pop("preflight_advisories", None)
             node.review_issues = [issue for issue in (node.review_issues or []) if issue.get("source") != "model_preflight"]
             if previously_rejected and node.review_status == "rejected" and not any(
                 issue.get("severity") == "critical" for issue in node.review_issues
@@ -741,6 +745,10 @@ class AgentSearch:
             record_pipeline_node_action(self, node, "model_preflight_rechecked", payload=node_preflight_metadata(node))
 
         if outcome.admitted:
+            if previously_rejected and node.review_status == "rejected" and not any(
+                issue.get("severity") == "critical" for issue in node.review_issues
+            ):
+                node.review_status = None
             if repair_count and node.review_status != "rejected":
                 node.review_status = "repaired"
             return True

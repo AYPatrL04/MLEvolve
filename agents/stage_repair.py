@@ -153,6 +153,13 @@ def _build_repair_prompt(
         "merged_script": code,
     }
     from engine.preflight import preflight_enabled
+    from utils.feedback import scheduler_feedback
+
+    if advisory := (getattr(node, "diagnostics", None) or {}).get("preflight_advisories"):
+        payload["preflight_advisories"] = advisory
+        payload["advisory_rule"] = "These risks and unverified checks are context, not additional repair requests; preserve their uncertainty."
+    if operational := scheduler_feedback(agent):
+        payload["scheduler_execution_constraints"] = operational
 
     if not preflight_enabled(agent.cfg):
         payload["ownership_guidelines"] = [item for item in guidelines if "CandidateAdapter" not in item]

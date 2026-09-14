@@ -1,6 +1,6 @@
 # CPU Model-Preflight Admission
 
-MLEvolve runs the pinned `nn-model-preflight-checker` after stage-aware review and before
+MLEvolve runs the pinned `nn-model-preflight-checker` before stage-aware LLM review and before
 direct execution, scheduler submission, or GPU batch probing. The gate is enabled by default for
 `experiment.mode: hardware_aware`.
 
@@ -55,7 +55,8 @@ project-specific orchestration and GPU profiles remain in MLEvolve.
 Every candidate is copied to `workspace/working/preflight/<node-id>/candidate/candidate.py` with
 a generated manifest. Batch scenarios and precision are derived from the same script
 introspection used by the scheduler. The schema-validated checker report is stored as
-`report.json`; `admission_summary.json` records MLEvolve's compact decision, source hash,
+`report.json`, with immutable `report_attempt_*.json` copies referenced by review and diagnostics;
+`admission_summary.json` records MLEvolve's compact decision, source hash,
 diagnostic codes, repair count, and GPU-canary requirement.
 
 Newly generated candidates must expose this no-argument class and remain safe to import:
@@ -89,8 +90,16 @@ infrastructure errors fail open by default and are never labeled as candidate de
 source hash is checked again immediately before execution, so modified code cannot reuse a
 stale report.
 
-Repair feedback retains bounded scenario, traceback, and reproduction details from the
-checker. An inconclusive `FIX001` batch-builder exception produces a warning and a bounded
+Generated candidates enter LLM review only after preflight admits them, including admitted
+`INCONCLUSIVE` results. Rejected candidates skip review after the configured targeted repairs
+are exhausted. Review receives concise CPU evidence for the exact checked source and retains
+the preflight history. If review or pre-submit parameter adjustment changes code, preflight
+runs again before execution or deferral; unchanged code reuses its existing result. Internal
+review repair rounds retain their existing behavior and label earlier CPU evidence stale until
+the final revision is rechecked. Disabling preflight preserves the existing review workflow.
+
+Repair feedback retains distinct scenarios, concise source locations, reproduction details, and
+full-report references from the checker. An inconclusive `FIX001` batch-builder exception produces a warning and a bounded
 targeted repair/recheck, without asserting a proven model defect. Unresolved warnings remain
 available to result parsing; the configured admission policy still decides whether to run.
 
