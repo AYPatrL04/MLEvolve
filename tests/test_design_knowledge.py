@@ -265,3 +265,24 @@ def test_graph_ingestion_persists_conditions_and_original_evidence(monkeypatch, 
     assert "Do not use dynamic shapes." in records[0]["restrictions"]
     assert "Keep an eager fallback." in records[0]["restrictions"]
     assert any(params and params.get("props", {}).get("sample_code") == "original code" for _, params in writes)
+
+    from hardware_knowledge_graph.client import HardwareKnowledgeClient, _sanitize_agent_response
+    from knowledge.records import validate_record
+
+    # Exercise the exact graph projection that previously erased required empty fields.
+    records[0]["evidence_refs"].append("https://example.org/precision#conditions")
+    props["design_records_v2_json"] = json.dumps(records)
+    monkeypatch.setattr(store, "_query_neighborhood_rows", lambda **kwargs: [
+        {"hardware": hardware, "feature": feature, "relationship": props},
+    ])
+    public = _sanitize_agent_response(store.get_feature_neighborhood(hardware_terms=["V100"]))
+    projected = public["features"][0]["design_records_v2"][0]
+    assert validate_record(projected) == records[0]
+    assert projected["applies_when"] == [] and projected["fallbacks"] == []
+    client = HardwareKnowledgeClient(store.settings, include_profile_evidence=False)
+    client._hardware_knowledge_store = store
+    monkeypatch.setattr(client, "hardware_profile", lambda: SimpleNamespace(gpu_name="V100", hardware_key="v100"))
+    found = client.get_design_knowledge(candidate={}, context={"hardware_key": "v100"})
+    assert len(found) == 1
+    assert found[0]["applicability"] == {"hardware_keys": ["v100"]}
+    assert found[0]["evidence_refs"] == records[0]["evidence_refs"]

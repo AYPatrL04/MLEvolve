@@ -48,6 +48,7 @@ class TrainingDiagnostics:
         self._pending_completed = 0
         self._fused_overflows = []
         self._autocast = set()
+        self._quality_parameters_checked = False
         self.device = next(model.parameters()).device
         self.seed = torch.initial_seed()
         self.torch_version = torch.__version__
@@ -69,6 +70,20 @@ class TrainingDiagnostics:
         if model.training:
             enabled = torch.is_autocast_enabled(self.device.type)
             dtype = str(torch.get_autocast_dtype(self.device.type)) if enabled else "disabled"
+            quality = self.settings.get("precision_quality")
+            if "precision_quality" in self.settings:
+                if not isinstance(quality, dict):
+                    raise RuntimeError("precision_quality must contain the recorded precision selection.")
+                expected = {"fp16_amp": "torch.float16", "bf16_amp": "torch.bfloat16"}.get(quality.get("precision"))
+                te_precision = quality.get("precision") in {"fp8_te", "mxfp8_te", "nvfp4_te"}
+                if enabled and (quality.get("status") != "accepted" or not te_precision and expected != dtype):
+                    raise RuntimeError("Autocast precision lacks an accepted matching quality comparison; use the selected FP32 fallback.")
+                if enabled and dtype == "torch.float16" and not te_precision and (self.scaler is None or not self.scaler.is_enabled()):
+                    raise RuntimeError("FP16 AMP requires an enabled GradScaler or the framework's active scaler.")
+                if not te_precision and not self._quality_parameters_checked:
+                    if any(parameter.is_floating_point() and parameter.dtype != torch.float32 for parameter in model.parameters()):
+                        raise RuntimeError("Mixed precision requires FP32 model parameters; remove whole-model dtype casts.")
+                    self._quality_parameters_checked = True
             self._autocast.add(dtype)
 
     def after_update(self):

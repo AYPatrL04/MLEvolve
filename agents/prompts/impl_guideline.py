@@ -6,7 +6,7 @@ import humanize
 
 from agents.runtime_dependencies import advertised_package_names
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
-from utils.precision_policy import CONSERVATIVE_PRECISION_INSTRUCTION
+from utils.precision_policy import CONSERVATIVE_PRECISION_INSTRUCTION, MIXED_PRECISION_INSTRUCTION
 
 
 def get_impl_guideline_from_agent(agent):
@@ -32,6 +32,8 @@ def get_impl_guideline_from_agent(agent):
     )
     if getattr(agent.acfg, "precision_optimization_mode", "normal") == "conservative":
         guideline["Conservative precision"] = [CONSERVATIVE_PRECISION_INSTRUCTION]
+    else:
+        guideline["Mixed precision safety"] = [MIXED_PRECISION_INSTRUCTION]
     return guideline
 
 
@@ -74,6 +76,8 @@ def get_impl_guideline(
         "**3. Print Validation Metric**",
         "• MUST print: `print(f'Final Validation Score: {score}')`",
         "• Score MUST be computed on hold-out validation set using proper metric formula",
+        "• For RMSE use `np.sqrt(mean_squared_error(y_true, y_pred))`; do not pass the incompatible `squared=False` keyword.",
+        "• Track the best finite validation metric, save its model checkpoint, and restore it before final validation and test prediction; do not silently use the last epoch.",
         "• CRITICAL CONSISTENCY REQUIREMENT: Ensure that validation and test inference use IDENTICAL processing logic. Any differences in how validation and test data are handled (such as post-processing, reconstruction, or formatting) can cause large performance gaps between validation and test sets. Maintain consistency across all data processing steps for both validation and test phases.",
         "",
         "**4. Scheduler Model Family Contract**",

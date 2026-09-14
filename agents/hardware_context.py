@@ -27,8 +27,8 @@ HARDWARE_DATATYPE_HEADING = "# Hardware-Aware Datatype/Precision Context"
 HARDWARE_TRAINING_HEADING = "# Hardware-Aware Training Hyperparameter Context"
 EVIDENCE_NOT_LAW_RULE = (
     "Treat recommendations as empirical evidence, not hard rules. Follow high-confidence hardware/profile "
-    "guidance by default; if a scoring reason requires deviating, state why and include a fallback such as "
-    "smaller physical batch size, gradient accumulation, AMP, reduced resolution, fewer epochs, or checkpointing."
+    "guidance only when task quality is preserved; explain deviations and retain an FP32 or checkpointing fallback. "
+    "A smaller physical batch must preserve the effective batch through accumulation; do not reduce resolution or epochs for hardware-only tuning."
 )
 CONSTRAINT_PRECEDENCE_RULE = (
     "Hardware advice never overrides task, dataset, submission, package, model-source, or filesystem constraints. "

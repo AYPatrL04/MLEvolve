@@ -111,7 +111,7 @@
       "id": "feat:fp16",
       "properties": {
         "feature_id": "fp16",
-        "design_summary": "Use supported FP16 autocast with FP32 optimizer state and loss scaling when needed to prevent gradient underflow.",
+        "design_summary": "Use FP16 autocast for eligible operations with GradScaler, FP32 model parameters and optimizer state, and FP32 sensitive reductions and metrics. Preserve the model design and retain an FP32 fallback; accept a speed optimization only after a matching task-quality comparison.",
         "name": "fp16",
         "category": "precision",
         "description": "Hardware-native FP16 Tensor Core mixed-precision training. Use AMP/autocast for forward and backward computation, framework-managed FP32 optimizer state, and loss scaling when gradients would otherwise underflow.",

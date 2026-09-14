@@ -219,9 +219,7 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
             **Key Techniques**:
             1. **Feature Extractor Pattern**: If dataset is small or domain mismatch exists → Freeze backbone + train only final layers (or feed to XGBoost/SVM).
 
-            2. **Precision**: Follow the configured precision policy and the target hardware allowlist. Use FP32 when a compatible mixed-precision training path is unavailable. DO NOT manually convert to .half().
-
-            3. **Avoid Timeouts**: #1 cause is slow data loading, NOT GPU model.
+            2. **Avoid Timeouts**: #1 cause is slow data loading, NOT GPU model.
                • Use DataLoader with num_workers>=2, pin_memory=True (NOT raw for loops)
                • For large datasets + heavy backbones: Extract & cache features to disk (.npy/.h5)
             """

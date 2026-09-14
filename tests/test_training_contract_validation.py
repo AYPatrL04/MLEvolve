@@ -62,3 +62,31 @@ def make_val_split(frame):
     issues = validate_training_contract(code)
 
     assert {issue.category for issue in issues} == {"identifier_index_split"}
+
+
+def test_amp_contract_requires_quality_selection_and_numerical_checks():
+    code = '''
+import torch
+from utils.training_diagnostics import TrainingDiagnostics
+with TrainingDiagnostics(model, optimizer) as diagnostics:
+    with torch.autocast("cuda", dtype=torch.float16):
+        loss = model(batch).sum()
+    scaler.scale(loss).backward()
+    scaler.step(optimizer)
+    scaler.update()
+    diagnostics.after_update()
+    diagnostics.report()
+'''
+    categories = {issue.category for issue in validate_training_contract(code, scheduler_enabled=False)}
+    assert categories == {"precision_quality_gate", "precision_numerical_fallback"}
+    code = code.replace("with TrainingDiagnostics(model, optimizer)", '''
+from utils.precision_quality import select_validated_precision
+decision = select_validated_precision("fp16_amp")
+settings = {"precision_quality": decision}
+with TrainingDiagnostics(model, optimizer, settings=settings)''')
+    code = code.replace('with torch.autocast("cuda", dtype=torch.float16):',
+                        'with torch.autocast("cuda", dtype=torch.float16, enabled=decision["precision"] == "fp16_amp"):')
+    code = code.replace('scaler.scale(loss).backward()', 'assert torch.isfinite(loss)\n    scaler.scale(loss).backward()')
+    assert "precision_numerical_fallback" in {issue.category for issue in validate_training_contract(code, scheduler_enabled=False)}
+    code = code.replace('scaler.step(optimizer)', 'scaler.unscale_(optimizer)\n    assert all(torch.isfinite(p.grad).all() for p in model.parameters() if p.grad is not None)\n    scaler.step(optimizer)')
+    assert validate_training_contract(code, scheduler_enabled=False) == ()
