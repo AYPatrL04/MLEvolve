@@ -9,6 +9,7 @@ qwen_model_dir=${QWEN_MODEL_DIR:-/root/downeyflyfan/qwen38-v100-int8/models/Qwen
 
 : "${SOURCE_SHA256:?Local snapshot checksum required}"
 mkdir -p "$root" /runtime
+export PYTHONUNBUFFERED=1
 exec > >(tee -a "$root/${phase}-${task}.log") 2>&1
 date -u
 
@@ -27,7 +28,11 @@ prepare_public() {
   python -c 'from deployments.prepare_kaggle_data import stage_public; stage_public({"petfinder-pawpularity-score", "nlp-getting-started"})'
 }
 
-if [[ "$phase" == prepare ]]; then
+if [[ "$phase" == data ]]; then
+  : "${KAGGLE_CONFIG_DIR:?Kaggle credentials are required for data preparation}"
+  python -u -m deployments.prepare_a100_qwen_data
+  echo "PetFinder public dataset is archived and checksummed."
+elif [[ "$phase" == prepare ]]; then
   test -d "$qwen_model_dir"
   test -n "$(find "$qwen_model_dir" -mindepth 1 -maxdepth 1 -print -quit)"
   prepare_public
@@ -40,8 +45,8 @@ if [[ "$phase" == prepare ]]; then
     tests/test_design_knowledge.py \
     tests/test_component_modularity.py \
     > "$root/regression-tests.log" 2>&1
-  python -m deployments.run_a100_qwen_task --task petfinder --prepare-only
-  python -m deployments.run_a100_qwen_task --task full --prepare-only
+  python -u -m deployments.run_a100_qwen_task --task petfinder --prepare-only
+  python -u -m deployments.run_a100_qwen_task --task full --prepare-only
   touch "$root/READY"
   echo "A100 Qwen CPU gate passed: model, public data, config and merged code."
 elif [[ "$phase" == run ]]; then
@@ -70,7 +75,8 @@ elif [[ "$phase" == run ]]; then
     sleep 5
   done
   curl --fail --silent "http://127.0.0.1:8000/health" >/dev/null
-  exec python -m deployments.run_a100_qwen_task --task "$task"
+  exec python -u -m deployments.run_a100_qwen_task --task "$task"
 else
+  echo "Expected data, prepare or run" >&2
   exit 2
 fi

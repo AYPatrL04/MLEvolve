@@ -10,6 +10,18 @@ def test_prepare_job_has_no_gpu():
     assert all("nvidia.com/a100" not in resources for resources in pod["containers"][0]["resources"].values())
 
 
+def test_data_job_has_kaggle_secret_and_no_gpu():
+    pod = manifest("data", "d" * 64)["spec"]["template"]["spec"]
+    assert "affinity" not in pod
+    assert all("nvidia.com/a100" not in resources for resources in pod["containers"][0]["resources"].values())
+    assert pod["containers"][0]["env"][1] == {
+        "name": "KAGGLE_CONFIG_DIR",
+        "value": "/credentials",
+    }
+    assert any(volume.get("secret", {}).get("secretName") == "hwdb-kaggle-20260911" for volume in pod["volumes"])
+    assert any(mount["mountPath"] == "/heldout" for mount in pod["containers"][0]["volumeMounts"])
+
+
 def test_petfinder_run_is_a100_only_and_pins_source():
     job = manifest("run", "b" * 64, "petfinder")
     assert job["spec"]["backoffLimit"] == 0

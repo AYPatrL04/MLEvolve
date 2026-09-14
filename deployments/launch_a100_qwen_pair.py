@@ -80,6 +80,30 @@ def manifest(phase: str, digest: str, task: str | None = None) -> dict:
     if task:
         command.append(task)
     environment = [{"name": "SOURCE_SHA256", "value": digest}]
+    volumes = [
+        {"name": "workspace", "persistentVolumeClaim": {"claimName": "yuze-li-vol"}},
+        {"name": "home", "persistentVolumeClaim": {"claimName": "yuw-home"}},
+        {"name": "runtime", "emptyDir": {"sizeLimit": "64Gi"}},
+        {"name": "launcher", "configMap": {"name": PREFIX + "-launcher-v1"}},
+        {"name": "shm", "emptyDir": {"medium": "Memory", "sizeLimit": "16Gi"}},
+    ]
+    if phase == "data":
+        environment.append({"name": "KAGGLE_CONFIG_DIR", "value": "/credentials"})
+        mounts.append({"name": "heldout", "mountPath": "/heldout"})
+        volumes.extend(
+            [
+                {
+                    "name": "kaggle",
+                    "secret": {"secretName": "hwdb-kaggle-20260911", "defaultMode": 256},
+                },
+                {
+                    "name": "heldout",
+                    "persistentVolumeClaim": {"claimName": "yuze-li-vol"},
+                },
+            ]
+        )
+        mounts[-1]["subPath"] = "aypatrl04-hwdb-heldout-20260911"
+        mounts.append({"name": "kaggle", "mountPath": "/credentials", "readOnly": True})
     if phase == "run":
         environment.extend(
             [
@@ -102,13 +126,7 @@ def manifest(phase: str, digest: str, task: str | None = None) -> dict:
                 "volumeMounts": mounts,
             }
         ],
-        "volumes": [
-            {"name": "workspace", "persistentVolumeClaim": {"claimName": "yuze-li-vol"}},
-            {"name": "home", "persistentVolumeClaim": {"claimName": "yuw-home"}},
-            {"name": "runtime", "emptyDir": {"sizeLimit": "64Gi"}},
-            {"name": "launcher", "configMap": {"name": PREFIX + "-launcher-v1"}},
-            {"name": "shm", "emptyDir": {"medium": "Memory", "sizeLimit": "16Gi"}},
-        ],
+        "volumes": volumes,
     }
     if phase == "run":
         pod["tolerations"] = [{"key": "nvidia.com/gpu", "operator": "Exists"}]
@@ -201,7 +219,7 @@ def ensure_absent(name: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("phase", choices=("stage", "prepare", "run"))
+    parser.add_argument("phase", choices=("stage", "data", "prepare", "run"))
     parser.add_argument("--task", choices=TASKS + ("both",), default="both")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
@@ -210,6 +228,11 @@ def main() -> None:
         stage(repo, records)
         return
     metadata = json.loads((records / "source.json").read_text())
+    if args.phase == "data":
+        ensure_absent(PREFIX + "-data")
+        apply_launcher(repo)
+        print(kubectl("create", "-f", "-", payload=json.dumps(manifest("data", metadata["sha256"]))))
+        return
     if args.phase == "prepare":
         ensure_absent(PREFIX + "-prepare")
         apply_launcher(repo)
