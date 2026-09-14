@@ -1,0 +1,81 @@
+{
+  "status": "INCONCLUSIVE",
+  "mode": "full_cpu",
+  "code_hash": "sha256:e7bc94ff3f1bddd26f67ff634fc377acdcadf9d920086e1e3eb08cc6d0c2a115",
+  "admitted": true,
+  "gpu_check_required": true,
+  "diagnostic_codes": [
+    "BAT001",
+    "GPU003"
+  ],
+  "report_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/13a7ade8ad8b4128b32cb87876f05112/report.json",
+  "summary_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/13a7ade8ad8b4128b32cb87876f05112/admission_summary.json",
+  "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+  "warning": null,
+  "internal_error": null,
+  "issues": [],
+  "advisories": [
+    {
+      "code": "BAT001",
+      "classification": "risk",
+      "message": "reshape/view appears to hard-code a configured batch size",
+      "affected_stages": [
+        "static_source"
+      ],
+      "affected_scenarios": [],
+      "facts": {
+        "literal_batch_size": 1
+      },
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/13a7ade8ad8b4128b32cb87876f05112/report_attempt_2.json#/diagnostics/0"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "BAT001",
+      "classification": "risk",
+      "message": "reshape/view appears to hard-code a configured batch size",
+      "affected_stages": [
+        "static_source"
+      ],
+      "affected_scenarios": [],
+      "facts": {
+        "literal_batch_size": 1
+      },
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/13a7ade8ad8b4128b32cb87876f05112/report_attempt_2.json#/diagnostics/1"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "BAT001",
+      "classification": "risk",
+      "message": "reshape/view appears to hard-code a configured batch size",
+      "affected_stages": [
+        "static_source"
+      ],
+      "affected_scenarios": [],
+      "facts": {
+        "literal_batch_size": 1
+      },
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/13a7ade8ad8b4128b32cb87876f05112/report_attempt_2.json#/diagnostics/2"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/13a7ade8ad8b4128b32cb87876f05112/report_attempt_2.json#/diagnostics/3"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    }
+  ]
+}

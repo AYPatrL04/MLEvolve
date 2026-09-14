@@ -1,0 +1,18 @@
+[
+  {
+    "source": "static_review",
+    "severity": "warning",
+    "category": "best_checkpoint_usage",
+    "owner": "training_evaluation",
+    "evidence": "The training loop (lines under `for epoch in range(1, planned_epochs + 1):`) only tracks running train loss; validation is evaluated once after all epochs complete, so the final (last-epoch) weights are always used for val/test inference with no comparison against an earlier better checkpoint.",
+    "repair_instruction": "If checkpoint selection is desired, evaluate validation loss each epoch and keep the state_dict with the lowest validation RMSE before running test inference; otherwise this is acceptable for a 2-epoch synthetic audit run."
+  },
+  {
+    "source": "static_review",
+    "severity": "warning",
+    "category": "hardware_execution_risk",
+    "owner": "integration",
+    "evidence": "GPU003 advisory notes `device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")` at line 286 is inconclusive under CPU-only preflight since the CUDA branch is unexercised.",
+    "repair_instruction": "No code change required; this is a standard fallback pattern. If GPU execution is later verified, confirm the model, optimizer state, and all tensors move to the same device consistently (already done here via `.to(device)` calls)."
+  }
+]

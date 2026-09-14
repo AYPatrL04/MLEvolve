@@ -1,0 +1,37 @@
+<<<<<<< SEARCH
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+_USE_TF32 = False
+if torch.cuda.is_available():
+    try:
+        major, _ = torch.cuda.get_device_capability(0)
+        _USE_TF32 = major >= 8
+    except Exception:
+        _USE_TF32 = False
+torch.backends.cuda.matmul.allow_tf32 = _USE_TF32
+torch.backends.cudnn.allow_tf32 = _USE_TF32
+=======
+# NOTE: CUDA availability probing and TF32 backend flag configuration are
+# side-effecting operations. They are deferred to the main guard below so
+# importing this module (e.g. for CPU-only CandidateAdapter preflight checks)
+# remains free of executable side effects.
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+if __name__ == "__main__":
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+=======
+if __name__ == "__main__":
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    _USE_TF32 = False
+    if torch.cuda.is_available():
+        try:
+            major, _ = torch.cuda.get_device_capability(0)
+            _USE_TF32 = major >= 8
+        except Exception:
+            _USE_TF32 = False
+    torch.backends.cuda.matmul.allow_tf32 = _USE_TF32
+    torch.backends.cudnn.allow_tf32 = _USE_TF32
+>>>>>>> REPLACE

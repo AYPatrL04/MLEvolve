@@ -1,0 +1,160 @@
+Repair only the assigned stage-owned issues in the complete merged Python script below. Preserve every other stage's behavior and public variables/interfaces. Return one or more raw SEARCH/REPLACE blocks and no prose or markdown fences. Every SEARCH block must be non-empty and copied exactly from the merged script. Keep each SEARCH span as small as safely possible. Use these exact delimiters for every block:
+<<<<<<< SEARCH
+exact original lines
+=======
+replacement lines
+>>>>>>> REPLACE
+
+{
+  "role": "training_evaluation repair specialist",
+  "stage_ownership": "Implement the training loop, validation, metric tracking, model saving, and generate submission file.",
+  "issues": [
+    {
+      "source": "model_preflight",
+      "severity": "critical",
+      "category": "preflight_aut002",
+      "owner": "training_evaluation",
+      "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py', line 211, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/4",
+      "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+    }
+  ],
+  "task_context": "Build a complete small PetFinder-style image plus tabular regression script. Input root: records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/input. train.csv has Id, twelve numeric binary metadata columns, and Pawpularity in [0,100]; test.csv omits the target. Metadata columns: ['Subject Focus', 'Eyes', 'Face', 'Near', 'Action', 'Accessory', 'Group', 'Collage', 'Human', 'Occlusion', 'Info', 'Blur']. JPEG paths are input/train/<Id>.jpg and input/test/<Id>.jpg. Use a tiny real CNN (at most two convolution layers with 8 and 16 channels), global image pooling, and a small tabular branch. Preserve image [3,256,256] and tabular [12] interfaces. Train from scratch with one train/validation split and at most two epochs. Fit preprocessing only on training data. Report RMSE in original target units and produce Id,Pawpularity test predictions. Use CPU-safe real CandidateAdapter methods; all training side effects belong inside the main guard. Target deployment is RTX 5090, but this audit will execute only CPU adapter checks, not the training entrypoint. Select precision according to the configured mode; normal mode may use FP32 when appropriate. The dataset is synthetic audit evidence, so do not claim leaderboard quality.",
+  "pipeline_decision": {},
+  "stage_notes": [],
+  "hardware_evidence": "# Design knowledge\nSource-backed reference. Current task constraints and fresh measurements take precedence.\n- Hardware: gpu_name=NVIDIA GeForce RTX 5090; architecture=blackwell; compute_capability=12.0; total_vram_mb=32768. [hardware:runtime:ed7741576b8bf10b; verified]\n- Use the same train-only preprocessing in the adapter and training path. Only when: PetFinder-style image and tabular regression on the target profile. Fallback: Rebuild features when preprocessing changes. [hardware:audit-training:b1c8975f557b215b; advisory]\n- Runtime estimate: {\"found\": false, \"reason\": \"No measured profile in this audit fixture\"}. This is an estimate, not a measured runtime for the new candidate; missing evidence does not establish a fit. [hardware:runtime_estimate:9f0c7ca997355edb; advisory]",
+  "cuda_documentation_evidence": "",
+  "ownership_guidelines": [
+    "Conservative precision is mandatory for candidate models: use float32 parameters, floating inputs, optimizer state, training, validation, and inference. Keep integer indices/labels unchanged. Disable AMP/autocast and GradScaler; do not use FP16, BF16, FP8, FP4, FP64, quantized models, or lower-precision adapters. TF32 may accelerate float32 matmul/convolution only on confirmed Ampere-or-newer CUDA hardware; otherwise use FP32. TF32 uses reduced internal mantissa precision while tensors remain float32. This rule overrides inherited code and hardware recommendations.",
+    "Your responsibility: Stage 3 hardware-aware training hyperparameter optimization. Write the training loop using the data/features, model or precision-adapted model, loss/interface, and datatype_precision variables from previous stages. Define optimizer, learning rate, weight decay, scheduler, physical batch size, gradient accumulation, dataloader workers, checkpoint cadence, validation, test inference, and `submission.csv`.",
+    "Read the Cross-Stage Note Board first and align optimizer, batch, dataloader, runtime, and fallback choices with the Stage 1 candidate target and Stage 2 precision policy.",
+    "CRITICAL: Assume all previous code steps have already been executed. Do NOT redefine or reload data/features, redesign the model/loss, undo precision-required model adapters, or replace the datatype_precision policy. Consume those variables and utilities AS-IS.",
+    "CRITICAL: Own training hyperparameters in this step: batch size, effective batch size, accumulation steps, epochs, learning rate, weight decay, scheduler, early stopping, dataloader workers, pin_memory, persistent_workers, checkpointing, and runtime logging.",
+    "CRITICAL: Use the datatype_precision variables/utilities and any precision-adapted model object for autocast, GradScaler, TF32, TE recipes, and fallback handling. Do NOT choose a different dtype policy unless the previous precision settings are impossible to use, and then keep a safe fallback.",
+    "PyTorch runtime diagnostics: import TrainingDiagnostics from utils.training_diagnostics. Inside the training entrypoint, wrap training in `with TrainingDiagnostics(model, optimizer, scaler=scaler_or_None, settings={...}) as diagnostics:` after model/optimizer initialization. Settings must include actual physical_batch_size, effective_batch_size, planned_epochs, steps_per_epoch, model_family, split_seed and precision choice/reason. Call diagnostics.after_update() once after each optimizer update ATTEMPT, after scaler.step and scaler.update (or optimizer.step); never after accumulation microbatches. The helper observes real optimizer steps, including skips, and actual autocast dtype. Call diagnostics.report(epoch=one_based_epoch) once per epoch; keep the normal epoch metric line. Save diagnostics.state_dict() with the training checkpoint and restore it using diagnostics.load_state_dict(...). Preserve these calls during merges/repairs. Do not replace missing measurements with zero. Keep the final validation score as the last line, after leaving the diagnostics context. These diagnostics also run without the scheduler.",
+    "Hardware graph contract: the stage-specific hardware node response is already attached in the Hardware/Profile Optimization Context. Do not query the hardware node again; query local feature-node details only for selected feature keys when deeper guidance is needed, and never fetch external URLs.",
+    "Note board: record how training/runtime choices preserve the Stage 1 target and use the Stage 2 precision policy.",
+    "CRITICAL: Validation metric computation must use the same prediction method as test inference, using training data only as reference, to avoid data leakage and ensure the metric reflects true generalization performance.",
+    "CRITICAL CONSISTENCY REQUIREMENT: Ensure that validation and test inference use IDENTICAL processing logic. Any differences in how validation and test data are handled can cause large performance gaps between validation and test sets.",
+    "CRITICAL: You MUST actively prevent overfitting. Use appropriate regularization, early stopping, and validation discipline without overfitting to the validation set.",
+    "CRITICAL CHECKPOINT COMPATIBILITY: When restoring a checkpoint written by this candidate and its payload includes optimizer state, metadata, NumPy values, or configuration dictionaries, call `torch.load(checkpoint_path, map_location=device, weights_only=False)`. Use this only for the candidate's own trusted local checkpoint; do not load arbitrary external files.",
+    "Do not reduce epoch count merely because physical batch increases. Keep planned epochs tied to data exposure and let validation early stopping reduce completed epochs; preserve effective batch through accumulation when possible.",
+    "CRITICAL: You MUST implement the exact evaluation metric as specified in the task description's 'Evaluation' section. Do not use dummy, simplified, or approximate metrics.",
+    "CRITICAL: The final line must be: `print(f'Final Validation Score: {score}')`. This is required for the score parser.",
+    "Hardware-aware training: optimize runtime at fixed modeling intent. Do NOT increase epochs, folds, model size, input resolution, ensemble count, TTA, dataset size, or validation workload as a hardware-only optimization unless the user explicitly asks for score improvement.",
+    "Allowed hardware optimizations in this stage: physical batch size, gradient accumulation while preserving effective batch size, dataloader workers, pin_memory, persistent_workers, channels_last, safe torch.compile, checkpointing, and runtime logging. Precision choices and precision-required model adapters must consume the datatype_precision policy.",
+    "Hardware-aware training: use the hardware/profile context to choose physical batch size, accumulation, checkpoint cadence, and dataloader settings. If choosing a riskier setting for score reasons, include an explicit fallback path for OOM/timeout such as smaller batch size, accumulation, lower resolution, fewer epochs, or checkpoint resume.",
+    "When feasible, log resolved batch size, selected precision, elapsed time, throughput, and peak CUDA memory so later scheduler graph evidence can learn from this run.",
+    "Pipeline decision: consume `training_evaluation.optimizer`, `training_evaluation.scheduler`, `training_evaluation.batch_size_policy`, `training_evaluation.dataloader_policy`, `training_evaluation.fallbacks`, and `evidence` for training, validation, checkpointing, submission generation, and runtime logging.",
+    "Pipeline decision: when evidence is missing, implement the recorded safe fallbacks rather than inventing hardware claims."
+  ],
+  "merged_script": "import os\nimport numpy as np\nimport pandas as pd\nfrom PIL import Image\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nfrom torch.utils.data import Dataset, DataLoader\n\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.metrics import mean_squared_error\n\ntry:\n    from utils.training_diagnostics import TrainingDiagnostics\nexcept Exception:\n\n    class TrainingDiagnostics:\n        def __init__(self, *args, **kwargs):\n            pass\n\n        def __enter__(self):\n            return self\n\n        def __exit__(self, exc_type, exc_val, exc_tb):\n            return False\n\n        def after_update(self):\n            pass\n\n        def report(self, epoch=None):\n            pass\n\n        def state_dict(self):\n            return {}\n\n        def load_state_dict(self, state):\n            pass\n\n\n# --------------------------------------------------------------------------------------\n# Constants (import-safe)\n# --------------------------------------------------------------------------------------\nINPUT_DIR = os.environ.get(\"MLEVOLVE_INPUT_DIR\", \"./input\")\nIMG_SIZE = 256\nMETADATA_COLS = [\n    \"Subject Focus\",\n    \"Eyes\",\n    \"Face\",\n    \"Near\",\n    \"Action\",\n    \"Accessory\",\n    \"Group\",\n    \"Collage\",\n    \"Human\",\n    \"Occlusion\",\n    \"Info\",\n    \"Blur\",\n]\nTARGET_COL = \"Pawpularity\"\nSEED = 42\n\n\n# --------------------------------------------------------------------------------------\n# Dataset (import-safe definition; no I/O side effects at import time)\n# --------------------------------------------------------------------------------------\nclass PetImageTabularDataset(Dataset):\n    def __init__(\n        self,\n        df,\n        img_dir,\n        img_mean,\n        img_std,\n        tab_mean,\n        tab_std,\n        metadata_cols,\n        target_col=None,\n        img_size=IMG_SIZE,\n    ):\n        self.df = df.reset_index(drop=True)\n        self.img_dir = img_dir\n        self.img_mean = np.asarray(img_mean, dtype=np.float32)\n        self.img_std = np.asarray(img_std, dtype=np.float32)\n        self.tab_mean = np.asarray(tab_mean, dtype=np.float32)\n        self.tab_std = np.asarray(tab_std, dtype=np.float32)\n        self.metadata_cols = metadata_cols\n        self.target_col = target_col\n        self.img_size = img_size\n\n    def __len__(self):\n        return len(self.df)\n\n    def _load_image(self, image_id):\n        path = os.path.join(self.img_dir, f\"{image_id}.jpg\")\n        img = Image.open(path).convert(\"RGB\").resize((self.img_size, self.img_size))\n        arr = np.asarray(img, dtype=np.float32) / 255.0  # HWC in [0,1]\n        arr = (arr - self.img_mean) / (self.img_std + 1e-6)\n        arr = np.transpose(arr, (2, 0, 1)).copy()  # CHW\n        return torch.from_numpy(arr).float()\n\n    def __getitem__(self, idx):\n        row = self.df.iloc[idx]\n        image_id = row[\"Id\"]\n        image = self._load_image(image_id)\n\n        tab = row[self.metadata_cols].values.astype(np.float32)\n        tab = (tab - self.tab_mean) / (self.tab_std + 1e-6)\n        tabular = torch.from_numpy(tab.copy()).float()\n\n        if self.target_col is not None:\n            target = torch.tensor(float(row[self.target_col]), dtype=torch.float32)\n            return image, tabular, target\n        else:\n            return image, tabular, str(image_id)\n\n\n# --------------------------------------------------------------------------------------\n# Model: tiny CNN (2 conv layers, 8->16 channels) + small tabular MLP branch + fusion head\n# --------------------------------------------------------------------------------------\nclass TinyPetNet(nn.Module):\n    def __init__(self, tab_dim=len(METADATA_COLS), dropout=0.3):\n        super().__init__()\n        self.conv1 = nn.Conv2d(3, 8, kernel_size=3, padding=1)\n        self.bn1 = nn.BatchNorm2d(8)\n        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, padding=1)\n        self.bn2 = nn.BatchNorm2d(16)\n        self.pool = nn.MaxPool2d(2)\n        self.global_pool = nn.AdaptiveAvgPool2d(1)\n        self.img_fc = nn.Linear(16, 16)\n\n        self.tab_fc1 = nn.Linear(tab_dim, 16)\n        self.tab_fc2 = nn.Linear(16, 16)\n\n        self.dropout = nn.Dropout(dropout)\n        self.head1 = nn.Linear(32, 16)\n        self.head2 = nn.Linear(16, 1)\n\n    def forward(self, image, tabular):\n        x = F.relu(self.bn1(self.conv1(image)))\n        x = self.pool(x)\n        x = F.relu(self.bn2(self.conv2(x)))\n        x = self.pool(x)\n        x = self.global_pool(x).flatten(1)  # [B, 16]\n        x = F.relu(self.img_fc(x))\n\n        t = F.relu(self.tab_fc1(tabular))\n        t = self.dropout(t)\n        t = F.relu(self.tab_fc2(t))\n\n        fused = torch.cat([x, t], dim=1)  # [B, 32]\n        fused = F.relu(self.head1(fused))\n        fused = self.dropout(fused)\n        out = self.head2(fused).squeeze(1)  # [B]\n        return out\n\n\n# --------------------------------------------------------------------------------------\n# CPU preflight adapter contract\n# --------------------------------------------------------------------------------------\nclass CandidateAdapter:\n    def __init__(self):\n        self.input_dir = os.environ.get(\"MLEVOLVE_INPUT_DIR\", \"./input\")\n        self.defaults = {\n            \"lr\": 1e-3,\n            \"weight_decay\": 1e-4,\n            \"dropout\": 0.3,\n            \"batch_size\": 4,\n            \"criterion\": None,\n        }\n\n    def _merge_context(self, context):\n        merged = dict(self.defaults)\n        if context:\n            merged.update(context)\n        return merged\n\n    def build_model(self, context):\n        context = self._merge_context(context)\n        model = TinyPetNet(\n            tab_dim=len(METADATA_COLS), dropout=context.get(\"dropout\", 0.3)\n        )\n        return model\n\n    def build_optimizer(self, model, context):\n        context = self._merge_context(context)\n        lr = context.get(\"lr\", 1e-3)\n        weight_decay = context.get(\"weight_decay\", 1e-4)\n        return torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)\n\n    def build_train_batch(self, scenario, device):\n        scenario = dict(scenario) if scenario else {}\n        batch_size = scenario.get(\"batch_size\", self.defaults[\"batch_size\"])\n        fixture = scenario.get(\"fixture\") or {}\n        image_shape = list(fixture.get(\"image\", [3, IMG_SIZE, IMG_SIZE]))\n        tabular_shape = list(fixture.get(\"tabular\", [len(METADATA_COLS)]))\n\n        image = torch.randn(\n            batch_size, *image_shape, dtype=torch.float32, device=device\n        )\n        tabular = torch.randn(\n            batch_size, *tabular_shape, dtype=torch.float32, device=device\n        )\n        # target contract: float32 Pawpularity-scale target in [0, 100], built separately\n        target = torch.rand(batch_size, dtype=torch.float32, device=device) * 100.0\n        return {\"image\": image, \"tabular\": tabular, \"target\": target}\n\n    def build_validation_batch(self, scenario, device):\n        return self.build_train_batch(scenario, device)\n\n    def training_step(self, model, batch, context):\n        raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\n        context = self._merge_context(context)\n        criterion = context.get(\"criterion\") or nn.MSELoss()\n        model.train()\n        preds = model(batch[\"image\"], batch[\"tabular\"])\n        loss = criterion(preds.float(), batch[\"target\"].float())\n        return loss\n\n    def validation_step(self, model, batch, context):\n        context = self._merge_context(context)\n        criterion = context.get(\"criterion\") or nn.MSELoss()\n        model.eval()\n        with torch.no_grad():\n            preds = model(batch[\"image\"], batch[\"tabular\"])\n            loss = criterion(preds.float(), batch[\"target\"].float())\n        return loss\n\n\n# --------------------------------------------------------------------------------------\n# Training / evaluation / inference entrypoint (all side effects here)\n# --------------------------------------------------------------------------------------\nif __name__ == \"__main__\":\n    np.random.seed(SEED)\n    torch.manual_seed(SEED)\n\n    device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n\n    # Conservative precision: FP32 everywhere; TF32 only on confirmed Ampere-or-newer CUDA.\n    if device.type == \"cuda\":\n        cap = torch.cuda.get_device_capability(0)\n        if cap[0] >= 8:\n            torch.backends.cuda.matmul.allow_tf32 = True\n            torch.backends.cudnn.allow_tf32 = True\n            precision_reason = (\n                \"FP32 params/compute with TF32 matmul (Ampere-or-newer CUDA detected)\"\n            )\n        else:\n            torch.backends.cuda.matmul.allow_tf32 = False\n            torch.backends.cudnn.allow_tf32 = False\n            precision_reason = \"FP32 (CUDA GPU older than Ampere; TF32 disabled)\"\n    else:\n        precision_reason = \"FP32 (CPU execution)\"\n\n    os.makedirs(\"./working\", exist_ok=True)\n    os.makedirs(\"./submission\", exist_ok=True)\n\n    train_csv_path = os.path.join(INPUT_DIR, \"train.csv\")\n    test_csv_path = os.path.join(INPUT_DIR, \"test.csv\")\n    train_img_dir = os.path.join(INPUT_DIR, \"train\")\n    test_img_dir = os.path.join(INPUT_DIR, \"test\")\n\n    train_df = pd.read_csv(train_csv_path)\n    test_df = pd.read_csv(test_csv_path)\n\n    # Single train/validation split\n    n_val = max(1, int(round(0.2 * len(train_df))))\n    train_split_df, val_split_df = train_test_split(\n        train_df, test_size=n_val, random_state=SEED, shuffle=True\n    )\n\n    # Fit tabular normalization ONLY on train split\n    tab_values = train_split_df[METADATA_COLS].values.astype(np.float32)\n    tab_mean = tab_values.mean(axis=0)\n    tab_std = tab_values.std(axis=0)\n    tab_std[tab_std < 1e-6] = 1.0\n\n    # Fit image normalization ONLY on train split\n    def compute_image_stats(df, img_dir, img_size):\n        sums = np.zeros(3, dtype=np.float32)\n        sq_sums = np.zeros(3, dtype=np.float32)\n        pixel_count = 0\n        for _, row in df.iterrows():\n            path = os.path.join(img_dir, f\"{row['Id']}.jpg\")\n            img = Image.open(path).convert(\"RGB\").resize((img_size, img_size))\n            arr = np.asarray(img, dtype=np.float32) / 255.0\n            flat = arr.reshape(-1, 3)\n            sums += flat.sum(axis=0)\n            sq_sums += (flat**2).sum(axis=0)\n            pixel_count += flat.shape[0]\n        mean = sums / pixel_count\n        var = np.maximum(sq_sums / pixel_count - mean**2, 1e-6)\n        std = np.sqrt(var)\n        return mean.astype(np.float32), std.astype(np.float32)\n\n    img_mean, img_std = compute_image_stats(train_split_df, train_img_dir, IMG_SIZE)\n\n    train_dataset = PetImageTabularDataset(\n        train_split_df,\n        train_img_dir,\n        img_mean,\n        img_std,\n        tab_mean,\n        tab_std,\n        METADATA_COLS,\n        target_col=TARGET_COL,\n        img_size=IMG_SIZE,\n    )\n    val_dataset = PetImageTabularDataset(\n        val_split_df,\n        train_img_dir,\n        img_mean,\n        img_std,\n        tab_mean,\n        tab_std,\n        METADATA_COLS,\n        target_col=TARGET_COL,\n        img_size=IMG_SIZE,\n    )\n    test_dataset = PetImageTabularDataset(\n        test_df,\n        test_img_dir,\n        img_mean,\n        img_std,\n        tab_mean,\n        tab_std,\n        METADATA_COLS,\n        target_col=None,\n        img_size=IMG_SIZE,\n    )\n\n    batch_size = max(1, min(4, len(train_dataset)))\n    train_loader = DataLoader(\n        train_dataset,\n        batch_size=batch_size,\n        shuffle=True,\n        num_workers=2,\n        drop_last=False,\n    )\n    val_loader = DataLoader(\n        val_dataset,\n        batch_size=max(1, min(4, len(val_dataset))),\n        shuffle=False,\n        num_workers=2,\n    )\n    test_loader = DataLoader(\n        test_dataset,\n        batch_size=max(1, min(4, len(test_dataset))),\n        shuffle=False,\n        num_workers=2,\n    )\n\n    adapter = CandidateAdapter()\n    run_context = {\"lr\": 1e-3, \"weight_decay\": 1e-4, \"dropout\": 0.3}\n    model = adapter.build_model(run_context).to(device)\n    optimizer = adapter.build_optimizer(model, run_context)\n    criterion = nn.MSELoss()\n\n    planned_epochs = 2\n    steps_per_epoch = len(train_loader)\n    settings = {\n        \"physical_batch_size\": batch_size,\n        \"effective_batch_size\": batch_size,\n        \"planned_epochs\": planned_epochs,\n        \"steps_per_epoch\": steps_per_epoch,\n        \"model_family\": \"TinyPetNet-CNN8-16-Tabular\",\n        \"split_seed\": SEED,\n        \"precision\": \"fp32\",\n        \"precision_reason\": precision_reason,\n    }\n\n    with TrainingDiagnostics(\n        model, optimizer, scaler=None, settings=settings\n    ) as diagnostics:\n        for epoch in range(planned_epochs):\n            model.train()\n            running_loss = 0.0\n            n_batches = 0\n            for image, tabular, target in train_loader:\n                image = image.to(device)\n                tabular = tabular.to(device)\n                target = target.to(device)\n\n                optimizer.zero_grad()\n                batch = {\"image\": image, \"tabular\": tabular, \"target\": target}\n                loss = adapter.training_step(model, batch, {\"criterion\": criterion})\n                loss.backward()\n                optimizer.step()\n                diagnostics.after_update()\n\n                running_loss += loss.item()\n                n_batches += 1\n\n            avg_train_loss = running_loss / max(1, n_batches)\n            print(\n                f\"Epoch {epoch + 1}/{planned_epochs} - train_mse: {avg_train_loss:.4f}\"\n            )\n            diagnostics.report(epoch=epoch + 1)\n\n    # Validation: real model forward pass, RMSE in original Pawpularity units\n    model.eval()\n    val_preds_list = []\n    val_targets_list = []\n    with torch.no_grad():\n        for image, tabular, target in val_loader:\n            image = image.to(device)\n            tabular = tabular.to(device)\n            preds = model(image, tabular)\n            val_preds_list.append(preds.cpu().numpy())\n            val_targets_list.append(target.numpy())\n\n    val_preds = np.concatenate(val_preds_list)\n    val_targets = np.concatenate(val_targets_list)\n    val_preds_clipped = np.clip(val_preds, 0.0, 100.0)\n    rmse = float(np.sqrt(mean_squared_error(val_targets, val_preds_clipped)))\n\n    # Test inference: identical preprocessing/model path as validation\n    test_ids = []\n    test_preds_list = []\n    with torch.no_grad():\n        for image, tabular, ids in test_loader:\n            image = image.to(device)\n            tabular = tabular.to(device)\n            preds = model(image, tabular)\n            test_preds_list.append(preds.cpu().numpy())\n            test_ids.extend(list(ids))\n\n    test_preds = np.concatenate(test_preds_list)\n    test_preds = np.clip(test_preds, 0.0, 100.0)\n\n    submission = pd.DataFrame({\"Id\": test_ids, \"Pawpularity\": test_preds})\n    submission.to_csv(\"./submission/submission.csv\", index=False)\n\n    print(f\"Final Validation Score: {rmse}\")\n",
+  "preflight_advisories": [
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 236
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/0"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "CHK001",
+      "classification": "inconclusive",
+      "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "affected_stages": [
+        "abstract_forward"
+      ],
+      "location": {
+        "file": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py",
+        "line": 211,
+        "function": "training_step"
+      },
+      "exception_type": "RuntimeError",
+      "affected_scenarios": [
+        {
+          "batch_size": 1,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        },
+        {
+          "batch_size": 2,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        },
+        {
+          "batch_size": 4,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        }
+      ],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/1",
+        "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/2",
+        "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/3"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    }
+  ],
+  "advisory_rule": "These risks and unverified checks are context, not additional repair requests; preserve their uncertainty.",
+  "execution_backend": "Direct subprocess execution; no scheduler hooks or scheduler-owned controls are required."
+}

@@ -1,0 +1,206 @@
+{
+  "status": "FAIL",
+  "mode": "full_cpu",
+  "code_hash": "sha256:fa51211bc2415716b848a2b61f7d13166f69228d6c0bf25fae0a0fe6f16a9205",
+  "admitted": false,
+  "gpu_check_required": true,
+  "diagnostic_codes": [
+    "AUT002",
+    "CHK001",
+    "GPU003",
+    "MLE_IMPORT001"
+  ],
+  "report_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report.json",
+  "summary_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/admission_summary.json",
+  "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+  "warning": null,
+  "internal_error": null,
+  "issues": [
+    {
+      "source": "model_preflight",
+      "severity": "critical",
+      "category": "preflight_aut002",
+      "owner": "training_evaluation",
+      "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/candidate/candidate.py', line 236, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/7",
+      "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+    },
+    {
+      "source": "model_preflight",
+      "severity": "critical",
+      "category": "preflight_import_safety",
+      "owner": "integration",
+      "evidence": "Executable import-time statements remain outside the main guard at line(s): 51.",
+      "repair_instruction": "The main guard already exists. Move each listed side-effecting call into that existing main guard while keeping lightweight constants and definitions importable. Calling the wrapper at module scope remains unsafe, so merely wrapping the same operation in a helper does not repair it. Do not add, remove, or duplicate the existing main guard."
+    }
+  ],
+  "advisories": [
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 49
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/0"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 51
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/1"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "CHK001",
+      "classification": "inconclusive",
+      "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "affected_stages": [
+        "abstract_forward"
+      ],
+      "location": {
+        "file": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/candidate/candidate.py",
+        "line": 236,
+        "function": "training_step"
+      },
+      "exception_type": "RuntimeError",
+      "affected_scenarios": [
+        {
+          "batch_size": 1,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        },
+        {
+          "batch_size": 2,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        },
+        {
+          "batch_size": 4,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        },
+        {
+          "batch_size": 8,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        },
+        {
+          "batch_size": 16,
+          "fixture": {
+            "image": [
+              3,
+              256,
+              256
+            ],
+            "tabular": [
+              12
+            ]
+          },
+          "input_shape": [
+            3,
+            256,
+            256
+          ],
+          "mode": "train",
+          "precision": "fp32",
+          "shape_name": "image"
+        }
+      ],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/2",
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/3",
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/4",
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/5",
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/6"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    }
+  ]
+}

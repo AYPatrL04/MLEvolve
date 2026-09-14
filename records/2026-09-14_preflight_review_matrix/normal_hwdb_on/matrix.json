@@ -1,0 +1,550 @@
+{
+  "provider": "Claude CLI Sonnet, text-only transport",
+  "results": [
+    {
+      "cell": "normal_hwdb_on",
+      "precision": "normal",
+      "hardware_enabled": true,
+      "assertions": {
+        "one_initial_generation": true,
+        "single_pass": true,
+        "blocked_candidate_skips_review": true,
+        "injected_failure_reproduced": true,
+        "debug_removes_injected_failure": true,
+        "review_follows_fresh_admission": true,
+        "review_receives_preflight_evidence": true,
+        "final_review_approved": true,
+        "final_code_admitted": true,
+        "unchanged_code_reuses_preflight": true,
+        "cpu_adapter_checks_passed": true,
+        "preflight_history_preserved": true,
+        "knowledge_not_duplicated": true,
+        "hardware_toggle_respected": true,
+        "no_unresolved_critical_issues": true,
+        "cpu_only": true,
+        "completed_without_error": true
+      },
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 0.0031310890044551343,
+          "duration_seconds": 128.24311791799846
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 128.4617972699998,
+          "duration_seconds": 17.784078702999977
+        },
+        {
+          "name": "repair",
+          "start_seconds": 146.47749271700013,
+          "duration_seconds": 2.7462100010016
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 149.2814642470039,
+          "duration_seconds": 17.42533528900094
+        },
+        {
+          "name": "review",
+          "start_seconds": 166.79858324100496,
+          "duration_seconds": 33.25369119699462
+        }
+      ],
+      "checks": [
+        {
+          "index": 1,
+          "node_id": "8eebe4ec8fdc4d6385f04d577e50be46",
+          "start_seconds": 128.4617972699998,
+          "duration_seconds": 17.784078702999977,
+          "status": "FAIL",
+          "mode": "full_cpu",
+          "code_hash": "sha256:473391956492ff78a90bac4db067ee0925e6c3f133d1655ebb29f2ef26a29be6",
+          "admitted": false,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "AUT002",
+            "CHK001",
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [
+            {
+              "source": "model_preflight",
+              "severity": "critical",
+              "category": "preflight_aut002",
+              "owner": "training_evaluation",
+              "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/candidate/candidate.py', line 193, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/6",
+              "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+            }
+          ],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 287
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "CHK001",
+              "classification": "inconclusive",
+              "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+              "affected_stages": [
+                "abstract_forward"
+              ],
+              "location": {
+                "file": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/candidate/candidate.py",
+                "line": 193,
+                "function": "training_step"
+              },
+              "exception_type": "RuntimeError",
+              "affected_scenarios": [
+                {
+                  "batch_size": 1,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 2,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 4,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 8,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 16,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                }
+              ],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/1",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/2",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/3",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/4",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/5"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/checks/01_report.json",
+          "report_sha256": "b341adfd2fdb1bfefa86c744a635dfe5f5bb7920d2a333a02eb020803d0220b6"
+        },
+        {
+          "index": 2,
+          "node_id": "ebe68dc34adb44a49032622cf02ea448",
+          "start_seconds": 149.2814642470039,
+          "duration_seconds": 17.42533528900094,
+          "status": "INCONCLUSIVE",
+          "mode": "full_cpu",
+          "code_hash": "sha256:117313baf39beb247b7ce60b10570bf271642952bc3688225da4293855b56409",
+          "admitted": true,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 286
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/checks/02_report.json",
+          "report_sha256": "282a95abfe4f199c3522146561b715be14ce3774724b416c8d14369b993383d1"
+        }
+      ],
+      "review_entries": [
+        {
+          "node_id": "ebe68dc34adb44a49032622cf02ea448",
+          "start_seconds": 166.70719736799947,
+          "admitted": true,
+          "status": "INCONCLUSIVE",
+          "fresh": true,
+          "code_hash": "sha256:117313baf39beb247b7ce60b10570bf271642952bc3688225da4293855b56409",
+          "evidence_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/report_attempt_0.json"
+        }
+      ],
+      "generation_strategy": "single_pass",
+      "initial_generation_calls": 1,
+      "final_review_status": "approved",
+      "final_preflight_status": "INCONCLUSIVE",
+      "gpu_check_required": true,
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 1,
+        "precision": 1,
+        "training": 1
+      },
+      "duration_seconds": 200.26183660000243,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 18188,
+          "prefix": "01_draft",
+          "started": 39787.256082556,
+          "response_chars": 13239,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 8124,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 16254,
+            "output_tokens_details": {
+              "thinking_tokens": 10758
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 8124,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 16254,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 8124,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 8124
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5616,
+              "outputTokens": 16,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.0056960000000000005,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 16254,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 8124,
+              "webSearchRequests": 0,
+              "costUSD": 0.19504000000000002,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 128.24277746400185
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 27474,
+          "prefix": "02_repair",
+          "started": 39933.730412354,
+          "response_chars": 277,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 12520,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 116,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 12520,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 116,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 12520,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 12520
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 9223,
+              "outputTokens": 18,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.009313,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 116,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 12520,
+              "webSearchRequests": 0,
+              "costUSD": 0.051244,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 2.745810385000368
+        },
+        {
+          "role": "review",
+          "prompt_chars": 27228,
+          "prefix": "03_review",
+          "started": 39954.051575175,
+          "response_chars": 1955,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 12901,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 3080,
+            "output_tokens_details": {
+              "thinking_tokens": 2325
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 12901,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 3080,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 12901,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 12901
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 8827,
+              "outputTokens": 18,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.008917,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 3080,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 12901,
+              "webSearchRequests": 0,
+              "costUSD": 0.082408,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 33.25320336400182
+        }
+      ],
+      "hardware_calls": [
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge"
+      ],
+      "evidence_tier": "Real controller, Sonnet responses, CPU checks; fixture RTX 5090 knowledge; no training entrypoint or GPU execution"
+    }
+  ]
+}

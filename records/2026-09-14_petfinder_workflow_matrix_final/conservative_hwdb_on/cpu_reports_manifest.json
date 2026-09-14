@@ -1,0 +1,37 @@
+[
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/0f976839f528438d9359d0c55b48d000/report_attempt_3.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/cpu_reports/0f976839f528438d9359d0c55b48d000_report_attempt_3.json",
+    "sha256": "1dff58fb2de80ac8ddbfa9b12055a4646a0a336ca0fe09aac446ab64d3b417dd"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/340c5630ab3a41e398748d6102d28d55/report_attempt_4.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/cpu_reports/340c5630ab3a41e398748d6102d28d55_report_attempt_4.json",
+    "sha256": "b09edec8dd2d092cf1ac4931e929c3d2bc888ef3397abb724e368b802e82c738"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/6118075536094463b22317c1e81579b5/report_attempt_3.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/cpu_reports/6118075536094463b22317c1e81579b5_report_attempt_3.json",
+    "sha256": "94a804dc1241cc9f7eee836a7f8812151753928b396be424cae8c9c897a7dd7c"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/6ca41ba8ec36419bb237e1f95a78afb4/report_attempt_4.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/cpu_reports/6ca41ba8ec36419bb237e1f95a78afb4_report_attempt_4.json",
+    "sha256": "11f9a6f794e3306b5340be23a1e044de0ed0a9f5b9ec10111990304a29ca9c24"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/b2a19232b3d1423b875798d290d019a2/report_attempt_2.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/cpu_reports/b2a19232b3d1423b875798d290d019a2_report_attempt_2.json",
+    "sha256": "e183a21a3e22748ef00c81b533fe55f798b926807b69d60a253b5e38113bd40f"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/dc1a7f905d734c94a7b4bed5a660fe7d/report_attempt_0.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/cpu_reports/dc1a7f905d734c94a7b4bed5a660fe7d_report_attempt_0.json",
+    "sha256": "068703cba4153930c6fc52b1758f5ca419a9c1b2ad380a3e7841c9a5a1e7ea81"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/dc1a7f905d734c94a7b4bed5a660fe7d/report_attempt_1.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/cpu_reports/dc1a7f905d734c94a7b4bed5a660fe7d_report_attempt_1.json",
+    "sha256": "2d1cb1399d80e9c3388ed918833ffe234e111598b158d60091d2e96f4a28e2f3"
+  }
+]

@@ -1,0 +1,345 @@
+{
+  "cell": "normal_hwdb_on",
+  "precision": "normal",
+  "hardware_enabled": true,
+  "stages": [
+    {
+      "name": "draft",
+      "start_seconds": 2.9676004487555474e-05,
+      "duration_seconds": 135.29325416199572
+    },
+    {
+      "name": "draft_preflight",
+      "start_seconds": 135.29344226800458,
+      "duration_seconds": 16.113647779995517
+    },
+    {
+      "name": "injected_preflight",
+      "start_seconds": 151.40946233000432,
+      "duration_seconds": 15.678857061000599
+    },
+    {
+      "name": "resume_preflight",
+      "start_seconds": 167.08867937300238,
+      "duration_seconds": 15.430097930999182
+    },
+    {
+      "name": "feedback",
+      "start_seconds": 182.57579308300046,
+      "duration_seconds": 38.24763973199879
+    },
+    {
+      "name": "debug",
+      "start_seconds": 220.82344279399695,
+      "duration_seconds": 13.595548493001843
+    },
+    {
+      "name": "repaired_preflight",
+      "start_seconds": 234.41912701399997,
+      "duration_seconds": 18.063157010001305
+    }
+  ],
+  "assertions": {
+    "one_initial_generation": true,
+    "single_pass": true,
+    "adapter_complete": true,
+    "candidate_failure_reproduced": true,
+    "feedback_provider_succeeded": true,
+    "feedback_identifies_failure": true,
+    "cpu_gate_admitted_repair": true,
+    "precision_policy_valid": true,
+    "knowledge_toggle_respected": true,
+    "all_subjects_with_conditions": true,
+    "cpu_only": true,
+    "cpu_adapter_checks_passed": true,
+    "knowledge_not_duplicated": true
+  },
+  "initial_generation_calls": 1,
+  "generation_strategy": "single_pass",
+  "draft_preflight_status": "FAIL",
+  "duration_seconds": 252.53929593799694,
+  "calls": [
+    {
+      "role": "draft",
+      "prompt_chars": 18008,
+      "prefix": "01_draft",
+      "started": 33459.95632735,
+      "response_chars": 15327,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 8075,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 17149,
+        "output_tokens_details": {
+          "thinking_tokens": 10982
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 8075,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 17149,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 8075,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 8075
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 5579,
+          "outputTokens": 17,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.005664,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5": {
+          "inputTokens": 2,
+          "outputTokens": 17149,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 8075,
+          "webSearchRequests": 0,
+          "costUSD": 0.203794,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-sonnet-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "ok": true,
+      "duration_seconds": 135.10050511699956
+    },
+    {
+      "role": "feedback",
+      "prompt_chars": 21904,
+      "prefix": "continuation_1/01_feedback",
+      "started": 33964.603965871,
+      "response_chars": 1694,
+      "usage": {
+        "input_tokens": 8,
+        "cache_creation_input_tokens": 14083,
+        "cache_read_input_tokens": 40647,
+        "output_tokens": 4310,
+        "output_tokens_details": {
+          "thinking_tokens": 1479
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 14083,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 778,
+            "cache_read_input_tokens": 14347,
+            "cache_creation_input_tokens": 933,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 933
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 7904,
+          "outputTokens": 18,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.007994,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5": {
+          "inputTokens": 8,
+          "outputTokens": 4310,
+          "cacheReadInputTokens": 40647,
+          "cacheCreationInputTokens": 14083,
+          "webSearchRequests": 0,
+          "costUSD": 0.10757739999999999,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-sonnet-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "ok": true,
+      "duration_seconds": 38.245265486999415
+    },
+    {
+      "role": "repair",
+      "prompt_chars": 25027,
+      "prefix": "continuation_1/02_repair",
+      "started": 34002.905934832,
+      "response_chars": 645,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 11733,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 1394,
+        "output_tokens_details": {
+          "thinking_tokens": 1183
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 11733,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1394,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 11733,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 11733
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 8678,
+          "outputTokens": 19,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.008773,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5": {
+          "inputTokens": 2,
+          "outputTokens": 1394,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 11733,
+          "webSearchRequests": 0,
+          "costUSD": 0.060876,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-sonnet-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "ok": true,
+      "duration_seconds": 13.508770631997322
+    }
+  ],
+  "hardware_calls": [
+    "get_optimization_context",
+    "get_design_knowledge",
+    "get_optimization_context",
+    "get_design_knowledge",
+    "get_optimization_context",
+    "get_design_knowledge",
+    "get_optimization_context",
+    "get_design_knowledge",
+    "get_optimization_context",
+    "get_design_knowledge",
+    "get_optimization_context",
+    "get_design_knowledge"
+  ],
+  "target_profile": "RTX 5090 32GB",
+  "evidence_tier": "Real Sonnet agent responses, fixture hardware knowledge, real CPU adapter checks; no GPU or training entrypoint execution",
+  "feedback_summary": "The candidate failed CPU preflight (status=FAIL, admitted=False) due to a DAT002 data-contract violation: the manifest declares an expected target dtype but the CandidateAdapter's batch-building logic omits the 'target' tensor whenever the preflight fixture spec doesn't explicitly include it, breaking data_contract, abstract_forward, cpu_training, and validation checks. Because the candidate was never admitted, no actual GPU training/evaluation occurred and no validation RMSE was produced.",
+  "feedback_issues": [
+    {
+      "source": "model_preflight",
+      "severity": "critical",
+      "category": "preflight_dat002",
+      "owner": "model_design",
+      "evidence": "[DAT002] manifest declares target_dtype but no target tensor was found\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 2, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 4, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 8, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 16, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"validation\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nFacts: {\"expected_target_dtype\": \"float32\"}\nAffected checks: data_contract, abstract_forward, cpu_training, validation\nReproduction: model-preflight check preflight.yaml --only data_contract\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/1, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/2, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/3, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/4, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/5, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/6, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/7, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/8",
+      "repair_instruction": "Repair the confirmed data_contract defect [DAT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+    },
+    {
+      "source": "runtime",
+      "severity": "critical",
+      "category": "preflight_dat002_data_contract",
+      "owner": "integration",
+      "evidence": "CPU preflight status=FAIL, admitted=False. DAT002: 'manifest declares target_dtype but no target tensor was found' across data_contract, abstract_forward, cpu_training, and validation checks for both train and validation scenarios. The CandidateAdapter._build_batch method only populates dict keys present in scenario['fixture'] (e.g. {'image':[3,256,256], 'tabular':[12]}), which omits the 'target' key whenever the preflight harness supplies a fixture spec without an explicit 'target' entry, so downstream training_step/validation_step cannot locate batch['target'] as required by the declared expected_target_dtype=float32 contract.",
+      "repair_instruction": "Update CandidateAdapter._build_batch (and build_train_batch/build_validation_batch) to always synthesize a 'target' tensor with the manifest-declared dtype (float32) regardless of whether 'target' is present in scenario['fixture'], so the batch dict satisfies the data_contract check across all batch_size/mode scenarios."
+    },
+    {
+      "source": "runtime_validator",
+      "severity": "critical",
+      "category": "missing_metric",
+      "owner": "training_evaluation",
+      "evidence": "Execution output did not contain a usable validation metric.",
+      "repair_instruction": "Compute the exact task metric and print it in the required final score format."
+    },
+    {
+      "source": "runtime_validator",
+      "severity": "critical",
+      "category": "missing_submission",
+      "owner": "training_evaluation",
+      "evidence": "Execution did not create the required submission CSV.",
+      "repair_instruction": "Generate ./submission/submission.csv from real test inference using the required columns."
+    }
+  ],
+  "final_code_ref": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/continuation_1/repaired.py",
+  "final_preflight_ref": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/continuation_1/repaired_preflight.json",
+  "precision_issues": [],
+  "repaired_preflight_status": "INCONCLUSIVE",
+  "initial_audit_error": "StopIteration: ",
+  "timing_scope": "active audit phases; excludes idle time before continuation",
+  "cpu_stage_statuses": {
+    "static_source": "INCONCLUSIVE",
+    "hardware": "PASS",
+    "construction": "PASS",
+    "data_contract": "PASS",
+    "abstract_forward": "PASS",
+    "cpu_training": "PASS",
+    "validation": "PASS",
+    "memory": "PASS"
+  },
+  "knowledge_record_occurrences": {
+    "architecture": 1,
+    "precision": 1,
+    "training": 1
+  }
+}

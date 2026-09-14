@@ -1,0 +1,10 @@
+[
+  {
+    "source": "static_review",
+    "severity": "warning",
+    "category": "hardware_execution_risk",
+    "owner": "integration",
+    "evidence": "DEVICE = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\") at line 52 is flagged by preflight advisory GPU003 as inconclusive since the CUDA branch is not exercised by the CPU-only preflight run.",
+    "repair_instruction": "No fix required now; when the GPU execution stage runs, confirm the CUDA branch initializes correctly with the same batch size and tiny model without additional verification steps."
+  }
+]

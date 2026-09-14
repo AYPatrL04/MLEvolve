@@ -1,0 +1,17 @@
+[
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/13a7ade8ad8b4128b32cb87876f05112/report_attempt_2.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/cpu_reports/13a7ade8ad8b4128b32cb87876f05112_report_attempt_2.json",
+    "sha256": "b13318e828479c9a839ba259941802333c51c9aee3137420f85c235d218c5e61"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/29de4a857fd9408c8ba709f0d368d83a/report_attempt_0.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/cpu_reports/29de4a857fd9408c8ba709f0d368d83a_report_attempt_0.json",
+    "sha256": "0713b027c35f3ce89c7b4f534886c1f795740a97ec1133b77a79809e84c5eb91"
+  },
+  {
+    "source": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/29de4a857fd9408c8ba709f0d368d83a/report_attempt_1.json",
+    "copy": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/cpu_reports/29de4a857fd9408c8ba709f0d368d83a_report_attempt_1.json",
+    "sha256": "ba3236cfce0e1c0ea5094a8b3ab9972f183881cd62c8a37177adc6924078993d"
+  }
+]

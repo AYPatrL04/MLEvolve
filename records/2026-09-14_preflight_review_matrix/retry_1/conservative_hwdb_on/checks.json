@@ -1,0 +1,185 @@
+[
+  {
+    "index": 1,
+    "node_id": "7cde654a9e104221bac55e10c341e482",
+    "start_seconds": 144.7383907149997,
+    "duration_seconds": 13.109674687999359,
+    "status": "FAIL",
+    "mode": "full_cpu",
+    "code_hash": "sha256:40b5391a1074f00f077c9a08dcfec890f559ac0635bcaab6d0caf77cbe4bdc5a",
+    "admitted": false,
+    "gpu_check_required": true,
+    "diagnostic_codes": [
+      "AUT002",
+      "CHK001",
+      "GPU003"
+    ],
+    "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json",
+    "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/admission_summary.json",
+    "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+    "warning": null,
+    "internal_error": null,
+    "issues": [
+      {
+        "source": "model_preflight",
+        "severity": "critical",
+        "category": "preflight_aut002",
+        "owner": "training_evaluation",
+        "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py', line 211, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/4",
+        "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+      }
+    ],
+    "advisories": [
+      {
+        "code": "GPU003",
+        "classification": "inconclusive",
+        "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+        "affected_stages": [
+          "static_source"
+        ],
+        "location": {
+          "file": "candidate.py",
+          "line": 236
+        },
+        "exception_type": null,
+        "affected_scenarios": [],
+        "facts": {},
+        "evidence_refs": [
+          "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/0"
+        ],
+        "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+      },
+      {
+        "code": "CHK001",
+        "classification": "inconclusive",
+        "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+        "affected_stages": [
+          "abstract_forward"
+        ],
+        "location": {
+          "file": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py",
+          "line": 211,
+          "function": "training_step"
+        },
+        "exception_type": "RuntimeError",
+        "affected_scenarios": [
+          {
+            "batch_size": 1,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          {
+            "batch_size": 2,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          {
+            "batch_size": 4,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          }
+        ],
+        "facts": {},
+        "evidence_refs": [
+          "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/1",
+          "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/2",
+          "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/3"
+        ],
+        "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+      }
+    ],
+    "report_copy": "records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/checks/01_report.json",
+    "report_sha256": "88fb8b8902d0b4dc9f327ac28885c8afb09dee2376ffd33543166c00115756ee"
+  },
+  {
+    "index": 2,
+    "node_id": "c88c42e10c374461b5c52f0b50e25dbb",
+    "start_seconds": 172.52240027599328,
+    "duration_seconds": 13.205161130004853,
+    "status": "INCONCLUSIVE",
+    "mode": "full_cpu",
+    "code_hash": "sha256:bdadfc1ec066d2c8e634273296b095e63d0c83532a0550e1fed4b1e7dc1c3f68",
+    "admitted": true,
+    "gpu_check_required": true,
+    "diagnostic_codes": [
+      "GPU003"
+    ],
+    "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/c88c42e10c374461b5c52f0b50e25dbb/report_attempt_0.json",
+    "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/c88c42e10c374461b5c52f0b50e25dbb/admission_summary.json",
+    "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+    "warning": null,
+    "internal_error": null,
+    "issues": [],
+    "advisories": [
+      {
+        "code": "GPU003",
+        "classification": "inconclusive",
+        "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+        "affected_stages": [
+          "static_source"
+        ],
+        "location": {
+          "file": "candidate.py",
+          "line": 235
+        },
+        "exception_type": null,
+        "affected_scenarios": [],
+        "facts": {},
+        "evidence_refs": [
+          "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/c88c42e10c374461b5c52f0b50e25dbb/report_attempt_0.json#/diagnostics/0"
+        ],
+        "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+      }
+    ],
+    "report_copy": "records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/checks/02_report.json",
+    "report_sha256": "0831ecc494290ba01171ce6ed15a3596a0237c847a79f554748dc7f2fb4244d1"
+  }
+]

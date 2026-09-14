@@ -1,0 +1,1609 @@
+{
+  "provider": "Claude CLI Sonnet, text-only transport",
+  "results": [
+    {
+      "cell": "normal_hwdb_off",
+      "precision": "normal",
+      "hardware_enabled": false,
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 7.460100459866226e-05,
+          "duration_seconds": 159.31167066600028
+        },
+        {
+          "name": "draft_preflight",
+          "start_seconds": 159.31186846000492,
+          "duration_seconds": 15.98604059599893
+        },
+        {
+          "name": "injected_preflight",
+          "start_seconds": 175.3003370689985,
+          "duration_seconds": 13.82634966000478
+        },
+        {
+          "name": "feedback",
+          "start_seconds": 189.12697190000472,
+          "duration_seconds": 16.072147128994402
+        },
+        {
+          "name": "debug",
+          "start_seconds": 205.1991304309995,
+          "duration_seconds": 2.74017671400361
+        },
+        {
+          "name": "repaired_preflight",
+          "start_seconds": 207.93944086800184,
+          "duration_seconds": 13.877741634998529
+        }
+      ],
+      "assertions": {
+        "one_initial_generation": true,
+        "single_pass": true,
+        "adapter_complete": true,
+        "induced_failure_reproduced": true,
+        "feedback_provider_succeeded": true,
+        "feedback_identifies_failure": true,
+        "repair_removes_injected_failure": true,
+        "cpu_gate_admitted_repair": true,
+        "precision_policy_valid": true,
+        "knowledge_toggle_respected": true,
+        "all_subjects_with_conditions": true,
+        "cpu_only": true,
+        "cpu_adapter_checks_passed": true,
+        "knowledge_not_duplicated": true
+      },
+      "initial_generation_calls": 1,
+      "generation_strategy": "single_pass",
+      "draft_preflight_status": "INCONCLUSIVE",
+      "feedback_summary": "CPU preflight failed because CandidateAdapter.training_step() unconditionally raises RuntimeError('AUDIT_INJECTED_LOSS_PATH') as its first statement, before any real loss computation code executes. This causes the cpu_training preflight check to fail and blocks admission, so the candidate never proceeds to actual GPU training or produces a validation metric.",
+      "feedback_issues": [
+        {
+          "source": "model_preflight",
+          "severity": "critical",
+          "category": "preflight_aut002",
+          "owner": "training_evaluation",
+          "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/29de4a857fd9408c8ba709f0d368d83a/candidate/candidate.py', line 245, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/29de4a857fd9408c8ba709f0d368d83a/report_attempt_1.json#/diagnostics/7",
+          "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+        },
+        {
+          "source": "runtime",
+          "severity": "critical",
+          "category": "preflight_training_step_failure",
+          "owner": "training_evaluation",
+          "evidence": "training_step() in CandidateAdapter begins with 'raise RuntimeError(\"AUDIT_INJECTED_LOSS_PATH\")' before the real forward/loss logic, causing CPU preflight's cpu_training check to fail with RuntimeError: AUDIT_INJECTED_LOSS_PATH at candidate.py line 245; preflight status=FAIL, admitted=False.",
+          "repair_instruction": "Remove the injected 'raise RuntimeError(\"AUDIT_INJECTED_LOSS_PATH\")' line from CandidateAdapter.training_step so the method executes its real forward pass and MSE loss computation (image/tabular forward, criterion(pred, target)) as originally intended, then rerun CPU preflight to confirm cpu_training passes before admission."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_metric",
+          "owner": "training_evaluation",
+          "evidence": "Execution output did not contain a usable validation metric.",
+          "repair_instruction": "Compute the exact task metric and print it in the required final score format."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_submission",
+          "owner": "training_evaluation",
+          "evidence": "Execution did not create the required submission CSV.",
+          "repair_instruction": "Generate ./submission/submission.csv from real test inference using the required columns."
+        }
+      ],
+      "repaired_preflight_status": "INCONCLUSIVE",
+      "precision_issues": [],
+      "duration_seconds": 221.85097304000374,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 15509,
+          "prefix": "01_draft",
+          "started": 33209.088349128,
+          "response_chars": 17146,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 7165,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 19071,
+            "output_tokens_details": {
+              "thinking_tokens": 12201
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 7165,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 19071,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 7165,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 7165
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 4967,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.005052,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 19071,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 7165,
+              "webSearchRequests": 0,
+              "costUSD": 0.219374,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 159.1069107200019
+        },
+        {
+          "role": "feedback",
+          "prompt_chars": 23526,
+          "prefix": "02_feedback",
+          "started": 33398.215960912,
+          "response_chars": 1234,
+          "usage": {
+            "input_tokens": 4,
+            "cache_creation_input_tokens": 13259,
+            "cache_read_input_tokens": 12112,
+            "output_tokens": 1683,
+            "output_tokens_details": {
+              "thinking_tokens": 545
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 13259,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 656,
+                "cache_read_input_tokens": 12112,
+                "cache_creation_input_tokens": 1147,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 1147
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 8334,
+              "outputTokens": 23,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.008449,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 4,
+              "outputTokens": 1683,
+              "cacheReadInputTokens": 12112,
+              "cacheCreationInputTokens": 13259,
+              "webSearchRequests": 0,
+              "costUSD": 0.0722964,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 16.070182018003834
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 29987,
+          "prefix": "03_repair",
+          "started": 33414.287485452,
+          "response_chars": 263,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 13400,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 118,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 13400,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 118,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 13400,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 13400
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 9980,
+              "outputTokens": 18,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.010069999999999999,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 118,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 13400,
+              "webSearchRequests": 0,
+              "costUSD": 0.054784,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 2.7066167290031444
+        }
+      ],
+      "hardware_calls": [],
+      "target_profile": "RTX 5090 32GB",
+      "evidence_tier": "Real Sonnet agent responses, fixture hardware knowledge, real CPU adapter checks; no GPU or training entrypoint execution",
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 0,
+        "precision": 0,
+        "training": 0
+      }
+    },
+    {
+      "cell": "normal_hwdb_on",
+      "precision": "normal",
+      "hardware_enabled": true,
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 2.9676004487555474e-05,
+          "duration_seconds": 135.29325416199572
+        },
+        {
+          "name": "draft_preflight",
+          "start_seconds": 135.29344226800458,
+          "duration_seconds": 16.113647779995517
+        },
+        {
+          "name": "injected_preflight",
+          "start_seconds": 151.40946233000432,
+          "duration_seconds": 15.678857061000599
+        },
+        {
+          "name": "resume_preflight",
+          "start_seconds": 167.08867937300238,
+          "duration_seconds": 15.430097930999182
+        },
+        {
+          "name": "feedback",
+          "start_seconds": 182.57579308300046,
+          "duration_seconds": 38.24763973199879
+        },
+        {
+          "name": "debug",
+          "start_seconds": 220.82344279399695,
+          "duration_seconds": 13.595548493001843
+        },
+        {
+          "name": "repaired_preflight",
+          "start_seconds": 234.41912701399997,
+          "duration_seconds": 18.063157010001305
+        }
+      ],
+      "assertions": {
+        "one_initial_generation": true,
+        "single_pass": true,
+        "adapter_complete": true,
+        "candidate_failure_reproduced": true,
+        "feedback_provider_succeeded": true,
+        "feedback_identifies_failure": true,
+        "cpu_gate_admitted_repair": true,
+        "precision_policy_valid": true,
+        "knowledge_toggle_respected": true,
+        "all_subjects_with_conditions": true,
+        "cpu_only": true,
+        "cpu_adapter_checks_passed": true,
+        "knowledge_not_duplicated": true
+      },
+      "initial_generation_calls": 1,
+      "generation_strategy": "single_pass",
+      "draft_preflight_status": "FAIL",
+      "duration_seconds": 252.53929593799694,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 18008,
+          "prefix": "01_draft",
+          "started": 33459.95632735,
+          "response_chars": 15327,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 8075,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 17149,
+            "output_tokens_details": {
+              "thinking_tokens": 10982
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 8075,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 17149,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 8075,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 8075
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5579,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.005664,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 17149,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 8075,
+              "webSearchRequests": 0,
+              "costUSD": 0.203794,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 135.10050511699956
+        },
+        {
+          "role": "feedback",
+          "prompt_chars": 21904,
+          "prefix": "continuation_1/01_feedback",
+          "started": 33964.603965871,
+          "response_chars": 1694,
+          "usage": {
+            "input_tokens": 8,
+            "cache_creation_input_tokens": 14083,
+            "cache_read_input_tokens": 40647,
+            "output_tokens": 4310,
+            "output_tokens_details": {
+              "thinking_tokens": 1479
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 14083,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 778,
+                "cache_read_input_tokens": 14347,
+                "cache_creation_input_tokens": 933,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 933
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 7904,
+              "outputTokens": 18,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.007994,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 8,
+              "outputTokens": 4310,
+              "cacheReadInputTokens": 40647,
+              "cacheCreationInputTokens": 14083,
+              "webSearchRequests": 0,
+              "costUSD": 0.10757739999999999,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 38.245265486999415
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 25027,
+          "prefix": "continuation_1/02_repair",
+          "started": 34002.905934832,
+          "response_chars": 645,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 11733,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 1394,
+            "output_tokens_details": {
+              "thinking_tokens": 1183
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 11733,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 1394,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 11733,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 11733
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 8678,
+              "outputTokens": 19,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.008773,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 1394,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 11733,
+              "webSearchRequests": 0,
+              "costUSD": 0.060876,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 13.508770631997322
+        }
+      ],
+      "hardware_calls": [
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge"
+      ],
+      "target_profile": "RTX 5090 32GB",
+      "evidence_tier": "Real Sonnet agent responses, fixture hardware knowledge, real CPU adapter checks; no GPU or training entrypoint execution",
+      "feedback_summary": "The candidate failed CPU preflight (status=FAIL, admitted=False) due to a DAT002 data-contract violation: the manifest declares an expected target dtype but the CandidateAdapter's batch-building logic omits the 'target' tensor whenever the preflight fixture spec doesn't explicitly include it, breaking data_contract, abstract_forward, cpu_training, and validation checks. Because the candidate was never admitted, no actual GPU training/evaluation occurred and no validation RMSE was produced.",
+      "feedback_issues": [
+        {
+          "source": "model_preflight",
+          "severity": "critical",
+          "category": "preflight_dat002",
+          "owner": "model_design",
+          "evidence": "[DAT002] manifest declares target_dtype but no target tensor was found\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 2, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 4, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 8, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 16, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}, {\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"validation\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nFacts: {\"expected_target_dtype\": \"float32\"}\nAffected checks: data_contract, abstract_forward, cpu_training, validation\nReproduction: model-preflight check preflight.yaml --only data_contract\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/1, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/2, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/3, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/4, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/5, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/6, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/7, /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/f9c4eb5db437442984fc5afcbb3be367/report_attempt_3.json#/diagnostics/8",
+          "repair_instruction": "Repair the confirmed data_contract defect [DAT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+        },
+        {
+          "source": "runtime",
+          "severity": "critical",
+          "category": "preflight_dat002_data_contract",
+          "owner": "integration",
+          "evidence": "CPU preflight status=FAIL, admitted=False. DAT002: 'manifest declares target_dtype but no target tensor was found' across data_contract, abstract_forward, cpu_training, and validation checks for both train and validation scenarios. The CandidateAdapter._build_batch method only populates dict keys present in scenario['fixture'] (e.g. {'image':[3,256,256], 'tabular':[12]}), which omits the 'target' key whenever the preflight harness supplies a fixture spec without an explicit 'target' entry, so downstream training_step/validation_step cannot locate batch['target'] as required by the declared expected_target_dtype=float32 contract.",
+          "repair_instruction": "Update CandidateAdapter._build_batch (and build_train_batch/build_validation_batch) to always synthesize a 'target' tensor with the manifest-declared dtype (float32) regardless of whether 'target' is present in scenario['fixture'], so the batch dict satisfies the data_contract check across all batch_size/mode scenarios."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_metric",
+          "owner": "training_evaluation",
+          "evidence": "Execution output did not contain a usable validation metric.",
+          "repair_instruction": "Compute the exact task metric and print it in the required final score format."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_submission",
+          "owner": "training_evaluation",
+          "evidence": "Execution did not create the required submission CSV.",
+          "repair_instruction": "Generate ./submission/submission.csv from real test inference using the required columns."
+        }
+      ],
+      "final_code_ref": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/continuation_1/repaired.py",
+      "final_preflight_ref": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/continuation_1/repaired_preflight.json",
+      "precision_issues": [],
+      "repaired_preflight_status": "INCONCLUSIVE",
+      "initial_audit_error": "StopIteration: ",
+      "timing_scope": "active audit phases; excludes idle time before continuation",
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 1,
+        "precision": 1,
+        "training": 1
+      }
+    },
+    {
+      "cell": "conservative_hwdb_off",
+      "precision": "conservative",
+      "hardware_enabled": false,
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 2.918499376391992e-05,
+          "duration_seconds": 131.4739910250064
+        },
+        {
+          "name": "draft_preflight",
+          "start_seconds": 131.4741569789985,
+          "duration_seconds": 20.454424192997976
+        },
+        {
+          "name": "injected_preflight",
+          "start_seconds": 151.93047678199946,
+          "duration_seconds": 20.03699277799751
+        },
+        {
+          "name": "feedback",
+          "start_seconds": 171.9677696689978,
+          "duration_seconds": 11.944234634000168
+        },
+        {
+          "name": "debug",
+          "start_seconds": 183.91202109499864,
+          "duration_seconds": 30.536063360996195
+        },
+        {
+          "name": "repaired_preflight",
+          "start_seconds": 214.4482740050007,
+          "duration_seconds": 17.677419205996557
+        }
+      ],
+      "assertions": {
+        "one_initial_generation": true,
+        "single_pass": true,
+        "adapter_complete": true,
+        "induced_failure_reproduced": true,
+        "feedback_provider_succeeded": true,
+        "feedback_identifies_failure": true,
+        "repair_removes_injected_failure": true,
+        "cpu_gate_admitted_repair": true,
+        "precision_policy_valid": true,
+        "knowledge_toggle_respected": true,
+        "all_subjects_with_conditions": true,
+        "cpu_only": true,
+        "cpu_adapter_checks_passed": true,
+        "knowledge_not_duplicated": true
+      },
+      "initial_generation_calls": 1,
+      "generation_strategy": "single_pass",
+      "draft_preflight_status": "FAIL",
+      "feedback_summary": "Execution failed during CPU preflight: the CandidateAdapter.training_step method contains an injected `raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')` as its first statement, making the real loss computation unreachable and causing all cpu_training preflight scenarios (batch sizes 1\u201316) to fail immediately. The candidate was not admitted (status=FAIL, admitted=False), and preflight also flagged an import-safety violation for executable CUDA-capability statements left outside the main guard.</summary>\n</invoke>\n",
+      "feedback_issues": [
+        {
+          "source": "model_preflight",
+          "severity": "critical",
+          "category": "preflight_aut002",
+          "owner": "training_evaluation",
+          "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/candidate/candidate.py', line 236, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_off/workspace/working/preflight/a2a858d7543341a89b853319a68ce0fa/report_attempt_1.json#/diagnostics/7",
+          "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+        },
+        {
+          "source": "model_preflight",
+          "severity": "critical",
+          "category": "preflight_import_safety",
+          "owner": "integration",
+          "evidence": "Executable import-time statements remain outside the main guard at line(s): 51.",
+          "repair_instruction": "The main guard already exists. Move each listed side-effecting call into that existing main guard while keeping lightweight constants and definitions importable. Calling the wrapper at module scope remains unsafe, so merely wrapping the same operation in a helper does not repair it. Do not add, remove, or duplicate the existing main guard."
+        },
+        {
+          "source": "runtime",
+          "severity": "critical",
+          "category": "preflight_aut002",
+          "owner": "training_evaluation",
+          "evidence": "CandidateAdapter.training_step begins with `raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')` before any of its real implementation, so every CPU preflight training scenario (batch sizes 1,2,4,8,16) fails immediately with this exception at candidate.py line 236, and the actual MSE loss/forward logic below it is unreachable dead code.",
+          "repair_instruction": "Remove the injected `raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')` line from training_step so the CandidateAdapter contract executes the real forward/loss computation, and re-run CPU preflight to confirm cpu_training passes."
+        },
+        {
+          "source": "runtime",
+          "severity": "critical",
+          "category": "preflight_import_safety",
+          "owner": "integration",
+          "evidence": "Preflight flagged executable import-time statements outside the main guard at line 51 (device/TF32 capability probing via torch.cuda.get_device_capability and torch.backends.cuda.matmul.allow_tf32 assignment executed at module import time).",
+          "repair_instruction": "Move the CUDA capability probing and TF32 backend configuration calls into the `if __name__ == \"__main__\":` guard (or a function invoked only from it), keeping only constant/definition code importable at module scope."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_metric",
+          "owner": "training_evaluation",
+          "evidence": "Execution output did not contain a usable validation metric.",
+          "repair_instruction": "Compute the exact task metric and print it in the required final score format."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_submission",
+          "owner": "training_evaluation",
+          "evidence": "Execution did not create the required submission CSV.",
+          "repair_instruction": "Generate ./submission/submission.csv from real test inference using the required columns."
+        }
+      ],
+      "repaired_preflight_status": "INCONCLUSIVE",
+      "precision_issues": [],
+      "duration_seconds": 232.13140230700083,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 16118,
+          "prefix": "01_draft",
+          "started": 33459.953528486,
+          "response_chars": 15281,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 7388,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 15618,
+            "output_tokens_details": {
+              "thinking_tokens": 9411
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 7388,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 15618,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 7388,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 7388
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5117,
+              "outputTokens": 19,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.005212,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 15618,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 7388,
+              "webSearchRequests": 0,
+              "costUSD": 0.18573599999999998,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 131.30286666999746
+        },
+        {
+          "role": "feedback",
+          "prompt_chars": 22144,
+          "prefix": "02_feedback",
+          "started": 33631.92192418,
+          "response_chars": 1930,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 10400,
+            "cache_read_input_tokens": 1197,
+            "output_tokens": 1169,
+            "output_tokens_details": {
+              "thinking_tokens": 368
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 10400,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 1169,
+                "cache_read_input_tokens": 1197,
+                "cache_creation_input_tokens": 10400,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 10400
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 7874,
+              "outputTokens": 12,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.007934,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 1169,
+              "cacheReadInputTokens": 1197,
+              "cacheCreationInputTokens": 10400,
+              "webSearchRequests": 0,
+              "costUSD": 0.053533399999999995,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 11.942247512000904
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 28922,
+          "prefix": "03_repair",
+          "started": 33643.865711632,
+          "response_chars": 327,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 12882,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 134,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 12882,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 134,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 12882,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 12882
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 9541,
+              "outputTokens": 22,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.009651,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 134,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 12882,
+              "webSearchRequests": 0,
+              "costUSD": 0.052871999999999995,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 2.7297471439960646
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 23975,
+          "prefix": "04_repair",
+          "started": 33646.599219748,
+          "response_chars": 1257,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 11071,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 3163,
+            "output_tokens_details": {
+              "thinking_tokens": 2573
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 11071,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 3163,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 11071,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 11071
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 8335,
+              "outputTokens": 16,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.008415,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 3163,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 11071,
+              "webSearchRequests": 0,
+              "costUSD": 0.07591799999999999,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 27.773113805997127
+        }
+      ],
+      "hardware_calls": [],
+      "target_profile": "RTX 5090 32GB",
+      "evidence_tier": "Real Sonnet agent responses, fixture hardware knowledge, real CPU adapter checks; no GPU or training entrypoint execution",
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 0,
+        "precision": 0,
+        "training": 0
+      }
+    },
+    {
+      "cell": "conservative_hwdb_on",
+      "precision": "conservative",
+      "hardware_enabled": true,
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 2.8073001885786653e-05,
+          "duration_seconds": 134.03545071400004
+        },
+        {
+          "name": "draft_preflight",
+          "start_seconds": 134.03564048300177,
+          "duration_seconds": 20.319466754997848
+        },
+        {
+          "name": "injected_preflight",
+          "start_seconds": 154.35737718600285,
+          "duration_seconds": 19.85948372299754
+        },
+        {
+          "name": "feedback",
+          "start_seconds": 174.217209729999,
+          "duration_seconds": 13.035298907998367
+        },
+        {
+          "name": "debug",
+          "start_seconds": 187.25251948799996,
+          "duration_seconds": 4.451567910997255
+        },
+        {
+          "name": "repaired_preflight",
+          "start_seconds": 191.70419494200178,
+          "duration_seconds": 18.250169311999343
+        },
+        {
+          "name": "resume_preflight",
+          "start_seconds": 209.9864026590003,
+          "duration_seconds": 19.908804197999416
+        },
+        {
+          "name": "debug",
+          "start_seconds": 229.92653571800474,
+          "duration_seconds": 73.08645059799892
+        },
+        {
+          "name": "repaired_preflight",
+          "start_seconds": 303.0131091380026,
+          "duration_seconds": 17.873556487000315
+        },
+        {
+          "name": "resume_preflight",
+          "start_seconds": 320.9189697349939,
+          "duration_seconds": 18.0255859040044
+        },
+        {
+          "name": "debug",
+          "start_seconds": 338.97733806500037,
+          "duration_seconds": 16.243859688998782
+        },
+        {
+          "name": "repaired_preflight",
+          "start_seconds": 355.22131678799633,
+          "duration_seconds": 18.67832831799751
+        }
+      ],
+      "assertions": {
+        "one_initial_generation": true,
+        "single_pass": true,
+        "adapter_complete": true,
+        "induced_failure_reproduced": true,
+        "feedback_provider_succeeded": true,
+        "feedback_identifies_failure": true,
+        "repair_removes_injected_failure": true,
+        "cpu_gate_admitted_repair": true,
+        "precision_policy_valid": true,
+        "knowledge_toggle_respected": true,
+        "all_subjects_with_conditions": true,
+        "cpu_only": true,
+        "candidate_failure_reproduced": true,
+        "cpu_adapter_checks_passed": true,
+        "knowledge_not_duplicated": true
+      },
+      "initial_generation_calls": 1,
+      "generation_strategy": "single_pass",
+      "draft_preflight_status": "INCONCLUSIVE",
+      "feedback_summary": "Execution failed during CPU preflight: CandidateAdapter.training_step unconditionally raises RuntimeError('AUDIT_INJECTED_LOSS_PATH') as its very first statement, before any real loss/training logic can execute, making the rest of the method dead code. This caused the cpu_training preflight check to fail across all tested batch sizes and scenarios, resulting in admitted=False and no validation metric being produced (the main training script itself was never reached).",
+      "feedback_issues": [
+        {
+          "source": "model_preflight",
+          "severity": "critical",
+          "category": "preflight_aut002",
+          "owner": "training_evaluation",
+          "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/dc1a7f905d734c94a7b4bed5a660fe7d/candidate/candidate.py', line 260, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/dc1a7f905d734c94a7b4bed5a660fe7d/report_attempt_1.json#/diagnostics/7",
+          "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+        },
+        {
+          "source": "runtime",
+          "severity": "critical",
+          "category": "unconditional_exception_in_training_step",
+          "owner": "training_evaluation",
+          "evidence": "CandidateAdapter.training_step immediately executes `raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')` as its first statement, making all subsequent training logic (criterion setup, forward pass, loss computation) unreachable dead code. The CPU preflight harness invoked training_step across all tested batch sizes (1,2,4,8,16) and every scenario failed with this RuntimeError at candidate.py line 260, causing execution_failed and admitted=False.",
+          "repair_instruction": "Remove the unconditional `raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')` line from CandidateAdapter.training_step so the real forward/loss logic (criterion, model(batch['image'], batch['tabular']), loss computation) executes as intended and the CPU preflight training_step check can pass."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_metric",
+          "owner": "training_evaluation",
+          "evidence": "Execution output did not contain a usable validation metric.",
+          "repair_instruction": "Compute the exact task metric and print it in the required final score format."
+        },
+        {
+          "source": "runtime_validator",
+          "severity": "critical",
+          "category": "missing_submission",
+          "owner": "training_evaluation",
+          "evidence": "Execution did not create the required submission CSV.",
+          "repair_instruction": "Generate ./submission/submission.csv from real test inference using the required columns."
+        }
+      ],
+      "repaired_preflight_status": "INCONCLUSIVE",
+      "precision_issues": [],
+      "duration_seconds": 373.9327004279985,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 18597,
+          "prefix": "01_draft",
+          "started": 33459.95646742,
+          "response_chars": 15350,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 8287,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 17057,
+            "output_tokens_details": {
+              "thinking_tokens": 10790
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 8287,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 17057,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 8287,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 8287
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5720,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.005805,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 17057,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 8287,
+              "webSearchRequests": 0,
+              "costUSD": 0.20372200000000001,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 133.84533523100254
+        },
+        {
+          "role": "feedback",
+          "prompt_chars": 21123,
+          "prefix": "02_feedback",
+          "started": 33634.17108151,
+          "response_chars": 1466,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 10207,
+            "cache_read_input_tokens": 1197,
+            "output_tokens": 1063,
+            "output_tokens_details": {
+              "thinking_tokens": 425
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 10207,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 1063,
+                "cache_read_input_tokens": 1197,
+                "cache_creation_input_tokens": 10207,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 10207
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 7814,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.007899,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 1063,
+              "cacheReadInputTokens": 1197,
+              "cacheCreationInputTokens": 10207,
+              "webSearchRequests": 0,
+              "costUSD": 0.0517014,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 13.033445007997216
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 30772,
+          "prefix": "03_repair",
+          "started": 33647.262425624,
+          "response_chars": 313,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 13829,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 134,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 13829,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 134,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 13829,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 13829
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 10180,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.010265,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 134,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 13829,
+              "webSearchRequests": 0,
+              "costUSD": 0.056659999999999995,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 4.362057658996491
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 21952,
+          "prefix": "continuation_1/01_repair",
+          "started": 33969.113389698,
+          "response_chars": 455,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 10491,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 10026,
+            "output_tokens_details": {
+              "thinking_tokens": 9805
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 10491,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 10026,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 10491,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 10491
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 7786,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.007871,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 10026,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 10491,
+              "webSearchRequests": 0,
+              "costUSD": 0.14222800000000002,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 72.99970931599819
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 22093,
+          "prefix": "continuation_2/01_repair",
+          "started": 34194.326749739,
+          "response_chars": 686,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 10540,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 1847,
+            "output_tokens_details": {
+              "thinking_tokens": 1487
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 10540,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 1847,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 10540,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 10540
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 7818,
+              "outputTokens": 13,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.007883000000000001,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 1847,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 10540,
+              "webSearchRequests": 0,
+              "costUSD": 0.06063400000000001,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 16.15442409300158
+        }
+      ],
+      "hardware_calls": [
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge"
+      ],
+      "target_profile": "RTX 5090 32GB",
+      "evidence_tier": "Real Sonnet agent responses, fixture hardware knowledge, real CPU adapter checks; no GPU or training entrypoint execution",
+      "final_code_ref": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/continuation_2/repaired.py",
+      "final_preflight_ref": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/continuation_2/repaired_preflight.json",
+      "timing_scope": "active audit phases; excludes idle time before continuation",
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 1,
+        "precision": 1,
+        "training": 1
+      }
+    }
+  ]
+}

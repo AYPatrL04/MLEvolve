@@ -1,0 +1,17 @@
+<<<<<<< SEARCH
+    sums = np.zeros(3, dtype=np.float64)
+    sq_sums = np.zeros(3, dtype=np.float64)
+    n_pixels = 0
+    for img_id in df["Id"]:
+        path = os.path.join(input_dir, split, f"{img_id}.jpg")
+        img = Image.open(path).convert("RGB").resize((IMG_SIZE, IMG_SIZE))
+        arr = np.asarray(img, dtype=np.float64) / 255.0
+=======
+    sums = np.zeros(3, dtype=np.float32)
+    sq_sums = np.zeros(3, dtype=np.float32)
+    n_pixels = 0
+    for img_id in df["Id"]:
+        path = os.path.join(input_dir, split, f"{img_id}.jpg")
+        img = Image.open(path).convert("RGB").resize((IMG_SIZE, IMG_SIZE))
+        arr = np.asarray(img, dtype=np.float32) / 255.0
+>>>>>>> REPLACE

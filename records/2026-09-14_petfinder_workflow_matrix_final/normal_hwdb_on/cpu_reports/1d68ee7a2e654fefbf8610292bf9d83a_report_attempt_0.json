@@ -1,0 +1,765 @@
+{
+  "candidate_hash": "sha256:dfb3f1eb8b8210b2117a548f34a458bf96d64de4745357836f09ce6680021c99",
+  "candidate_id": "1d68ee7a2e654fefbf8610292bf9d83a",
+  "checker_version": "0.1.0",
+  "diagnostics": [
+    {
+      "classification": "inconclusive",
+      "code": "GPU003",
+      "file": "candidate.py",
+      "line": 290,
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "operation": "torch.cuda.is_available",
+      "reproduction": "model-preflight check preflight.yaml --only static_source",
+      "severity": "warning",
+      "stage": "static_source"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only data_contract",
+      "scenario": {
+        "batch_size": 1,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "data_contract"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 1,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 2,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 4,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 8,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 16,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only cpu_training",
+      "scenario": {
+        "batch_size": 1,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "cpu_training"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "DAT002",
+      "evidence": {
+        "expected_target_dtype": "float32"
+      },
+      "message": "manifest declares target_dtype but no target tensor was found",
+      "reproduction": "model-preflight check preflight.yaml --only validation",
+      "scenario": {
+        "batch_size": 1,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "validation",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stage": "validation"
+    }
+  ],
+  "environment": {
+    "conda_environment": "base",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2+-x86_64-with-glibc2.39",
+    "python_implementation": "CPython",
+    "python_version": "3.11.15",
+    "torch_version": "2.11.0",
+    "worker_python": "/home/justin/MLEvolve/.venv/bin/python"
+  },
+  "gpu_check_required": true,
+  "gpu_submission_recommended": false,
+  "normalized_manifest": {
+    "candidate": {
+      "adapter": "candidate:CandidateAdapter",
+      "id": "1d68ee7a2e654fefbf8610292bf9d83a",
+      "root": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/1d68ee7a2e654fefbf8610292bf9d83a/candidate"
+    },
+    "execution": {
+      "abstract_timeout_seconds": 15.0,
+      "allow_real_cpu_abstract_fallback": false,
+      "cache": false,
+      "cpu_timeout_seconds": 20.0,
+      "disable_network": true,
+      "maximum_cpu_memory_mb": 8192,
+      "maximum_output_bytes": 1000000,
+      "maximum_processes": 32
+    },
+    "policy": {
+      "memory_high_risk_fraction": 0.9,
+      "memory_warning_fraction": 0.7,
+      "mode": "balanced"
+    },
+    "scenarios": {
+      "boundary_shapes": {},
+      "fixture": {
+        "image": [
+          3,
+          256,
+          256
+        ],
+        "tabular": [
+          12
+        ]
+      },
+      "input_shapes": {
+        "image": [
+          3,
+          256,
+          256
+        ]
+      },
+      "last_batch_size": 1,
+      "precision": [
+        "fp32"
+      ],
+      "run_validation": true,
+      "stateful_two_steps": false,
+      "test_last_batch": true,
+      "train_batch_sizes": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ]
+    },
+    "schema_version": 1,
+    "target": {
+      "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml"
+    },
+    "task": {
+      "drop_last": false,
+      "input_rank": 3,
+      "name": "petfinder-pawpularity-score",
+      "target_dtype": "float32"
+    }
+  },
+  "overall_status": "FAIL",
+  "report_schema_version": 1,
+  "resource_estimate": {
+    "estimated_risk": "low",
+    "estimated_total_bytes": 45356,
+    "gradient_bytes_exact": 9860,
+    "is_gpu_oom_guarantee": false,
+    "optimizer_state_bytes_estimated": 19720,
+    "parameter_bytes_exact": 9860,
+    "safety_margin_bytes": 5916,
+    "saved_activation_bytes_estimated": 0,
+    "target_vram_bytes": 34359738368,
+    "target_vram_fraction": 1e-06,
+    "uncertainty_sources": [
+      "allocator fragmentation",
+      "tensor lifetime overlap",
+      "cuDNN and compiler workspaces",
+      "custom kernels",
+      "activation checkpointing"
+    ]
+  },
+  "stages": [
+    {
+      "diagnostics": [
+        {
+          "classification": "inconclusive",
+          "code": "GPU003",
+          "file": "candidate.py",
+          "line": 290,
+          "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+          "operation": "torch.cuda.is_available",
+          "reproduction": "model-preflight check preflight.yaml --only static_source",
+          "severity": "warning",
+          "stage": "static_source"
+        }
+      ],
+      "duration_seconds": 0.004677,
+      "evidence": {
+        "python_files_scanned": 1
+      },
+      "name": "static_source",
+      "status": "INCONCLUSIVE"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 4e-06,
+      "evidence": {
+        "architecture": "blackwell",
+        "compute_capability": "12.0",
+        "name": "GeForce RTX 5090 32GB",
+        "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+        "profile_schema_version": 1,
+        "vram_bytes": 34359738368
+      },
+      "name": "hardware",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 2.338469,
+      "evidence": {
+        "model_type": "candidate.TinyPetCNN",
+        "optimizer_type": "torch.optim.adam.Adam",
+        "parameter_bytes": 9860,
+        "parameter_count": 2465,
+        "parameter_tensors": 16,
+        "trainable_parameter_bytes": 9860,
+        "trainable_parameter_count": 2465,
+        "trainable_parameter_tensors": 16
+      },
+      "name": "construction",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only data_contract",
+          "scenario": {
+            "batch_size": 1,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "data_contract"
+        }
+      ],
+      "duration_seconds": 1.754584,
+      "name": "data_contract",
+      "status": "FAIL"
+    },
+    {
+      "diagnostics": [
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 1,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "abstract_forward"
+        },
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 2,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "abstract_forward"
+        },
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 4,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "abstract_forward"
+        },
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 8,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "abstract_forward"
+        },
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 16,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "abstract_forward"
+        }
+      ],
+      "duration_seconds": 8.108456,
+      "evidence": {
+        "scenarios": [
+          {
+            "duration_seconds": 1.692584,
+            "status": "FAIL"
+          },
+          {
+            "duration_seconds": 1.603086,
+            "status": "FAIL"
+          },
+          {
+            "duration_seconds": 1.515908,
+            "status": "FAIL"
+          },
+          {
+            "duration_seconds": 1.613802,
+            "status": "FAIL"
+          },
+          {
+            "duration_seconds": 1.683077,
+            "status": "FAIL"
+          }
+        ]
+      },
+      "name": "abstract_forward",
+      "status": "FAIL"
+    },
+    {
+      "diagnostics": [
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only cpu_training",
+          "scenario": {
+            "batch_size": 1,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "cpu_training"
+        }
+      ],
+      "duration_seconds": 2.238802,
+      "evidence": {
+        "scenarios": [
+          {
+            "duration_seconds": 2.238802,
+            "status": "FAIL"
+          }
+        ]
+      },
+      "name": "cpu_training",
+      "status": "FAIL"
+    },
+    {
+      "diagnostics": [
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "DAT002",
+          "evidence": {
+            "expected_target_dtype": "float32"
+          },
+          "message": "manifest declares target_dtype but no target tensor was found",
+          "reproduction": "model-preflight check preflight.yaml --only validation",
+          "scenario": {
+            "batch_size": 1,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "validation",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stage": "validation"
+        }
+      ],
+      "duration_seconds": 1.581333,
+      "name": "validation",
+      "status": "FAIL"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 0.0,
+      "evidence": {
+        "estimated_risk": "low",
+        "estimated_total_bytes": 45356,
+        "gradient_bytes_exact": 9860,
+        "is_gpu_oom_guarantee": false,
+        "optimizer_state_bytes_estimated": 19720,
+        "parameter_bytes_exact": 9860,
+        "safety_margin_bytes": 5916,
+        "saved_activation_bytes_estimated": 0,
+        "target_vram_bytes": 34359738368,
+        "target_vram_fraction": 1e-06,
+        "uncertainty_sources": [
+          "allocator fragmentation",
+          "tensor lifetime overlap",
+          "cuDNN and compiler workspaces",
+          "custom kernels",
+          "activation checkpointing"
+        ]
+      },
+      "name": "memory",
+      "status": "PASS"
+    }
+  ]
+}

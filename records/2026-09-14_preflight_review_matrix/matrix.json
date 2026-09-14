@@ -1,0 +1,2335 @@
+{
+  "provider": "Claude CLI Sonnet, text-only transport",
+  "results": [
+    {
+      "cell": "normal_hwdb_off",
+      "precision": "normal",
+      "hardware_enabled": false,
+      "assertions": {
+        "single_pass": true,
+        "blocked_candidate_skips_review": true,
+        "injected_failure_reproduced": true,
+        "debug_removes_injected_failure": true,
+        "review_follows_fresh_admission": true,
+        "review_receives_preflight_evidence": true,
+        "final_review_approved": true,
+        "final_code_admitted": true,
+        "unchanged_code_reuses_preflight": true,
+        "cpu_adapter_checks_passed": true,
+        "preflight_history_preserved": true,
+        "knowledge_not_duplicated": true,
+        "hardware_toggle_respected": true,
+        "no_unresolved_critical_issues": true,
+        "cpu_only": true,
+        "completed_without_error": true,
+        "one_generation_in_completed_attempt": true
+      },
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 0.00042530799692030996,
+          "duration_seconds": 136.85602652800299
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 137.0387647000025,
+          "duration_seconds": 18.803904218999378
+        },
+        {
+          "name": "repair",
+          "start_seconds": 155.98701521800103,
+          "duration_seconds": 79.31177069000114
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 235.33026817099744,
+          "duration_seconds": 18.662679379005567
+        },
+        {
+          "name": "review",
+          "start_seconds": 254.0662176650003,
+          "duration_seconds": 30.483425608996185
+        }
+      ],
+      "checks": [
+        {
+          "index": 1,
+          "node_id": "1743fa2723aa4c2cba31fe094ca7da95",
+          "start_seconds": 137.0387647000025,
+          "duration_seconds": 18.803904218999378,
+          "status": "FAIL",
+          "mode": "full_cpu",
+          "code_hash": "sha256:b7f511c48d1ae3dbe54a7f8728019112fb26a455b96d50c230a4ffdc94fc87ce",
+          "admitted": false,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "AUT002",
+            "CHK001",
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [
+            {
+              "source": "model_preflight",
+              "severity": "critical",
+              "category": "preflight_aut002",
+              "owner": "training_evaluation",
+              "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/candidate/candidate.py', line 219, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json#/diagnostics/6",
+              "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+            }
+          ],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 51
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "CHK001",
+              "classification": "inconclusive",
+              "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+              "affected_stages": [
+                "abstract_forward"
+              ],
+              "location": {
+                "file": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/candidate/candidate.py",
+                "line": 219,
+                "function": "training_step"
+              },
+              "exception_type": "RuntimeError",
+              "affected_scenarios": [
+                {
+                  "batch_size": 1,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 2,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 4,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 8,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 16,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                }
+              ],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json#/diagnostics/1",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json#/diagnostics/2",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json#/diagnostics/3",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json#/diagnostics/4",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/1743fa2723aa4c2cba31fe094ca7da95/report_attempt_0.json#/diagnostics/5"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/checks/01_report.json",
+          "report_sha256": "df81f762cee6bba8c79616ac24265395de01b9846294cb9edfc4a36b3f40c3e7"
+        },
+        {
+          "index": 2,
+          "node_id": "e8ddb86233944a38be0211981c951c4f",
+          "start_seconds": 235.33026817099744,
+          "duration_seconds": 18.662679379005567,
+          "status": "INCONCLUSIVE",
+          "mode": "full_cpu",
+          "code_hash": "sha256:422ec3c556671e3006acfd0396d82f6ff679dc3bd2697a03a4c9c9a5e0348896",
+          "admitted": true,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/e8ddb86233944a38be0211981c951c4f/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/e8ddb86233944a38be0211981c951c4f/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 52
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/e8ddb86233944a38be0211981c951c4f/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/checks/02_report.json",
+          "report_sha256": "e317294f7508f10393919c446ef8c4afb2a606a8ef0b8f6c5c890667799f12e4"
+        }
+      ],
+      "review_entries": [
+        {
+          "node_id": "e8ddb86233944a38be0211981c951c4f",
+          "start_seconds": 253.99334385900147,
+          "admitted": true,
+          "status": "INCONCLUSIVE",
+          "fresh": true,
+          "code_hash": "sha256:422ec3c556671e3006acfd0396d82f6ff679dc3bd2697a03a4c9c9a5e0348896",
+          "evidence_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/e8ddb86233944a38be0211981c951c4f/report_attempt_0.json"
+        }
+      ],
+      "generation_strategy": "single_pass",
+      "final_review_status": "approved",
+      "final_preflight_status": "INCONCLUSIVE",
+      "gpu_check_required": true,
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 0,
+        "precision": 0,
+        "training": 0
+      },
+      "duration_seconds": 284.6461545339989,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 15689,
+          "prefix": "01_draft",
+          "started": 39652.770212245,
+          "response_chars": 15202,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 7214,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 16376,
+            "output_tokens_details": {
+              "thinking_tokens": 10148
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 7214,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 16376,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 7214,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 7214
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5004,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.005089,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 16376,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 7214,
+              "webSearchRequests": 0,
+              "costUSD": 0.19262,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 136.8557371210045,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off"
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 27632,
+          "prefix": "02_repair",
+          "started": 39808.756779883,
+          "response_chars": 7085,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 12556,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 10863,
+            "output_tokens_details": {
+              "thinking_tokens": 8061
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 12556,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 10863,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 12556,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 12556
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 9256,
+              "outputTokens": 16,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.009336,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 10863,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 12556,
+              "webSearchRequests": 0,
+              "costUSD": 0.158858,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 79.31110308300413,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off"
+        },
+        {
+          "role": "review",
+          "prompt_chars": 27871,
+          "prefix": "03_review",
+          "started": 39906.836266697,
+          "response_chars": 1442,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 13220,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 2678,
+            "output_tokens_details": {
+              "thinking_tokens": 2090
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 13220,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 2678,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 13220,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 13220
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 8990,
+              "outputTokens": 15,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.009065,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 2678,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 13220,
+              "webSearchRequests": 0,
+              "costUSD": 0.079664,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 30.48272808099864,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off"
+        }
+      ],
+      "hardware_calls": [],
+      "evidence_tier": "Real controller, Sonnet responses, CPU checks; fixture RTX 5090 knowledge; no training entrypoint or GPU execution",
+      "completed_attempt_generation_calls": 1,
+      "attempts": [
+        {
+          "result_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/result.json",
+          "completed_without_error": true,
+          "duration_seconds": 284.6461545339989
+        }
+      ],
+      "initial_generation_calls": 1,
+      "timing_scope": "All recorded active attempts; excludes idle gaps between attempts"
+    },
+    {
+      "cell": "normal_hwdb_on",
+      "precision": "normal",
+      "hardware_enabled": true,
+      "assertions": {
+        "single_pass": true,
+        "blocked_candidate_skips_review": true,
+        "injected_failure_reproduced": true,
+        "debug_removes_injected_failure": true,
+        "review_follows_fresh_admission": true,
+        "review_receives_preflight_evidence": true,
+        "final_review_approved": true,
+        "final_code_admitted": true,
+        "unchanged_code_reuses_preflight": true,
+        "cpu_adapter_checks_passed": true,
+        "preflight_history_preserved": true,
+        "knowledge_not_duplicated": true,
+        "hardware_toggle_respected": true,
+        "no_unresolved_critical_issues": true,
+        "cpu_only": true,
+        "completed_without_error": true,
+        "one_generation_in_completed_attempt": true
+      },
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 0.0031310890044551343,
+          "duration_seconds": 128.24311791799846
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 128.4617972699998,
+          "duration_seconds": 17.784078702999977
+        },
+        {
+          "name": "repair",
+          "start_seconds": 146.47749271700013,
+          "duration_seconds": 2.7462100010016
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 149.2814642470039,
+          "duration_seconds": 17.42533528900094
+        },
+        {
+          "name": "review",
+          "start_seconds": 166.79858324100496,
+          "duration_seconds": 33.25369119699462
+        }
+      ],
+      "checks": [
+        {
+          "index": 1,
+          "node_id": "8eebe4ec8fdc4d6385f04d577e50be46",
+          "start_seconds": 128.4617972699998,
+          "duration_seconds": 17.784078702999977,
+          "status": "FAIL",
+          "mode": "full_cpu",
+          "code_hash": "sha256:473391956492ff78a90bac4db067ee0925e6c3f133d1655ebb29f2ef26a29be6",
+          "admitted": false,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "AUT002",
+            "CHK001",
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [
+            {
+              "source": "model_preflight",
+              "severity": "critical",
+              "category": "preflight_aut002",
+              "owner": "training_evaluation",
+              "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/candidate/candidate.py', line 193, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/6",
+              "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+            }
+          ],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 287
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "CHK001",
+              "classification": "inconclusive",
+              "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+              "affected_stages": [
+                "abstract_forward"
+              ],
+              "location": {
+                "file": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/candidate/candidate.py",
+                "line": 193,
+                "function": "training_step"
+              },
+              "exception_type": "RuntimeError",
+              "affected_scenarios": [
+                {
+                  "batch_size": 1,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 2,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 4,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 8,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 16,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                }
+              ],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/1",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/2",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/3",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/4",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/5"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/checks/01_report.json",
+          "report_sha256": "b341adfd2fdb1bfefa86c744a635dfe5f5bb7920d2a333a02eb020803d0220b6"
+        },
+        {
+          "index": 2,
+          "node_id": "ebe68dc34adb44a49032622cf02ea448",
+          "start_seconds": 149.2814642470039,
+          "duration_seconds": 17.42533528900094,
+          "status": "INCONCLUSIVE",
+          "mode": "full_cpu",
+          "code_hash": "sha256:117313baf39beb247b7ce60b10570bf271642952bc3688225da4293855b56409",
+          "admitted": true,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 286
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/checks/02_report.json",
+          "report_sha256": "282a95abfe4f199c3522146561b715be14ce3774724b416c8d14369b993383d1"
+        }
+      ],
+      "review_entries": [
+        {
+          "node_id": "ebe68dc34adb44a49032622cf02ea448",
+          "start_seconds": 166.70719736799947,
+          "admitted": true,
+          "status": "INCONCLUSIVE",
+          "fresh": true,
+          "code_hash": "sha256:117313baf39beb247b7ce60b10570bf271642952bc3688225da4293855b56409",
+          "evidence_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/report_attempt_0.json"
+        }
+      ],
+      "generation_strategy": "single_pass",
+      "final_review_status": "approved",
+      "final_preflight_status": "INCONCLUSIVE",
+      "gpu_check_required": true,
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 1,
+        "precision": 1,
+        "training": 1
+      },
+      "duration_seconds": 200.26183660000243,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 18188,
+          "prefix": "01_draft",
+          "started": 39787.256082556,
+          "response_chars": 13239,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 8124,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 16254,
+            "output_tokens_details": {
+              "thinking_tokens": 10758
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 8124,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 16254,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 8124,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 8124
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5616,
+              "outputTokens": 16,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.0056960000000000005,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 16254,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 8124,
+              "webSearchRequests": 0,
+              "costUSD": 0.19504000000000002,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 128.24277746400185,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on"
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 27474,
+          "prefix": "02_repair",
+          "started": 39933.730412354,
+          "response_chars": 277,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 12520,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 116,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 12520,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 116,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 12520,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 12520
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 9223,
+              "outputTokens": 18,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.009313,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 116,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 12520,
+              "webSearchRequests": 0,
+              "costUSD": 0.051244,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 2.745810385000368,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on"
+        },
+        {
+          "role": "review",
+          "prompt_chars": 27228,
+          "prefix": "03_review",
+          "started": 39954.051575175,
+          "response_chars": 1955,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 12901,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 3080,
+            "output_tokens_details": {
+              "thinking_tokens": 2325
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 12901,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 3080,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 12901,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 12901
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 8827,
+              "outputTokens": 18,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.008917,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 3080,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 12901,
+              "webSearchRequests": 0,
+              "costUSD": 0.082408,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 33.25320336400182,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on"
+        }
+      ],
+      "hardware_calls": [
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge"
+      ],
+      "evidence_tier": "Real controller, Sonnet responses, CPU checks; fixture RTX 5090 knowledge; no training entrypoint or GPU execution",
+      "completed_attempt_generation_calls": 1,
+      "attempts": [
+        {
+          "result_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/result.json",
+          "completed_without_error": true,
+          "duration_seconds": 200.26183660000243
+        }
+      ],
+      "initial_generation_calls": 1,
+      "timing_scope": "All recorded active attempts; excludes idle gaps between attempts"
+    },
+    {
+      "cell": "conservative_hwdb_off",
+      "precision": "conservative",
+      "hardware_enabled": false,
+      "assertions": {
+        "single_pass": true,
+        "blocked_candidate_skips_review": true,
+        "injected_failure_reproduced": true,
+        "debug_removes_injected_failure": true,
+        "review_follows_fresh_admission": true,
+        "review_receives_preflight_evidence": true,
+        "final_review_approved": true,
+        "final_code_admitted": true,
+        "unchanged_code_reuses_preflight": true,
+        "cpu_adapter_checks_passed": true,
+        "preflight_history_preserved": true,
+        "knowledge_not_duplicated": true,
+        "hardware_toggle_respected": true,
+        "no_unresolved_critical_issues": true,
+        "cpu_only": true,
+        "completed_without_error": true,
+        "one_generation_in_completed_attempt": true
+      },
+      "stages": [
+        {
+          "name": "draft",
+          "start_seconds": 0.0003083729970967397,
+          "duration_seconds": 155.08907777100103
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 155.36943028899987,
+          "duration_seconds": 17.553122325000004
+        },
+        {
+          "name": "repair",
+          "start_seconds": 172.9650594909981,
+          "duration_seconds": 73.63128890000371
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 246.63388011600182,
+          "duration_seconds": 18.441317354001512
+        },
+        {
+          "name": "review",
+          "start_seconds": 265.13566224199894,
+          "duration_seconds": 39.66083037000499
+        }
+      ],
+      "checks": [
+        {
+          "index": 1,
+          "node_id": "ff86f4779b004ed79a75aa8f61a3d259",
+          "start_seconds": 155.36943028899987,
+          "duration_seconds": 17.553122325000004,
+          "status": "FAIL",
+          "mode": "full_cpu",
+          "code_hash": "sha256:4a7e24406c18903b127531bd82ff7fa9dc663e1bc82c1b15c41e157b8906ee49",
+          "admitted": false,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "AUT002",
+            "BAT001",
+            "CHK001",
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [
+            {
+              "source": "model_preflight",
+              "severity": "critical",
+              "category": "preflight_aut002",
+              "owner": "training_evaluation",
+              "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/candidate/candidate.py', line 281, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/8",
+              "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+            }
+          ],
+          "advisories": [
+            {
+              "code": "BAT001",
+              "classification": "risk",
+              "message": "reshape/view appears to hard-code a configured batch size",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 100
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {
+                "literal_batch_size": 1
+              },
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "BAT001",
+              "classification": "risk",
+              "message": "reshape/view appears to hard-code a configured batch size",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 101
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {
+                "literal_batch_size": 1
+              },
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/1"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 315
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/2"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "CHK001",
+              "classification": "inconclusive",
+              "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+              "affected_stages": [
+                "abstract_forward"
+              ],
+              "location": {
+                "file": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/candidate/candidate.py",
+                "line": 281,
+                "function": "training_step"
+              },
+              "exception_type": "RuntimeError",
+              "affected_scenarios": [
+                {
+                  "batch_size": 1,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 2,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 4,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 8,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 16,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                }
+              ],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/3",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/4",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/5",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/6",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/7"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/checks/01_report.json",
+          "report_sha256": "d726674560f7c66e36aced62f04d73a7a96917771e831fbdaa79173a23ff7cf7"
+        },
+        {
+          "index": 2,
+          "node_id": "e027966495ea4d7a842610ae69c3a5a2",
+          "start_seconds": 246.63388011600182,
+          "duration_seconds": 18.441317354001512,
+          "status": "INCONCLUSIVE",
+          "mode": "full_cpu",
+          "code_hash": "sha256:21109656c8a4537562a8495d667594ca6dfcde821d953e1c57c2db0d6193499f",
+          "admitted": true,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "BAT001",
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/e027966495ea4d7a842610ae69c3a5a2/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/e027966495ea4d7a842610ae69c3a5a2/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [],
+          "advisories": [
+            {
+              "code": "BAT001",
+              "classification": "risk",
+              "message": "reshape/view appears to hard-code a configured batch size",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 100
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {
+                "literal_batch_size": 1
+              },
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/e027966495ea4d7a842610ae69c3a5a2/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "BAT001",
+              "classification": "risk",
+              "message": "reshape/view appears to hard-code a configured batch size",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 101
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {
+                "literal_batch_size": 1
+              },
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/e027966495ea4d7a842610ae69c3a5a2/report_attempt_0.json#/diagnostics/1"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 314
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/e027966495ea4d7a842610ae69c3a5a2/report_attempt_0.json#/diagnostics/2"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/checks/02_report.json",
+          "report_sha256": "31e7e2ee35c383487450d4b907c47b396ca3bc26c9a9d1aeeb6fe2fe6a5d0c5e"
+        }
+      ],
+      "review_entries": [
+        {
+          "node_id": "e027966495ea4d7a842610ae69c3a5a2",
+          "start_seconds": 265.07564374300273,
+          "admitted": true,
+          "status": "INCONCLUSIVE",
+          "fresh": true,
+          "code_hash": "sha256:21109656c8a4537562a8495d667594ca6dfcde821d953e1c57c2db0d6193499f",
+          "evidence_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/e027966495ea4d7a842610ae69c3a5a2/report_attempt_0.json"
+        }
+      ],
+      "generation_strategy": "single_pass",
+      "final_review_status": "approved",
+      "final_preflight_status": "INCONCLUSIVE",
+      "gpu_check_required": true,
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 0,
+        "precision": 0,
+        "training": 0
+      },
+      "duration_seconds": 304.8944543749967,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 16298,
+          "prefix": "01_draft",
+          "started": 39652.77012477,
+          "response_chars": 18479,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 7437,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 19586,
+            "output_tokens_details": {
+              "thinking_tokens": 12269
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 7437,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 19586,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 7437,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 7437
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5154,
+              "outputTokens": 16,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.005234,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 19586,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 7437,
+              "webSearchRequests": 0,
+              "costUSD": 0.22561199999999998,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 155.0888122489996,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off"
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 34298,
+          "prefix": "02_repair",
+          "started": 39825.734875848,
+          "response_chars": 6116,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 14934,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 9695,
+            "output_tokens_details": {
+              "thinking_tokens": 7347
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 14934,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 9695,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 14934,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 14934
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 11189,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.011274,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 9695,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 14934,
+              "webSearchRequests": 0,
+              "costUSD": 0.15669,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 73.63030110300315,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off"
+        },
+        {
+          "role": "review",
+          "prompt_chars": 33445,
+          "prefix": "03_review",
+          "started": 39917.905827693,
+          "response_chars": 2033,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 15082,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 3952,
+            "output_tokens_details": {
+              "thinking_tokens": 3112
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 15082,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 3952,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 15082,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 15082
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 10649,
+              "outputTokens": 18,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.010739,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 3952,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 15082,
+              "webSearchRequests": 0,
+              "costUSD": 0.099852,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 39.66007757299667,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off"
+        }
+      ],
+      "hardware_calls": [],
+      "evidence_tier": "Real controller, Sonnet responses, CPU checks; fixture RTX 5090 knowledge; no training entrypoint or GPU execution",
+      "completed_attempt_generation_calls": 1,
+      "attempts": [
+        {
+          "result_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/result.json",
+          "completed_without_error": true,
+          "duration_seconds": 304.8944543749967
+        }
+      ],
+      "initial_generation_calls": 1,
+      "timing_scope": "All recorded active attempts; excludes idle gaps between attempts"
+    },
+    {
+      "cell": "conservative_hwdb_on",
+      "precision": "conservative",
+      "hardware_enabled": true,
+      "assertions": {
+        "single_pass": true,
+        "blocked_candidate_skips_review": true,
+        "injected_failure_reproduced": true,
+        "debug_removes_injected_failure": true,
+        "review_follows_fresh_admission": true,
+        "review_receives_preflight_evidence": true,
+        "final_review_approved": true,
+        "final_code_admitted": true,
+        "unchanged_code_reuses_preflight": true,
+        "cpu_adapter_checks_passed": true,
+        "preflight_history_preserved": true,
+        "knowledge_not_duplicated": true,
+        "hardware_toggle_respected": true,
+        "no_unresolved_critical_issues": true,
+        "cpu_only": true,
+        "completed_without_error": true,
+        "one_generation_in_completed_attempt": true
+      },
+      "stages": [
+        {
+          "name": "draft_timeout",
+          "start_seconds": 0.0032862919979379512,
+          "duration_seconds": 240.10564729899488
+        },
+        {
+          "name": "draft",
+          "start_seconds": 240.11292420398968,
+          "duration_seconds": 144.53635047999705
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 384.84781173799274,
+          "duration_seconds": 13.109674687999359
+        },
+        {
+          "name": "repair",
+          "start_seconds": 398.06603515399183,
+          "duration_seconds": 11.89615151599719
+        },
+        {
+          "name": "repair",
+          "start_seconds": 409.99213236298965,
+          "duration_seconds": 2.5830341550026787
+        },
+        {
+          "name": "preflight",
+          "start_seconds": 412.6318212989863,
+          "duration_seconds": 13.205161130004853
+        },
+        {
+          "name": "review",
+          "start_seconds": 425.9857256799878,
+          "duration_seconds": 42.086029992002295
+        }
+      ],
+      "checks": [
+        {
+          "index": 1,
+          "node_id": "7cde654a9e104221bac55e10c341e482",
+          "start_seconds": 144.7383907149997,
+          "duration_seconds": 13.109674687999359,
+          "status": "FAIL",
+          "mode": "full_cpu",
+          "code_hash": "sha256:40b5391a1074f00f077c9a08dcfec890f559ac0635bcaab6d0caf77cbe4bdc5a",
+          "admitted": false,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "AUT002",
+            "CHK001",
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [
+            {
+              "source": "model_preflight",
+              "severity": "critical",
+              "category": "preflight_aut002",
+              "owner": "training_evaluation",
+              "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py', line 211, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/4",
+              "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+            }
+          ],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 236
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            },
+            {
+              "code": "CHK001",
+              "classification": "inconclusive",
+              "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+              "affected_stages": [
+                "abstract_forward"
+              ],
+              "location": {
+                "file": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py",
+                "line": 211,
+                "function": "training_step"
+              },
+              "exception_type": "RuntimeError",
+              "affected_scenarios": [
+                {
+                  "batch_size": 1,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 2,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                },
+                {
+                  "batch_size": 4,
+                  "fixture": {
+                    "image": [
+                      3,
+                      256,
+                      256
+                    ],
+                    "tabular": [
+                      12
+                    ]
+                  },
+                  "input_shape": [
+                    3,
+                    256,
+                    256
+                  ],
+                  "mode": "train",
+                  "precision": "fp32",
+                  "shape_name": "image"
+                }
+              ],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/1",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/2",
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/report_attempt_0.json#/diagnostics/3"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/checks/01_report.json",
+          "report_sha256": "88fb8b8902d0b4dc9f327ac28885c8afb09dee2376ffd33543166c00115756ee"
+        },
+        {
+          "index": 2,
+          "node_id": "c88c42e10c374461b5c52f0b50e25dbb",
+          "start_seconds": 172.52240027599328,
+          "duration_seconds": 13.205161130004853,
+          "status": "INCONCLUSIVE",
+          "mode": "full_cpu",
+          "code_hash": "sha256:bdadfc1ec066d2c8e634273296b095e63d0c83532a0550e1fed4b1e7dc1c3f68",
+          "admitted": true,
+          "gpu_check_required": true,
+          "diagnostic_codes": [
+            "GPU003"
+          ],
+          "report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/c88c42e10c374461b5c52f0b50e25dbb/report_attempt_0.json",
+          "summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/c88c42e10c374461b5c52f0b50e25dbb/admission_summary.json",
+          "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+          "warning": null,
+          "internal_error": null,
+          "issues": [],
+          "advisories": [
+            {
+              "code": "GPU003",
+              "classification": "inconclusive",
+              "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+              "affected_stages": [
+                "static_source"
+              ],
+              "location": {
+                "file": "candidate.py",
+                "line": 235
+              },
+              "exception_type": null,
+              "affected_scenarios": [],
+              "facts": {},
+              "evidence_refs": [
+                "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/c88c42e10c374461b5c52f0b50e25dbb/report_attempt_0.json#/diagnostics/0"
+              ],
+              "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+            }
+          ],
+          "report_copy": "records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/checks/02_report.json",
+          "report_sha256": "0831ecc494290ba01171ce6ed15a3596a0237c847a79f554748dc7f2fb4244d1"
+        }
+      ],
+      "review_entries": [
+        {
+          "node_id": "c88c42e10c374461b5c52f0b50e25dbb",
+          "start_seconds": 185.72790588899807,
+          "admitted": true,
+          "status": "INCONCLUSIVE",
+          "fresh": true,
+          "code_hash": "sha256:bdadfc1ec066d2c8e634273296b095e63d0c83532a0550e1fed4b1e7dc1c3f68",
+          "evidence_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/c88c42e10c374461b5c52f0b50e25dbb/report_attempt_0.json"
+        }
+      ],
+      "generation_strategy": "single_pass",
+      "final_review_status": "approved",
+      "final_preflight_status": "INCONCLUSIVE",
+      "gpu_check_required": true,
+      "cpu_stage_statuses": {
+        "static_source": "INCONCLUSIVE",
+        "hardware": "PASS",
+        "construction": "PASS",
+        "data_contract": "PASS",
+        "abstract_forward": "PASS",
+        "cpu_training": "PASS",
+        "validation": "PASS",
+        "memory": "PASS"
+      },
+      "knowledge_record_occurrences": {
+        "architecture": 1,
+        "precision": 1,
+        "training": 1
+      },
+      "duration_seconds": 468.1755625129881,
+      "calls": [
+        {
+          "role": "draft",
+          "prompt_chars": 18777,
+          "prefix": "01_draft",
+          "started": 39787.256028899,
+          "ok": false,
+          "error": "TimeoutExpired: Command '['claude', '-p', '# system\\n\\n\ud83c\udfc6 You are a Kaggle Grandmaster - a top-tier ML expert competing to WIN.\\n\\n**Your Standards**:\\n\u2713 Design complete ML pipelines (data \u2192 model \u2192 training \u2192 inference)\\n\u2713 Implement real models that LEARN from data (not baseline scripts with constants)\\n\u2713 Generate predictions through ACTUAL MODEL INFERENCE on each sample\\n\u2713 Compete for TOP performance, not trivial baselines\\n\\nYour solution will be evaluated on a real leaderboard. Treat this with professionalism.\\n\\nNow, let\\'s begin the competition. You need to come up with an excellent and creative plan for a competitive solution and then implement this solution in Python with the quality expected of a Kaggle Grandmaster. We will now provide a description of the task.\\n\\n# user\\n\\n# Task description\\nBuild a complete small PetFinder-style image plus tabular regression script. Input root: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_on/workspace/input. train.csv has Id, twelve numeric binary metadata columns, and Pawpularity in [0,100]; test.csv omits the target. Metadata columns: [\\'Subject Focus\\', \\'Eyes\\', \\'Face\\', \\'Near\\', \\'Action\\', \\'Accessory\\', \\'Group\\', \\'Collage\\', \\'Human\\', \\'Occlusion\\', \\'Info\\', \\'Blur\\']. JPEG paths are input/train/<Id>.jpg and input/test/<Id>.jpg. Use a tiny real CNN (at most two convolution layers with 8 and 16 channels), global image pooling, and a small tabular branch. Preserve image [3,256,256] and tabular [12] interfaces. Train from scratch with one train/validation split and at most two epochs. Fit preprocessing only on training data. Report RMSE in original target units and produce Id,Pawpularity test predictions. Use CPU-safe real CandidateAdapter methods; all training side effects belong inside the main guard. Target deployment is RTX 5090, but this audit will execute only CPU adapter checks, not the training entrypoint. Select precision according to the configured mode; normal mode may use FP32 when appropriate. The dataset is synthetic audit evidence, so do not claim leaderboard quality.\\n# Design knowledge\\nSource-backed reference. Current task constraints and fresh measurements take precedence.\\n- Allowed precision policies: fp32, disabled, tf32. Use FP32 if a supported training path is unavailable. [hardware:precision_policy:ec6037dc5280da63; verified]\\n- Hardware: gpu_name=NVIDIA GeForce RTX 5090; architecture=blackwell; compute_capability=12.0; total_vram_mb=32768. [hardware:runtime:ed7741576b8bf10b; verified]\\n- For image plus tabular regression, fuse spatially pooled image features with the metadata branch. Only when: PetFinder-style image and tabular regression on the target profile. Fallback: Keep both input modalities if reducing model size. [hardware:audit-architecture:f6ad2870aec19c08; advisory]\\n- Keep regression loss and RMSE reductions in FP32 under any allowed training precision. Only when: PetFinder-style image and tabular regression on the target profile. Fallback: Use FP32 when the chosen accelerated training path is unavailable. [hardware:audit-precision:e3e3880515318659; advisory]\\n- Use the same train-only preprocessing in the adapter and training path. Only when: PetFinder-style image and tabular regression on the target profile. Fallback: Rebuild features when preprocessing changes. [hardware:audit-training:b1c8975f557b215b; advisory]\\n- Runtime estimate: {\"found\": false, \"reason\": \"No measured profile in this audit fixture\"}. This is an estimate, not a measured runtime for the new candidate; missing evidence does not establish a fit. [hardware:runtime_estimate:9f0c7ca997355edb; advisory]\\n\\n# Instructions\\n\\n## Response format\\n\\nYour response should be a brief outline/sketch of your proposed solution in natural language, followed by a single markdown code block (wrapped in ```) which implements this solution and prints out the evaluation metric. There should be no additional headings or text in your response. Just natural language text followed by a newline and then the markdown code block.\\n\\n## Hardware/Profile reasoning rule\\n\\n- Treat recommendations as empirical evidence, not hard rules. Follow high-confidence hardware/profile guidance by default; if a scoring reason requires deviating, state why and include a fallback such as smaller physical batch size, gradient accumulation, AMP, reduced resolution, fewer epochs, or checkpointing.\\n- Hardware advice never overrides task, dataset, submission, package, model-source, or filesystem constraints. Do not invent Kaggle input paths, local checkpoints, torch hub directories, or placeholder weights; use only paths and model sources that are explicitly available in the prompt/config.\\n- For hardware/runtime optimization, preserve the parent solution\\'s modeling budget unless the user explicitly asks to improve score. Do not increase epochs, folds, model size, input resolution, ensemble count, TTA, dataset size, or validation workload as a hardware-only optimization.\\n\\n\\n## Joint design\\n\\n- Choose data preparation, model, precision, optimizer, training, evaluation and inference together.\\n- Return a brief design followed by one complete runnable Python script; there are no later coding or integration stages.\\n- Keep every applicable knowledge restriction and fallback; family-specific experience is conditional until you choose that family.\\n\\n\\n## \ud83d\udd2c Critical: Scientific Approach to Design\\n\\n- \\n- Before designing your solution, you must answer three fundamental questions:\\n- \\n- 1. **WHAT makes this task unique?**\\n- - Not generic observations like \\'it\\'s a classification task\\'\\n- - What SPECIFIC patterns, challenges, or domain characteristics?\\n- \\n- 2. **WHY is your approach suitable for this task?**\\n- - Not just \\'this model is good\\' - explain the MATCH between approach and task\\n- - What properties of your method address the task characteristics?\\n- \\n- 3. **HOW will you validate your hypothesis?**\\n- - What outcome would confirm your approach is right?\\n- - What outcome would suggest you need to reconsider?\\n- \\n- ---\\n- \\n- \u26a0\ufe0f This is not a template to fill - this is how scientists think.\\n- Blindly applying standard methods without understanding WHY is not acceptable.\\n- \\n- Your plan should naturally reflect this reasoning process.\\n\\n\\n## Solution sketch guideline\\n\\n- - This first solution design should be relatively simple \u2014 avoid complex ensemble strategies or extensive hyperparameter searches at this stage.\\n- - \ud83c\udfaf **CRITICAL: NOVELTY & DIVERSITY REQUIREMENT**:\\n- \u2022 **Mandatory**: Your solution MUST be NOVEL compared to ALL existing attempts in Memory.\\n- \u2022 **Step 1**: Carefully analyze the core idea of EACH previous attempt in Memory.\\n- \u2022 **Step 2 - Choose Strategy**:\\n- \u2192 **Option A (Preferred)**: Propose a COMPLETELY DIFFERENT approach exploring an untried direction.\\n- \u2192 **Option B**: Build upon an existing approach BUT add significant novel insights that fundamentally change the solution.\\n- \u2022 **Forbidden**: Minor variations (changing hyperparameters, swapping similar models, tweaking preprocessing).\\n- \u2022 **Think**: \\'Does my approach explore a fundamentally different hypothesis?\\' If NO \u2192 redesign.\\n- - Don\\'t propose the same modelling solution but keep the evaluation the same.\\n- - Your plan should be concise but comprehensive: Must address WHAT/WHY/HOW (2-4 sentences each). Avoid verbosity - every sentence should add new insight. Natural length: around 8-12 sentences for a complete reasoning process.\\n- - Propose an evaluation metric that is reasonable for this task.\\n- - Don\\'t suggest to do EDA.\\n- - The data is already prepared in `./input` directory. No need to unzip files.\\n\\n\\n## Coding & Execution Guidelines (CRITICAL)\\n\\n- - **NO PROGRESS BARS**: You MUST NOT use `tqdm`. Assume `tqdm` is not installed. Use standard Python loops only. Do not use `verbose=1`.\\n- - **MINIMAL LOGGING**: Print ONLY 1 line per epoch (e.g. loss/accuracy). Do NOT print batch-level logs.\\n- - **FINAL OUTPUT**: The VERY LAST line of execution MUST be `print(f\\'Final Validation Score: {score}\\')`. This is required for the score parser.\\n\\n\\n## CPU preflight adapter contract\\n\\n- - **CPU PREFLIGHT CONTRACT (MANDATORY)**: Define a no-argument `class CandidateAdapter` in the generated file. It must implement `build_model(context)`, `build_optimizer(model, context)`, `build_train_batch(scenario, device)`, `build_validation_batch(scenario, device)`, `training_step(model, batch, context)`, and `validation_step(model, batch, context)`.\\n- - The adapter must exercise the same real model, loss, inputs, and optimizer as the training pipeline; do not use mock tensors or a different toy model. Its batch builders must honor `scenario[\\'batch_size\\']` and return all inputs required by the model plus a target.\\n- - `scenario[\\'fixture\\']` describes input shapes and may omit the target. Construct the target separately according to the task\\'s target contract in every fixture and fallback batch path.\\n- - Keep imports, constants, class/function definitions, and read-only device configuration import-safe. Put all training, validation, prediction, and submission side effects under `if __name__ == \\'__main__\\':`.\\n\\n\\n## Implementation guideline\\n\\n- **Resource Budget**: Time left \u2248 0h 9m 59s | Steps left = 1 | Max execution time per run = a minute\\n- \\n- **Note:** Code execution MUST complete within 9 hours (hard limit) \u2014 any solution exceeding this will be invalid. Within this constraint, prioritize performance and optimization.\\n- \ud83c\udfaf **CRITICAL REQUIREMENTS** (Non-Negotiable):\\n- \\n- **1. Model Inference for ALL Predictions**\\n- \u2022 EVERY prediction (validation & test) MUST come from trained model\\'s forward pass\\n- \u2022 Process: Load data \u2192 Preprocess \u2192 model.predict()/model.forward() \u2192 Save predictions\\n- \u2022 \u274c FORBIDDEN: Constants, placeholders, dummy values, empty arrays, statistics, random numbers\\n- \u2022 \u274c FORBIDDEN: Fake/mock metric functions (must use real sklearn.metrics or correct manual implementation)\\n- \u2022 Why: Shortcuts create fake high validation scores but fail on test (CRITICAL SYSTEM FAILURE)\\n- \\n- **2. Generate submission.csv**\\n- \u2022 Path: `./submission/submission.csv` (NOT ./working/submission.csv)\\n- \u2022 Content: Model predictions on ALL test samples\\n- \u2022 Format: Follow task description exactly\\n- \\n- **3. Print Validation Metric**\\n- \u2022 MUST print: `print(f\\'Final Validation Score: {score}\\')`\\n- \u2022 Score MUST be computed on hold-out validation set using proper metric formula\\n- \u2022 CRITICAL CONSISTENCY REQUIREMENT: Ensure that validation and test inference use IDENTICAL processing logic. Any differences in how validation and test data are handled (such as post-processing, reconstruction, or formatting) can cause large performance gaps between validation and test sets. Maintain consistency across all data processing steps for both validation and test phases.\\n- \\n- **5. CPU Model-Preflight Adapter Contract**\\n- \u2022 The module MUST be import-safe: definitions and lightweight constants may be top-level, but all training, validation, inference, and submission execution MUST be called only inside `if __name__ == \"__main__\":`.\\n- \u2022 MUST define a no-argument top-level `CandidateAdapter` class with methods `build_model(context)`, `build_optimizer(model, context)`, `build_train_batch(scenario, device)`, `build_validation_batch(scenario, device)`, `training_step(model, batch, context)`, and `validation_step(model, batch, context)`. build_model(context) MUST return the real torch.nn.Module used by training, never a dict, tuple, or metadata wrapper.\\n- \u2022 `training_step` MUST return the real scalar loss tensor connected to model parameters; adapter methods must reuse the script\\'s real model, loss, transforms, collate logic, and optimizer rather than mocks.\\n- \u2022 Treat every caller-supplied `context` as a partial mapping: merge it over adapter defaults before reading optional keys, and preserve caller-provided values.\\n- \u2022 CandidateAdapter context mutations do not persist between checker method calls; `training_step` and `validation_step` MUST resolve the script\\'s real criterion when the partial context omits it or supplies `None`, rather than relying on `build_model` to mutate a local context.\\n- \u2022 Batch builders MUST honor `scenario[\\'batch_size\\']` and `device`; use `os.environ.get(\\'MLEVOLVE_INPUT_DIR\\', \\'./input\\')` to locate input fixtures during the isolated CPU check.\\n- \u2022 When `scenario[\\'fixture\\']` is non-empty, it is the authoritative named input contract: build every listed tensor with the declared non-batch shape, preserve those names in the returned mapping, and pass all model inputs to the real forward path. Do not collapse a multimodal fixture into one feature vector.\\n- \u2022 Adapter construction and a one-batch CPU step must be lightweight and must not download weights or require CUDA.\\n- \\n- \ud83d\udcc1 **Directories**: Input data in `./input/`, submission in `./submission/`, temp files in `./working/`\\n- \\n- \ud83d\udce6 **Packages & Internet**: Guaranteed installed packages: numpy, pandas, scikit-learn, statsmodels, xgboost, lightgbm, torch, torchvision, torch-geometric, bayesian-optimization, timm, transformers, sentence-transformers, opencv-python, Pillow. Do not assume unlisted third-party packages are installed; avoid them or provide an ImportError-guarded fallback. Never run pip from generated code. Generated code runs offline: do not download weights or data through torch.hub.load(), Hugging Face, timm, or another remote loader. Use only verified local or cached weights.\\n- \\n- \u26a0\ufe0f **API Compatibility**: LightGBM/XGBoost: \u274c `fit(..., early_stopping_rounds=...)` \u2192 \u2705 LightGBM: `fit(..., callbacks=[lgb.early_stopping(...)])` \u2705 XGBoost: `XGBClassifier(early_stopping_rounds=...)`\\n- \u2022 AdamW: \u274c `from transformers import AdamW` (deprecated) \u2192 \u2705 `from torch.optim import AdamW`\\n- \\n- \ud83d\udeab **Execution Guidelines**:\\n- \u2022 NO tqdm (not installed), NO verbose=1\\n- \u2022 Print only 1 line per epoch (minimize logging)\\n- \u2022 Runtime diagnostics are an exception: one diagnostics line per epoch plus context entry/exit; no per-batch printing.\\n- PyTorch runtime diagnostics: import TrainingDiagnostics from utils.training_diagnostics. Inside the training entrypoint, wrap training in `with TrainingDiagnostics(model, optimizer, scaler=scaler_or_None, settings={...}) as diagnostics:` after model/optimizer initialization. Settings must include actual physical_batch_size, effective_batch_size, planned_epochs, steps_per_epoch, model_family, split_seed and precision choice/reason. Call diagnostics.after_update() once after each optimizer update ATTEMPT, after scaler.step and scaler.update (or optimizer.step); never after accumulation microbatches. The helper observes real optimizer steps, including skips, and actual autocast dtype. Call diagnostics.report(epoch=one_based_epoch) once per epoch; keep the normal epoch metric line. Save diagnostics.state_dict() with the training checkpoint and restore it using diagnostics.load_state_dict(...). Preserve these calls during merges/repairs. Do not replace missing measurements with zero. Keep the final validation score as the last line, after leaving the diagnostics context. These diagnostics also run without the scheduler.\\n- \u2022 Use DataLoader with num_workers>=2 for speed\\n- \\n- \u26a0\ufe0f  **Self-Check Before Finalizing**:\\n- \u25a1 Did predictions pass through model\\'s learned weights during inference? (If NO \u2192 INVALID)\\n- \u25a1 Did I generate submission.csv in correct path with ALL test predictions?\\n- \u25a1 Did I print validation metric as the last line?\\n- \u25a1 Did I use the COMPLETE training dataset (not a tiny subset)?\\n- \u25a1 Is execution behind the main guard and is CandidateAdapter complete and CPU-safe?\\n- \u2022 PetFinder preflight fixture: return a mapping containing image [B, 3, 256, 256], tabular [B, 12], and float32 target [B]; call the real model with both image and tabular.\\n- \\n\\n\\n## Conservative precision\\n\\n- Conservative precision is mandatory for candidate models: use float32 parameters, floating inputs, optimizer state, training, validation, and inference. Keep integer indices/labels unchanged. Disable AMP/autocast and GradScaler; do not use FP16, BF16, FP8, FP4, FP64, quantized models, or lower-precision adapters. TF32 may accelerate float32 matmul/convolution only on confirmed Ampere-or-newer CUDA hardware; otherwise use FP32. TF32 uses reduced internal mantissa precision while tensors remain float32. This rule overrides inherited code and hardware recommendations.\\n\\n\\n## \ud83d\udea8 DATA LEAKAGE PREVENTION\\n\\n- \\n- \u26a0\ufe0f **Strict Isolation Principle**: Validation/Test data must remain strictly unseen during training.\\n- \\n- \u2705 **Sequence**: Always **Split Data FIRST**, then apply processing.\\n- \u2705 **Stateful Transformations**: Fit all Scalers, Encoders, Imputers, and Tokenizers **ONLY on Training data**, then use `.transform()` on Validation/Test.\\n- \u2705 **Feature Engineering**: Calculate global statistics (e.g., mean, variance, vocabulary) solely from the Training set.\\n- \u2705 **Target Leakage**: Never use target information (e.g., Target Encoding) from the validation set.\\n- \\n\\n\\n## Installed Packages\\n\\nThe following packages are guaranteed in the execution environment: `numpy`, `pandas`, `scikit-learn`, `statsmodels`, `xgboost`, `lightgbm`, `torch`, `torchvision`, `torch-geometric`, `bayesian-optimization`, `timm`, `transformers`, `sentence-transformers`, `opencv-python`, `Pillow`. Do not assume any unlisted third-party package is installed: either avoid it or use an ImportError-guarded fallback. Do not run pip from generated code. For neural networks we suggest using PyTorch rather than TensorFlow.\\n\\n## \ud83d\udca1 Recommendation: Robustness & Generalization Strategy\\n\\n- \\n- **To improve model robustness and generalization on unseen data:**\\n- \\n- \u2705 **Architecture**: Match model inductive bias to data structure (e.g., CNNs/ViTs for spatial grids, Transformers/RNNs for sequences, GNNs/GCNs for graphs/topology)\\n- \u2705 **Input Strategy**: Handle variable-length or large-scale inputs via **windowing strategies** or patch-based processing (consider overlap for smoother predictions)\\n- \u2705 **Regularization**: Consider using Dropout, Batch/Layer Norm, Weight Decay, or Label Smoothing\\n- \u2705 **Loss Function**: Inspect class distribution and adapt loss accordingly (e.g., weighted loss, FocalLoss, or task-specific objectives)\\n- \u2705 **Learning Rate**: Consider using adaptive schedules like Cosine Annealing or ReduceLROnPlateau or Warmup with differential rates if needed\\n- \u2705 **Data Augmentation**: Apply domain-appropriate augmentation based on data modality (e.g., geometric transforms, masking, mixup)\\n- \u2705 **Validation**: Monitor validation metrics strictly and use early stopping to prevent overfitting\\n- \\n- \u26a0\ufe0f **Note**:\\n- Prioritize capturing the intrinsic structure of the data (Inductive Bias) over simply increasing model size.\\n-\\n\\n# assistant\\n\\nLet me approach this systematically.\\nFirst, I\\'ll examine the dataset:\\n24 training and 4 test rows; 256x256 RGB JPEGs; 12 metadata features; scalar target.\\n', '--system-prompt', 'You are a text-only model inference endpoint. You cannot call tools or inspect files. All task information is in the supplied prompt. Return the requested complete plan and code, SEARCH/REPLACE patch, or JSON directly. Never describe a future tool action. The supplied MLEvolve interfaces exist in the execution environment.', '--model', 'sonnet', '--output-format', 'json', '--no-session-persistence', '--tools', '']' timed out after 240 seconds",
+          "duration_seconds": 240.10518287200102,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_on"
+        },
+        {
+          "role": "draft",
+          "prompt_chars": 18763,
+          "prefix": "01_draft",
+          "started": 40101.87329131,
+          "response_chars": 15871,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 8328,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 18066,
+            "output_tokens_details": {
+              "thinking_tokens": 11759
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 8328,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 18066,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 8328,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 8328
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 5751,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.005836,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 18066,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 8328,
+              "webSearchRequests": 0,
+              "costUSD": 0.213976,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 144.53610720299912,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on"
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 25159,
+          "prefix": "02_repair",
+          "started": 40259.82645402,
+          "response_chars": 850,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 11483,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 1407,
+            "output_tokens_details": {
+              "thinking_tokens": 1020
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 11483,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 1407,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 11483,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 11483
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 8656,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.008741,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 1407,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 11483,
+              "webSearchRequests": 0,
+              "costUSD": 0.060006000000000004,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 11.895758218997798,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on"
+        },
+        {
+          "role": "repair",
+          "prompt_chars": 29958,
+          "prefix": "03_repair",
+          "started": 40271.752560614,
+          "response_chars": 291,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 13275,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 120,
+            "output_tokens_details": {
+              "thinking_tokens": 0
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 13275,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 120,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 13275,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 13275
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 9808,
+              "outputTokens": 14,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.009878000000000001,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 120,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 13275,
+              "webSearchRequests": 0,
+              "costUSD": 0.054304000000000005,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 2.5826097940007458,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on"
+        },
+        {
+          "role": "review",
+          "prompt_chars": 30782,
+          "prefix": "04_review",
+          "started": 40287.746359602,
+          "response_chars": 1968,
+          "usage": {
+            "input_tokens": 2,
+            "cache_creation_input_tokens": 14034,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 4193,
+            "output_tokens_details": {
+              "thinking_tokens": 3426
+            },
+            "server_tool_use": {
+              "web_search_requests": 0,
+              "web_fetch_requests": 0
+            },
+            "service_tier": "standard",
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 14034,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "inference_geo": "not_available",
+            "iterations": [
+              {
+                "input_tokens": 2,
+                "output_tokens": 4193,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 14034,
+                "cache_creation": {
+                  "ephemeral_5m_input_tokens": 0,
+                  "ephemeral_1h_input_tokens": 14034
+                },
+                "type": "message"
+              }
+            ],
+            "speed": "standard"
+          },
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 9726,
+              "outputTokens": 19,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.009821,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            },
+            "claude-sonnet-5": {
+              "inputTokens": 2,
+              "outputTokens": 4193,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 14034,
+              "webSearchRequests": 0,
+              "costUSD": 0.09806999999999999,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-sonnet-5",
+              "provider": "firstParty",
+              "costBasis": "list"
+            }
+          },
+          "ok": true,
+          "duration_seconds": 42.085371377994306,
+          "artifact_dir": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on"
+        }
+      ],
+      "hardware_calls": [
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge",
+        "get_optimization_context",
+        "get_design_knowledge"
+      ],
+      "evidence_tier": "Real controller, Sonnet responses, CPU checks; fixture RTX 5090 knowledge; no training entrypoint or GPU execution",
+      "completed_attempt_generation_calls": 1,
+      "attempts": [
+        {
+          "result_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_on/result.json",
+          "completed_without_error": false,
+          "duration_seconds": 240.10942102299305
+        },
+        {
+          "result_ref": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/result.json",
+          "completed_without_error": true,
+          "duration_seconds": 228.06614148999506
+        }
+      ],
+      "initial_generation_calls": 2,
+      "timing_scope": "All recorded active attempts; excludes idle gaps between attempts"
+    }
+  ]
+}

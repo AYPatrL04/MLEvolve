@@ -1,0 +1,241 @@
+{
+  "commit": "4da2d2ac28aa77e3596cec6030f4efb65cc600c1",
+  "evidence_tier": "Archived CPU reports projected through current functions plus deterministic fixtures; no LLM, GPU or live scheduler/database calls",
+  "preflight_cases": [
+    {
+      "source": "runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/report.json",
+      "sha256": "49e49c281f1d168b374608ebe6b3bc7d7ecd5d3da65cc11b2e45d3f4f78f0190",
+      "archived_report_chars": 14988,
+      "current_terminal_summary_chars": 960,
+      "diagnostic_count": 5,
+      "repair_issue_count": 1,
+      "journal_issues_after_existing_dedup": 1,
+      "repair_issues_chars": 1647,
+      "cause_occurrences": {
+        "construction raised ValueError: bad model configuration": 5
+      },
+      "per_issue_chars": [
+        1645
+      ],
+      "repair_issues": [
+        {
+          "source": "model_preflight",
+          "severity": "critical",
+          "category": "preflight_con001",
+          "owner": "model_design",
+          "evidence": "[CON001] construction raised ValueError: bad model configuration\nFailing scenario: [{\"batch_size\": 2, \"fixture\": {}, \"input_shape\": [], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"default\"}, {\"batch_size\": 1, \"fixture\": {}, \"input_shape\": [], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"last_batch\"}, {\"batch_size\": 2, \"fixture\": {}, \"input_shape\": [], \"mode\": \"validation\", \"precision\": \"fp32\", \"shape_name\": \"default\"}]\nCandidate traceback: File '/home/justin/MLEvolve/runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/candidate/candidate.py', line 6, in build_model\nAffected checks: construction, cpu_training, validation\nReproduction: model-preflight check preflight.yaml --only construction\nEvidence refs: runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/report.json#/diagnostics/0, runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/report.json#/diagnostics/2, runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/report.json#/diagnostics/3, runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/report.json#/diagnostics/4",
+          "repair_instruction": "Repair the confirmed construction defect [CON001] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+        }
+      ],
+      "advisories": [
+        {
+          "code": "CHK001",
+          "classification": "inconclusive",
+          "message": "construction raised ValueError: bad model configuration",
+          "affected_stages": [
+            "abstract_forward"
+          ],
+          "location": {
+            "file": "/home/justin/MLEvolve/runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/candidate/candidate.py",
+            "line": 6,
+            "function": "build_model"
+          },
+          "exception_type": "ValueError",
+          "affected_scenarios": [
+            {
+              "batch_size": 2,
+              "fixture": {},
+              "input_shape": [],
+              "mode": "train",
+              "precision": "fp32",
+              "shape_name": "default"
+            }
+          ],
+          "facts": {},
+          "evidence_refs": [
+            "runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-construction/report.json#/diagnostics/1"
+          ],
+          "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+        }
+      ]
+    },
+    {
+      "source": "runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/report.json",
+      "sha256": "fcc5b517909276e13696b2048e5de8babff738831915c563dde56ba7bdbfdcd4",
+      "archived_report_chars": 16634,
+      "current_terminal_summary_chars": 934,
+      "diagnostic_count": 5,
+      "repair_issue_count": 1,
+      "journal_issues_after_existing_dedup": 1,
+      "repair_issues_chars": 1724,
+      "cause_occurrences": {
+        "fixture raised KeyError: 'missing_feature_column'": 5
+      },
+      "per_issue_chars": [
+        1722
+      ],
+      "repair_issues": [
+        {
+          "source": "model_preflight",
+          "severity": "warning",
+          "category": "preflight_fix001",
+          "owner": "model_design",
+          "evidence": "[FIX001] fixture raised KeyError: 'missing_feature_column'\nFailing scenario: [{\"batch_size\": 2, \"fixture\": {}, \"input_shape\": [], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"default\"}, {\"batch_size\": 1, \"fixture\": {}, \"input_shape\": [], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"last_batch\"}, {\"batch_size\": 2, \"fixture\": {}, \"input_shape\": [], \"mode\": \"validation\", \"precision\": \"fp32\", \"shape_name\": \"default\"}]\nCandidate traceback: File '/home/justin/MLEvolve/runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/candidate/candidate.py', line 10, in build_train_batch\nAffected checks: data_contract, cpu_training, validation\nReproduction: model-preflight check preflight.yaml --only data_contract\nEvidence refs: runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/report.json#/diagnostics/0, runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/report.json#/diagnostics/2, runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/report.json#/diagnostics/3, runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/report.json#/diagnostics/4",
+          "repair_instruction": "The CPU adapter batch could not be constructed; this does not establish a model defect. Check the reported scenario against the real data contract and repair the batch builder if it is wrong. Preserve the selected model and do not substitute mock training behavior."
+        }
+      ],
+      "advisories": [
+        {
+          "code": "CHK001",
+          "classification": "inconclusive",
+          "message": "fixture raised KeyError: 'missing_feature_column'",
+          "affected_stages": [
+            "abstract_forward"
+          ],
+          "location": {
+            "file": "/home/justin/MLEvolve/runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/candidate/candidate.py",
+            "line": 10,
+            "function": "build_train_batch"
+          },
+          "exception_type": "KeyError",
+          "affected_scenarios": [
+            {
+              "batch_size": 2,
+              "fixture": {},
+              "input_shape": [],
+              "mode": "train",
+              "precision": "fp32",
+              "shape_name": "default"
+            }
+          ],
+          "facts": {},
+          "evidence_refs": [
+            "runs/hwdb-disabled-feedback-audit-20260913/fixed-feedback/working/preflight/broken-fixture/report.json#/diagnostics/1"
+          ],
+          "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+        }
+      ]
+    }
+  ],
+  "diagnostic_projection": {
+    "hardware_source": {
+      "code": "GPU001",
+      "stage": "hardware",
+      "classification": "confirmed_candidate_failure",
+      "severity": "error",
+      "message": "requested precision 'bf16' is unsupported by Tesla V100",
+      "evidence": {
+        "requested_precision": "bf16",
+        "native_training_dtypes": [
+          "float32",
+          "float16"
+        ],
+        "target_profile": "nvidia/v100_32gb"
+      },
+      "reproduction": "model-preflight check preflight.yaml --only hardware"
+    },
+    "hardware_issue": {
+      "source": "model_preflight",
+      "severity": "critical",
+      "category": "preflight_gpu001",
+      "owner": "datatype_precision",
+      "evidence": "[GPU001] requested precision 'bf16' is unsupported by Tesla V100\nFacts: {\"native_training_dtypes\": [\"float32\", \"float16\"], \"requested_precision\": \"bf16\", \"target_profile\": \"nvidia/v100_32gb\"}\nReproduction: model-preflight check preflight.yaml --only hardware",
+      "repair_instruction": "Repair the confirmed hardware defect [GPU001] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+    },
+    "supported_dtype_evidence_retained": true,
+    "memory_advisories": [
+      {
+        "code": "MEM001",
+        "classification": "risk",
+        "message": "analytical memory estimate is 92.0% of target VRAM; this is not a CUDA OOM guarantee",
+        "affected_stages": [
+          "memory"
+        ],
+        "location": {},
+        "exception_type": null,
+        "affected_scenarios": [],
+        "facts": {
+          "target_vram_fraction": 0.92,
+          "estimated_risk": "high",
+          "is_gpu_oom_guarantee": false
+        },
+        "evidence_refs": [
+          "preflight:report#/diagnostics/0"
+        ],
+        "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+      }
+    ],
+    "memory_source": {
+      "code": "MEM001",
+      "stage": "memory",
+      "severity": "warning",
+      "classification": "risk",
+      "message": "analytical memory estimate is 92.0% of target VRAM; this is not a CUDA OOM guarantee",
+      "evidence": {
+        "target_vram_fraction": 0.92,
+        "estimated_risk": "high",
+        "is_gpu_oom_guarantee": false
+      }
+    },
+    "memory_warning_forwarded_as_issue": false
+  },
+  "scheduler_projection": {
+    "fixture_raw": {
+      "effective_backend": "cuda_process",
+      "runner_contract": "subprocess_job_v1",
+      "runtime_estimate": {
+        "found": false,
+        "reason": "No valid runtime profile for the requested backend"
+      },
+      "hardware_context": {
+        "hardware": {
+          "gpu_name": "NVIDIA GeForce RTX 5090",
+          "architecture": "blackwell",
+          "total_vram_mb": 32768
+        },
+        "scheduler_limits": {
+          "safe_vram_budget_mb": 31744
+        }
+      },
+      "graph_evidence": {
+        "exact_profiles": [],
+        "similar_profiles": [],
+        "packed_profiles": []
+      },
+      "derived_diagnosis": {
+        "profile_symptoms": [
+          "high_vram_pressure"
+        ],
+        "optimization_targets": [
+          "reduce_vram"
+        ]
+      },
+      "stage_hardware_features": {},
+      "vector_evidence": {},
+      "recommendations": [],
+      "risk_flags": [
+        "high_vram_pressure"
+      ],
+      "evidence_refs": [],
+      "confidence": 0.0
+    },
+    "compact_runtime_estimate": {
+      "found": false,
+      "reason": "No valid runtime profile for the requested backend"
+    },
+    "current_v2_prompt": "# Design knowledge\nSource-backed reference. Current task constraints and fresh measurements take precedence.\n- Execution backend: cuda_process; runner contract: subprocess_job_v1. Scheduler-owned controls remain owned by the scheduler. [hardware:backend:c706b9d2aa9d33f5; verified]\n- Hardware: gpu_name=NVIDIA GeForce RTX 5090; architecture=blackwell; total_vram_mb=32768. [hardware:runtime:7e117524e4e45f09; verified]\n- Scheduler constraints: {\"safe_vram_budget_mb\": 31744}. The scheduler owns admission and concurrency; a memory budget is not a throughput target. [hardware:scheduler_limits:7d4f1b9248678004; verified]\n- Reported risk: high_vram_pressure Only when: Revalidate applicability to this candidate; preserve task and precision constraints. Restrictions: Verify this risk before assuming safe execution; it is not a confirmed candidate defect. [hardware:scheduler_risk:1c3ca6c6e446e990; advisory]\n- Runtime estimate: {\"found\": false, \"reason\": \"No valid runtime profile for the requested backend\"}. This is an estimate, not a measured runtime for the new candidate; missing evidence does not establish a fit. [hardware:runtime_estimate:1c979aba56fabc3a; advisory]\n- Suggested optimization target: reduce_vram Only when: Revalidate applicability to this candidate; preserve task and precision constraints. [hardware:scheduler_target:14e075b19fb5bc11; advisory]",
+    "raw_chars": 711,
+    "prompt_chars": 1371,
+    "safe_vram_budget_retained": true,
+    "runtime_unavailable_reason_retained": true,
+    "risk_flag_retained": true,
+    "prompt_unchanged_after_budget_runtime_risk_changes": false
+  },
+  "log_projection": {
+    "raw_chars": 8955,
+    "agent_visible_chars": 430,
+    "middle_warning_retained": true,
+    "final_metric_retained": true,
+    "truncation_reported": false
+  }
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "source": "static_review",
+    "severity": "warning",
+    "category": "P1.3 Best Model Usage",
+    "owner": "training_evaluation",
+    "evidence": "The training loop runs planned_epochs=2 with no per-epoch validation-loss tracking or checkpoint saving; after the loop, the model object in its final (last-epoch) state is used directly for both validation RMSE computation and test inference, so there is no selection of a best-performing epoch.",
+    "repair_instruction": "If multi-epoch training is retained, track validation loss per epoch and restore/use the best-performing state_dict for final validation reporting and test inference instead of the last epoch's weights."
+  },
+  {
+    "source": "static_review",
+    "severity": "warning",
+    "category": "P1.5 Hardware-Critical Execution Risk",
+    "owner": "integration",
+    "evidence": "GPU003 advisory flags that behavior at the device-selection branch (torch.cuda.is_available()) is inconclusive/unverified in this CPU-only preflight; the actual CUDA/TF32 branch on the RTX 5090 target has not been executed or confirmed.",
+    "repair_instruction": "Treat as advisory only; confirm the CUDA branch (device selection and TF32 gating) with a GPU-inclusive verification pass before relying on it for the RTX 5090 deployment target."
+  }
+]
