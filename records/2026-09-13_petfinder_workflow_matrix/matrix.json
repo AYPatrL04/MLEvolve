@@ -1,0 +1,114 @@
+{
+  "provider_probe": {
+    "luna_medium": "unavailable: Claude CLI returned 404 unrecognized_model",
+    "selected": "sonnet"
+  },
+  "cuda_visible_devices": "",
+  "gpu_execution": false,
+  "results": [
+    {
+      "cell": "normal_hwdb_off",
+      "precision": "normal",
+      "hwdb": false,
+      "target_profile": "nvidia/rtx5090",
+      "duration_ms": 49431,
+      "calls": {
+        "draft": {
+          "label": "draft",
+          "provider": "claude_cli",
+          "seam": "agents.coder.base_coder.generate",
+          "calls": [
+            {
+              "seam": "base_coder.generate",
+              "duration_ms": 19988,
+              "prompt_chars": 14517,
+              "response_chars": 299
+            }
+          ],
+          "ok": true,
+          "duration_ms": 19988
+        },
+        "debug": {
+          "ok": false,
+          "via": "agents.debug_agent.run",
+          "calls": [
+            {
+              "seam": "stage_repair.generate",
+              "duration_ms": 12825,
+              "prompt_chars": 2422,
+              "response_chars": 870
+            },
+            {
+              "seam": "stage_repair.generate",
+              "duration_ms": 16309,
+              "prompt_chars": 2422,
+              "response_chars": 903
+            }
+          ],
+          "duration_ms": 29134
+        }
+      },
+      "entrypoints": {
+        "draft_agent.run": {
+          "invoked": true,
+          "ok": true,
+          "node_id": "0c78b7fe16e345459f5ea88edab057f1"
+        },
+        "debug_agent.run": {
+          "invoked": true,
+          "ok": false
+        },
+        "stage_repair.repair_selected_stages": {
+          "invoked": false,
+          "via": "debug_agent.run"
+        },
+        "result_parse_agent.run": {
+          "invoked": true,
+          "ok": true
+        }
+      },
+      "draft_code_chars": 169,
+      "preflight": {
+        "status": "FAIL",
+        "mode": "static_hardware_fallback",
+        "code_hash": "sha256:616abb11ca96149c7f91cab5c2e34614d0dd47be02a159536f874d394fb2a7f4",
+        "admitted": false,
+        "gpu_check_required": false,
+        "diagnostic_codes": [
+          "MLE_ADAPTER001",
+          "MLE_IMPORT001"
+        ],
+        "report_path": "/home/justin/MLEvolve/records/2026-09-13_petfinder_workflow_matrix/normal_hwdb_off/workspace/working/preflight/0c78b7fe16e345459f5ea88edab057f1/report.json",
+        "summary_path": "/home/justin/MLEvolve/records/2026-09-13_petfinder_workflow_matrix/normal_hwdb_off/workspace/working/preflight/0c78b7fe16e345459f5ea88edab057f1/admission_summary.json",
+        "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+        "warning": null,
+        "internal_error": null,
+        "issues": [
+          {
+            "source": "model_preflight",
+            "severity": "critical",
+            "category": "preflight_adapter_contract",
+            "owner": "integration",
+            "evidence": "CandidateAdapter is missing",
+            "repair_instruction": "Add a no-argument CandidateAdapter implementing build_model, build_optimizer, build_train_batch, build_validation_batch, training_step, and validation_step."
+          },
+          {
+            "source": "model_preflight",
+            "severity": "critical",
+            "category": "preflight_import_safety",
+            "owner": "integration",
+            "evidence": "Training execution is not protected by if __name__ == '__main__'.",
+            "repair_instruction": "Move all training and submission execution behind an if __name__ == '__main__' guard."
+          }
+        ],
+        "advisories": []
+      },
+      "assertions": {
+        "draft_response_captured": false,
+        "preflight_ran_cpu_only": true,
+        "debug_attempted_on_rejection": true,
+        "post_preflight_recorded": false
+      }
+    }
+  ]
+}

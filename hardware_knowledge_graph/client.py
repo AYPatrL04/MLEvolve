@@ -111,6 +111,7 @@ class HardwareKnowledgeClient:
         self._probe_status: dict[str, Any] | None = None
         self._scheduler_client: Any | None = None
         self._hardware_knowledge_store: HardwareKnowledgeGraphStore | None = None
+        self._design_code_store = None
         self._hardware_neighborhood_cache = (
             RedisLRUCache.from_settings(self.settings)
             if graph_cache_enabled(self.settings)
@@ -259,6 +260,10 @@ class HardwareKnowledgeClient:
     def get_hardware_context(
         self, hardware_key: str = "current", include_scheduler_limits: bool = True
     ) -> dict[str, Any]:
+        if self._scheduler_client is not None:
+            return self._scheduler_client.get_hardware_context(
+                hardware_key, include_scheduler_limits=include_scheduler_limits
+            )
         probe = (
             self.probe_current_hardware()
             if str(hardware_key or "current") == "current"
@@ -317,6 +322,7 @@ class HardwareKnowledgeClient:
                     "profile_symptoms": [],
                     "optimization_targets": [],
                 },
+                "runtime_estimate": {"found": False, "reason": "profile evidence disabled" if self.scheduler_context_attached else "scheduler disabled"},
                 "evidence_refs": [],
                 "confidence": 0.0,
             }
@@ -381,7 +387,7 @@ class HardwareKnowledgeClient:
 
     @staticmethod
     def _stage_feature_context_from_static_graph(
-        *, hardware_name: str, stages: list[str], limit: int
+        *, hardware_name: str, stages: list[str], limit: int, precision_mode: str = "normal"
     ) -> dict[str, Any]:
         try:
             from localml_scheduler.hardware_knowledge.feature_filter import (
@@ -406,8 +412,8 @@ class HardwareKnowledgeClient:
         reason = "hardware not found"
         per_stage_limit = max(1, int(limit))
         for stage in stages:
-            node_payload = query_hardware_node(hardware_name, stage)
-            feature_payload = query_hardware_features(hardware_name, stage)
+            node_payload = query_hardware_node(hardware_name, stage, precision_mode=precision_mode)
+            feature_payload = query_hardware_features(hardware_name, stage, precision_mode=precision_mode)
             if not node_payload.get("found") and not feature_payload.get("found"):
                 reason = str(
                     node_payload.get("reason")
@@ -469,6 +475,7 @@ class HardwareKnowledgeClient:
         *,
         pipeline_stage: str | list[str] | tuple[str, ...] | None = None,
         limit: int = 8,
+        precision_mode: str = "normal",
     ) -> dict[str, Any]:
         stages = self._normalize_hardware_stage_list(pipeline_stage)
         if not stages:
@@ -481,7 +488,7 @@ class HardwareKnowledgeClient:
             hardware.get("gpu_name") or hardware.get("hardware_key") or hardware_id
         )
         result = self._stage_feature_context_from_static_graph(
-            hardware_name=hardware_name, stages=stages, limit=limit
+            hardware_name=hardware_name, stages=stages, limit=limit, precision_mode=precision_mode
         )
         result["hardware_context"] = hardware_context
         return result
@@ -662,9 +669,17 @@ class HardwareKnowledgeClient:
         workload_type: str | None = None,
         task_type: str | None = None,
         candidate_families: list[str] | None = None,
+        effective_backend: str | None = None,
+        runner_contract: str = "subprocess_job_v1",
         hardware_key: str = "current",
         limit: int = 8,
     ) -> dict[str, Any]:
+        if self._scheduler_client is not None:
+            return self._scheduler_client.get_model_design_hardware_context(
+                workload_type=workload_type, task_type=task_type,
+                candidate_families=candidate_families, effective_backend=effective_backend,
+                runner_contract=runner_contract, hardware_key=hardware_key, limit=limit,
+            )
         workload = workload_type or task_type or "mlevolve_training"
         hardware_context = self.get_hardware_context(
             hardware_key,
@@ -683,8 +698,8 @@ class HardwareKnowledgeClient:
             {
                 "model_family": family,
                 "branch_name": family,
-                "score": round(0.2 + min(0.5, 0.05 * len(feature_words)), 3),
-                "confidence": round(0.25 + min(0.5, 0.03 * len(feature_words)), 3),
+                "score": 0.05,
+                "confidence": 0.0,
                 "rationale": self._model_family_rationale(
                     family, workload, feature_words
                 ),
@@ -701,7 +716,7 @@ class HardwareKnowledgeClient:
         ]
         return _sanitize_agent_response(
             {
-                "found": bool(options),
+                "found": False,
                 "hardware_context": hardware_context,
                 "hardware_feature_index": {
                     "found": bool(feature_context.get("found")),
@@ -712,7 +727,7 @@ class HardwareKnowledgeClient:
                 "model_options": options,
                 "recommendations": [
                     "Prefer a branch that matches the task metric first, then use hardware facts to choose precision and batch-size strategy.",
-                    "Reuse existing branch profiles when branch_name matches the mother model.",
+                    "These are unranked task candidates; hardware capabilities alone do not establish model-specific performance.",
                 ],
                 "risk_flags": [],
                 "evidence_refs": sorted(
@@ -735,11 +750,14 @@ class HardwareKnowledgeClient:
     def get_optimization_context(
         self, *, candidate: dict[str, Any], limit: int = 8
     ) -> dict[str, Any]:
+        if self._scheduler_client is not None and self.include_profile_evidence:
+            return self._scheduler_client.get_optimization_context(candidate=candidate, limit=limit)
         graph_context = self.get_profile_evidence(candidate=candidate, limit=limit)
         pipeline_stages = self._hardware_stages_for_candidate(candidate)
         stage_hardware_features = (
             self.get_stage_hardware_features(
-                "current", pipeline_stage=pipeline_stages, limit=max(2, int(limit))
+                "current", pipeline_stage=pipeline_stages, limit=max(2, int(limit)),
+                precision_mode=str(candidate.get("precision_optimization_mode") or "normal"),
             )
             if pipeline_stages
             else {}
@@ -766,6 +784,9 @@ class HardwareKnowledgeClient:
             if feature.get("recommended") and feature.get("name"):
                 recommendations.append(str(feature["name"]))
         result = {
+            "effective_backend": graph_context.get("effective_backend"),
+            "runner_contract": graph_context.get("runner_contract"),
+            "runtime_estimate": graph_context.get("runtime_estimate") or {"found": False, "reason": "insufficient evidence"},
             "hardware_context": graph_context.get("hardware_context"),
             "graph_evidence": graph_context.get("graph_evidence")
             or {"exact_profiles": [], "similar_profiles": [], "packed_profiles": []},
@@ -778,6 +799,44 @@ class HardwareKnowledgeClient:
             "confidence": round(float(graph_context.get("confidence") or 0.0), 3),
         }
         return _sanitize_agent_response(result)
+
+    def get_design_knowledge(self, *, candidate: dict[str, Any], context: dict[str, Any], role: str = "draft") -> list[dict[str, Any]]:
+        """Retrieve the concise domain index without a feature-selection LLM."""
+        from knowledge.records import select_records
+
+        records = []
+        hardware = self.hardware_profile()
+        neighborhood = self._hardware_graph_store().get_feature_neighborhood(
+            hardware_terms=[hardware.gpu_name, hardware.hardware_key],
+        )
+        for feature in neighborhood.get("features") or []:
+            # The exact graph relationship already established the hardware match.
+            for record in feature.get("design_records_v2") or []:
+                if record.get("applicability", {}).get("hardware_id") == feature.get("hardware_id"):
+                    scope = {**context, "hardware_id": feature["hardware_id"]}
+                else:
+                    scope = context
+                matched = select_records([record], scope, role=role)
+                for item in matched:
+                    if item.get("applicability", {}).get("hardware_id") and context.get("hardware_key"):
+                        item["applicability"].pop("hardware_id")
+                        item["applicability"]["hardware_keys"] = [context["hardware_key"]]
+                records.extend(matched)
+        if self._scheduler_client is not None:
+            records.extend(self._scheduler_client._code_store().search_design_knowledge(
+                query=" ".join(str(candidate.get(key) or "") for key in ("workload_type", "task_type", "model_family")),
+                context=context, role=role,
+            ))
+        elif self.settings.code_knowledge.enabled:
+            from localml_scheduler.code_knowledge.store import CodeKnowledgeStore
+
+            if self._design_code_store is None:
+                self._design_code_store = CodeKnowledgeStore(self.settings)
+            records.extend(self._design_code_store.search_design_knowledge(
+                query=" ".join(str(candidate.get(key) or "") for key in ("workload_type", "task_type", "model_family")),
+                context=context, role=role,
+            ))
+        return records
 
     def plan_job_packet(
         self, *, candidates: list[dict[str, Any]], limit: int = 8

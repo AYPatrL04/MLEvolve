@@ -1,0 +1,5 @@
+<<<<<<< SEARCH
+    rmse = mean_squared_error(val_targets, val_preds, squared=False)
+=======
+    rmse = np.sqrt(mean_squared_error(val_targets, val_preds))
+>>>>>>> REPLACE

@@ -1,0 +1,10 @@
+[
+  {
+    "source": "model_preflight",
+    "severity": "critical",
+    "category": "preflight_aut002",
+    "owner": "training_evaluation",
+    "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/candidate/candidate.py', line 193, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/8eebe4ec8fdc4d6385f04d577e50be46/report_attempt_0.json#/diagnostics/6",
+    "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+  }
+]

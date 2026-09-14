@@ -1,0 +1,189 @@
+<<<<<<< SEARCH
+BATCH_SIZE = 4
+EPOCHS = 2
+LR = 1e-3
+WEIGHT_DECAY = 1e-4
+=======
+BATCH_SIZE = 4
+EPOCHS = 2
+LR = 1e-3
+WEIGHT_DECAY = 1e-4
+PATIENCE = 1
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    mean = sums / count
+    var = np.maximum(sq_sums / count - mean**2, 1e-6)
+    std = np.sqrt(var)
+    return mean.astype(np.float32), std.astype(np.float32)
+
+
+# ----------------------------------------------------------------------------
+# CPU preflight adapter contract
+# ----------------------------------------------------------------------------
+=======
+    mean = sums / count
+    var = np.maximum(sq_sums / count - mean**2, 1e-6)
+    std = np.sqrt(var)
+    return mean.astype(np.float32), std.astype(np.float32)
+
+
+def evaluate_regression(model, loader, target_mean, target_std, device):
+    model.eval()
+    preds_orig = []
+    trues_orig = []
+    with torch.no_grad():
+        for image, tabular, target in loader:
+            image = image.to(device)
+            tabular = tabular.to(device)
+            pred_norm = model(image, tabular).cpu().numpy()
+            pred_orig = pred_norm * target_std + target_mean
+            true_orig = target.numpy() * target_std + target_mean
+            preds_orig.extend(pred_orig.tolist())
+            trues_orig.extend(true_orig.tolist())
+    preds_orig = np.clip(np.array(preds_orig), 0.0, 100.0)
+    trues_orig = np.array(trues_orig)
+    rmse = float(np.sqrt(mean_squared_error(trues_orig, preds_orig)))
+    return rmse, preds_orig, trues_orig
+
+
+# ----------------------------------------------------------------------------
+# CPU preflight adapter contract
+# ----------------------------------------------------------------------------
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    def training_step(self, model, batch, context):
+        raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')
+        ctx = self._merge(context)
+=======
+    def training_step(self, model, batch, context):
+        ctx = self._merge(context)
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+    with TrainingDiagnostics(
+        model, optimizer, scaler=scaler, settings=settings
+    ) as diagnostics:
+        for epoch in range(1, EPOCHS + 1):
+            model.train()
+            running_loss = 0.0
+            n_samples = 0
+            for image, tabular, target in train_loader:
+                image = image.to(DEVICE)
+                tabular = tabular.to(DEVICE)
+                target = target.to(DEVICE)
+
+                optimizer.zero_grad()
+                pred = model(image, tabular)
+                loss = criterion(pred, target)
+                loss.backward()
+                optimizer.step()
+                diagnostics.after_update()
+
+                running_loss += loss.item() * image.size(0)
+                n_samples += image.size(0)
+
+            epoch_loss = running_loss / max(1, n_samples)
+            diagnostics.report(epoch=epoch)
+            print(f"Epoch {epoch}: train_loss(normalized_mse)={epoch_loss:.4f}")
+
+        checkpoint = {
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "diagnostics_state_dict": diagnostics.state_dict(),
+        }
+        torch.save(checkpoint, os.path.join(WORKING_DIR, "checkpoint.pt"))
+
+    # ---- Validation inference (identical pipeline to test) ----
+    model.eval()
+    val_preds_orig = []
+    val_true_orig = []
+    with torch.no_grad():
+        for image, tabular, target in val_loader:
+            image = image.to(DEVICE)
+            tabular = tabular.to(DEVICE)
+            pred_norm = model(image, tabular).cpu().numpy()
+            pred_orig = pred_norm * target_std + target_mean
+            true_orig = target.numpy() * target_std + target_mean
+            val_preds_orig.extend(pred_orig.tolist())
+            val_true_orig.extend(true_orig.tolist())
+
+    val_preds_orig = np.clip(np.array(val_preds_orig), 0.0, 100.0)
+    val_true_orig = np.array(val_true_orig)
+    rmse = float(np.sqrt(mean_squared_error(val_true_orig, val_preds_orig)))
+=======
+    best_val_rmse = float("inf")
+    epochs_without_improvement = 0
+    best_checkpoint_path = os.path.join(WORKING_DIR, "checkpoint_best.pt")
+
+    with TrainingDiagnostics(
+        model, optimizer, scaler=scaler, settings=settings
+    ) as diagnostics:
+        for epoch in range(1, EPOCHS + 1):
+            model.train()
+            running_loss = 0.0
+            n_samples = 0
+            for image, tabular, target in train_loader:
+                image = image.to(DEVICE)
+                tabular = tabular.to(DEVICE)
+                target = target.to(DEVICE)
+
+                optimizer.zero_grad()
+                pred = model(image, tabular)
+                loss = criterion(pred, target)
+                loss.backward()
+                optimizer.step()
+                diagnostics.after_update()
+
+                running_loss += loss.item() * image.size(0)
+                n_samples += image.size(0)
+
+            epoch_loss = running_loss / max(1, n_samples)
+            diagnostics.report(epoch=epoch)
+            print(f"Epoch {epoch}: train_loss(normalized_mse)={epoch_loss:.4f}")
+
+            epoch_val_rmse, _, _ = evaluate_regression(
+                model, val_loader, target_mean, target_std, DEVICE
+            )
+            print(f"Epoch {epoch}: val_rmse={epoch_val_rmse:.4f}")
+
+            if epoch_val_rmse < best_val_rmse:
+                best_val_rmse = epoch_val_rmse
+                epochs_without_improvement = 0
+                best_checkpoint = {
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "diagnostics_state_dict": diagnostics.state_dict(),
+                    "epoch": epoch,
+                    "val_rmse": best_val_rmse,
+                }
+                torch.save(best_checkpoint, best_checkpoint_path)
+            else:
+                epochs_without_improvement += 1
+                if epochs_without_improvement >= PATIENCE:
+                    print(
+                        f"Early stopping at epoch {epoch}: no val_rmse improvement "
+                        f"for {epochs_without_improvement} epoch(s)."
+                    )
+                    break
+
+        checkpoint = {
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "diagnostics_state_dict": diagnostics.state_dict(),
+        }
+        torch.save(checkpoint, os.path.join(WORKING_DIR, "checkpoint.pt"))
+
+    # ---- Restore best checkpoint (by validation RMSE) before final inference ----
+    if os.path.exists(best_checkpoint_path):
+        best_state = torch.load(best_checkpoint_path, map_location=DEVICE)
+        model.load_state_dict(best_state["model_state_dict"])
+        optimizer.load_state_dict(best_state["optimizer_state_dict"])
+        diagnostics.load_state_dict(best_state["diagnostics_state_dict"])
+
+    # ---- Validation inference (identical pipeline to test) ----
+    rmse, val_preds_orig, val_true_orig = evaluate_regression(
+        model, val_loader, target_mean, target_std, DEVICE
+    )
+>>>>>>> REPLACE

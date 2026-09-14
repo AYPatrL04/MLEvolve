@@ -1,0 +1,12 @@
+<<<<<<< SEARCH
+    val_preds = np.concatenate(val_preds).astype(np.float64)
+    val_targets = np.concatenate(val_targets).astype(np.float64)
+=======
+    val_preds = np.concatenate(val_preds).astype(np.float32)
+    val_targets = np.concatenate(val_targets).astype(np.float32)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    test_preds = np.concatenate(test_preds).astype(np.float64)
+=======
+    test_preds = np.concatenate(test_preds).astype(np.float32)
+>>>>>>> REPLACE

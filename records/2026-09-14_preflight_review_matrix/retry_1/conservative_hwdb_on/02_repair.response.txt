@@ -1,0 +1,19 @@
+<<<<<<< SEARCH
+    def compute_image_stats(df, img_dir, img_size):
+        sums = np.zeros(3, dtype=np.float64)
+        sq_sums = np.zeros(3, dtype=np.float64)
+        pixel_count = 0
+        for _, row in df.iterrows():
+            path = os.path.join(img_dir, f"{row['Id']}.jpg")
+            img = Image.open(path).convert("RGB").resize((img_size, img_size))
+            arr = np.asarray(img, dtype=np.float64) / 255.0
+=======
+    def compute_image_stats(df, img_dir, img_size):
+        sums = np.zeros(3, dtype=np.float32)
+        sq_sums = np.zeros(3, dtype=np.float32)
+        pixel_count = 0
+        for _, row in df.iterrows():
+            path = os.path.join(img_dir, f"{row['Id']}.jpg")
+            img = Image.open(path).convert("RGB").resize((img_size, img_size))
+            arr = np.asarray(img, dtype=np.float32) / 255.0
+>>>>>>> REPLACE

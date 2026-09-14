@@ -9,6 +9,7 @@ from engine.search_node import SearchNode
 from engine.executor import ExecutionResult
 from utils.metric import MetricValue, WorstMetricValue
 from utils.response import wrap_code
+from utils.feedback import preflight_feedback, raw_execution_output, render_execution_feedback
 from engine.validation import call_validate, _validate_submission_with_retry, validate_submission_content_quality
 from agents import data_leakage_agent
 from agents.triggers import should_check_data_leakage
@@ -58,8 +59,9 @@ _RUNTIME_ISSUE_SCHEMA = {
 
 
 def _hardware_aware(agent) -> bool:
-    mode = str(getattr(getattr(agent.cfg, "experiment", None), "mode", "hardware_aware") or "hardware_aware")
-    return mode.strip().lower().replace("-", "_") not in {"origin", "baseline"}
+    from agents.hardware_context import _hardware_context_enabled
+
+    return _hardware_context_enabled(agent)
 
 
 def _append_runtime_issue(
@@ -271,6 +273,8 @@ def _build_introduction(agent) -> str:
         "- \"issues\": (array) Stage-owned issues with source, severity, category, owner, evidence, and repair_instruction. Use [] on success.\n"
         "  Optimizer/scheduler/batch/training-loop/metric/submission issues belong to training_evaluation; cross-stage interface failures belong to integration.\n"
         "  A completed run with a finite metric and valid submission is NOT buggy merely because it underfits, overfits, fails to improve its parent, or uses resources poorly. Record those findings as warnings and preserve the metric.\n"
+        "  Execution feedback summarizes the complete referenced log. Missing measurements are unknown, not zero; execution_returned alone does not prove success.\n"
+        "  Keep preflight risks and inconclusive checks advisory unless candidate failure evidence confirms a defect. CPU admission does not prove GPU compatibility or memory fit.\n"
     )
     if use_memory:
         intro += (
@@ -310,6 +314,9 @@ def _save_code_summary(agent, node: SearchNode, response: dict):
 
 def _determine_buggy(node: SearchNode, response: dict, has_csv_submission: bool):
     """Set execution validity from hard result signals, not quality opinions."""
+    if (node.exc_info or {}).get("failure_origin") in {"scheduler", "executor"}:
+        node.is_buggy = True
+        return
     failure_reasons = []
     if response["is_bug"]:
         failure_reasons.append("execution error detected")
@@ -598,7 +605,7 @@ def _completed_metric_from_contract(agent, node: SearchNode) -> float | None:
     """Read a finite final score only from a completed job with a submission."""
     if node.exc_type is not None:
         return None
-    matches = _FINAL_VALIDATION_SCORE_RE.findall(node.term_out)
+    matches = _FINAL_VALIDATION_SCORE_RE.findall(raw_execution_output(node))
     if not matches:
         return None
     try:
@@ -705,6 +712,20 @@ def _recover_completed_result_without_llm(agent, node: SearchNode) -> bool:
 
 
 def run(agent, node: SearchNode, exec_result: ExecutionResult) -> SearchNode:
+    if (exec_result.exc_info or {}).get("failure_origin") in {"scheduler", "executor"}:
+        node.absorb_exec_result(exec_result)
+        node.analysis = "Execution backend was unavailable; no candidate code defect was established. " + str(
+            (exec_result.exc_info or {}).get("message") or (exec_result.exc_info or {}).get("error") or node.term_out
+        )
+        node.metric = WorstMetricValue()
+        node.is_buggy = True
+        node.is_valid = False
+        _append_runtime_issue(
+            node, category="execution_backend_unavailable", owner="unclassified",
+            evidence=node.analysis, severity="warning",
+            repair_instruction="Retry execution of the same candidate after backend recovery; do not change model, metric, or submission code without candidate failure evidence.",
+        )
+        return node
     max_retries = 3
     for retry_idx in range(max_retries):
         try:
@@ -716,8 +737,10 @@ def run(agent, node: SearchNode, exec_result: ExecutionResult) -> SearchNode:
             prompt = {
                 "Introduction": introduction,
                 "Implementation": wrap_code(node.code),
-                "Execution output": wrap_code(node.term_out, lang=""),
+                "Execution output": render_execution_feedback(node),
             }
+            if preflight := preflight_feedback(node):
+                prompt["CPU preflight evidence"] = preflight
             stable_prompt = {"Introduction": prompt["Introduction"]}
             dynamic_prompt = {
                 key: value for key, value in prompt.items() if key != "Introduction"

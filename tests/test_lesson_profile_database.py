@@ -60,14 +60,16 @@ class FakeQdrant:
         self.exists = False
         self.indexes = []
         self.points = []
+        self.design_points = []
+        self.collections = set()
 
     def collection_exists(self, name):
-        del name
-        return self.exists
+        return name in self.collections
 
     def create_collection(self, **kwargs):
         self.exists = True
         self.collection_args = kwargs
+        self.collections.add(kwargs["collection_name"])
 
     def delete_collection(self, name):
         del name
@@ -78,10 +80,14 @@ class FakeQdrant:
         self.indexes.append(kwargs["field_name"])
 
     def upsert(self, **kwargs):
-        by_id = {str(point.id): point for point in self.points}
+        design = kwargs["collection_name"].endswith("_design_v2")
+        by_id = {str(point.id): point for point in (self.design_points if design else self.points)}
         for point in kwargs["points"]:
             by_id[str(point.id)] = point
-        self.points = list(by_id.values())
+        if design:
+            self.design_points = list(by_id.values())
+        else:
+            self.points = list(by_id.values())
 
     @staticmethod
     def _matches(payload, query_filter):
@@ -682,3 +688,42 @@ def test_late_publication_cannot_replace_a_newer_active_revision(tmp_path):
     late = registry.activate_publication(publications[0]["outbox_id"])
     assert late["superseded_publication"] == 1
     assert registry.active_revision(exact.profile_key)["revision_number"] == 2
+
+
+def test_concise_backfill_preserves_frozen_publications_and_is_idempotent(tmp_path):
+    from knowledge.migration import publish_lessons
+
+    client = make_client(tmp_path)
+    client.initialize()
+    exact = identity()
+    enqueue(client, exact)
+    assert client.worker.process_once()
+    before = client.registry.list_revisions(exact.profile_key)
+    records = client.registry.design_knowledge(exact.profile_key, 1)
+    assert records and all(record["evidence_refs"] for record in records)
+    with client.registry.transaction() as connection:
+        frozen = [tuple(row) for row in connection.execute("SELECT outbox_id, payload_json FROM qdrant_outbox")]
+        connection.execute("DELETE FROM design_knowledge_v2")
+    first = publish_lessons(client.settings.database_path)
+    second = publish_lessons(client.settings.database_path)
+    assert first == second
+    assert client.registry.design_knowledge(exact.profile_key, 1) == records
+    assert client.registry.list_revisions(exact.profile_key) == before
+    with client.registry.connect() as connection:
+        assert [tuple(row) for row in connection.execute("SELECT outbox_id, payload_json FROM qdrant_outbox")] == frozen
+
+
+def test_draft_retrieves_conditional_families_only_on_matching_runtime(tmp_path, monkeypatch):
+    import agents.hardware_context as hardware_context
+
+    client = make_client(tmp_path)
+    client.initialize()
+    enqueue(client, identity())
+    assert client.worker.process_once()
+    agent = SimpleNamespace(task_desc="image classification", cfg=SimpleNamespace(scheduler=SimpleNamespace(enabled=False)))
+    monkeypatch.setattr(client, "_agent_hardware", lambda _agent: HARDWARE)
+    monkeypatch.setattr(hardware_context, "build_hardware_candidate", lambda *_a, **_k: {"effective_backend": "exclusive"})
+    records = client.design_knowledge_for_agent(agent, role="draft")
+    assert records and all(record["applicability"]["model_families"] for record in records)
+    monkeypatch.setattr(client, "_agent_hardware", lambda _agent: {**HARDWARE, "hardware_key": "different"})
+    assert client.design_knowledge_for_agent(agent, role="draft") == []

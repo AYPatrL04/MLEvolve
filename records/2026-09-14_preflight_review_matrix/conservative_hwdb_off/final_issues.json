@@ -1,0 +1,18 @@
+[
+  {
+    "source": "static_review",
+    "severity": "warning",
+    "category": "hardware_advisory",
+    "owner": "unclassified",
+    "evidence": "Preflight BAT001 flags PetDataset.__init__ lines mean.reshape(1,1,3)/std.reshape(1,1,3) as hard-coded batch size 1; these reshapes are per-channel broadcast shapes for HxWx3 normalization arrays, not the batch dimension, so no concrete mismatch is demonstrated.",
+    "repair_instruction": "No action required; optionally rename variables or add a comment clarifying the (1,1,3) shape is for channel-wise broadcasting, not batch size, to avoid future false-positive advisories."
+  },
+  {
+    "source": "static_review",
+    "severity": "warning",
+    "category": "gpu_branch_advisory",
+    "owner": "unclassified",
+    "evidence": "Preflight GPU003 notes model behavior depends on torch.cuda.is_available() at the device-selection branch; this is a standard CPU/GPU fallback pattern and CPU-only preflight cannot confirm the CUDA path.",
+    "repair_instruction": "No fix required now; verify the CUDA branch during an actual GPU run before relying on RTX 5090 deployment results."
+  }
+]

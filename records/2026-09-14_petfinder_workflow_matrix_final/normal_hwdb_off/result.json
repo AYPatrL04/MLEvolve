@@ -1,0 +1,324 @@
+{
+  "cell": "normal_hwdb_off",
+  "precision": "normal",
+  "hardware_enabled": false,
+  "stages": [
+    {
+      "name": "draft",
+      "start_seconds": 7.460100459866226e-05,
+      "duration_seconds": 159.31167066600028
+    },
+    {
+      "name": "draft_preflight",
+      "start_seconds": 159.31186846000492,
+      "duration_seconds": 15.98604059599893
+    },
+    {
+      "name": "injected_preflight",
+      "start_seconds": 175.3003370689985,
+      "duration_seconds": 13.82634966000478
+    },
+    {
+      "name": "feedback",
+      "start_seconds": 189.12697190000472,
+      "duration_seconds": 16.072147128994402
+    },
+    {
+      "name": "debug",
+      "start_seconds": 205.1991304309995,
+      "duration_seconds": 2.74017671400361
+    },
+    {
+      "name": "repaired_preflight",
+      "start_seconds": 207.93944086800184,
+      "duration_seconds": 13.877741634998529
+    }
+  ],
+  "assertions": {
+    "one_initial_generation": true,
+    "single_pass": true,
+    "adapter_complete": true,
+    "induced_failure_reproduced": true,
+    "feedback_provider_succeeded": true,
+    "feedback_identifies_failure": true,
+    "repair_removes_injected_failure": true,
+    "cpu_gate_admitted_repair": true,
+    "precision_policy_valid": true,
+    "knowledge_toggle_respected": true,
+    "all_subjects_with_conditions": true,
+    "cpu_only": true,
+    "cpu_adapter_checks_passed": true,
+    "knowledge_not_duplicated": true
+  },
+  "initial_generation_calls": 1,
+  "generation_strategy": "single_pass",
+  "draft_preflight_status": "INCONCLUSIVE",
+  "feedback_summary": "CPU preflight failed because CandidateAdapter.training_step() unconditionally raises RuntimeError('AUDIT_INJECTED_LOSS_PATH') as its first statement, before any real loss computation code executes. This causes the cpu_training preflight check to fail and blocks admission, so the candidate never proceeds to actual GPU training or produces a validation metric.",
+  "feedback_issues": [
+    {
+      "source": "model_preflight",
+      "severity": "critical",
+      "category": "preflight_aut002",
+      "owner": "training_evaluation",
+      "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/29de4a857fd9408c8ba709f0d368d83a/candidate/candidate.py', line 245, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_off/workspace/working/preflight/29de4a857fd9408c8ba709f0d368d83a/report_attempt_1.json#/diagnostics/7",
+      "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+    },
+    {
+      "source": "runtime",
+      "severity": "critical",
+      "category": "preflight_training_step_failure",
+      "owner": "training_evaluation",
+      "evidence": "training_step() in CandidateAdapter begins with 'raise RuntimeError(\"AUDIT_INJECTED_LOSS_PATH\")' before the real forward/loss logic, causing CPU preflight's cpu_training check to fail with RuntimeError: AUDIT_INJECTED_LOSS_PATH at candidate.py line 245; preflight status=FAIL, admitted=False.",
+      "repair_instruction": "Remove the injected 'raise RuntimeError(\"AUDIT_INJECTED_LOSS_PATH\")' line from CandidateAdapter.training_step so the method executes its real forward pass and MSE loss computation (image/tabular forward, criterion(pred, target)) as originally intended, then rerun CPU preflight to confirm cpu_training passes before admission."
+    },
+    {
+      "source": "runtime_validator",
+      "severity": "critical",
+      "category": "missing_metric",
+      "owner": "training_evaluation",
+      "evidence": "Execution output did not contain a usable validation metric.",
+      "repair_instruction": "Compute the exact task metric and print it in the required final score format."
+    },
+    {
+      "source": "runtime_validator",
+      "severity": "critical",
+      "category": "missing_submission",
+      "owner": "training_evaluation",
+      "evidence": "Execution did not create the required submission CSV.",
+      "repair_instruction": "Generate ./submission/submission.csv from real test inference using the required columns."
+    }
+  ],
+  "repaired_preflight_status": "INCONCLUSIVE",
+  "precision_issues": [],
+  "duration_seconds": 221.85097304000374,
+  "calls": [
+    {
+      "role": "draft",
+      "prompt_chars": 15509,
+      "prefix": "01_draft",
+      "started": 33209.088349128,
+      "response_chars": 17146,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 7165,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 19071,
+        "output_tokens_details": {
+          "thinking_tokens": 12201
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 7165,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 19071,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 7165,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 7165
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 4967,
+          "outputTokens": 17,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.005052,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5": {
+          "inputTokens": 2,
+          "outputTokens": 19071,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 7165,
+          "webSearchRequests": 0,
+          "costUSD": 0.219374,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-sonnet-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "ok": true,
+      "duration_seconds": 159.1069107200019
+    },
+    {
+      "role": "feedback",
+      "prompt_chars": 23526,
+      "prefix": "02_feedback",
+      "started": 33398.215960912,
+      "response_chars": 1234,
+      "usage": {
+        "input_tokens": 4,
+        "cache_creation_input_tokens": 13259,
+        "cache_read_input_tokens": 12112,
+        "output_tokens": 1683,
+        "output_tokens_details": {
+          "thinking_tokens": 545
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 13259,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 656,
+            "cache_read_input_tokens": 12112,
+            "cache_creation_input_tokens": 1147,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 1147
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 8334,
+          "outputTokens": 23,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.008449,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5": {
+          "inputTokens": 4,
+          "outputTokens": 1683,
+          "cacheReadInputTokens": 12112,
+          "cacheCreationInputTokens": 13259,
+          "webSearchRequests": 0,
+          "costUSD": 0.0722964,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-sonnet-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "ok": true,
+      "duration_seconds": 16.070182018003834
+    },
+    {
+      "role": "repair",
+      "prompt_chars": 29987,
+      "prefix": "03_repair",
+      "started": 33414.287485452,
+      "response_chars": 263,
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 13400,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 118,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 13400,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 118,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 13400,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 13400
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard"
+      },
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 9980,
+          "outputTokens": 18,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.010069999999999999,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        },
+        "claude-sonnet-5": {
+          "inputTokens": 2,
+          "outputTokens": 118,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 13400,
+          "webSearchRequests": 0,
+          "costUSD": 0.054784,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-sonnet-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "ok": true,
+      "duration_seconds": 2.7066167290031444
+    }
+  ],
+  "hardware_calls": [],
+  "target_profile": "RTX 5090 32GB",
+  "evidence_tier": "Real Sonnet agent responses, fixture hardware knowledge, real CPU adapter checks; no GPU or training entrypoint execution",
+  "cpu_stage_statuses": {
+    "static_source": "INCONCLUSIVE",
+    "hardware": "PASS",
+    "construction": "PASS",
+    "data_contract": "PASS",
+    "abstract_forward": "PASS",
+    "cpu_training": "PASS",
+    "validation": "PASS",
+    "memory": "PASS"
+  },
+  "knowledge_record_occurrences": {
+    "architecture": 0,
+    "precision": 0,
+    "training": 0
+  }
+}

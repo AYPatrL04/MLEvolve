@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from llm import compile_prompt_to_md
+from utils.feedback import render_execution_feedback
 from engine.search_node import SearchNode
 from utils.response import wrap_code
 from agents.hardware_context import (
@@ -87,7 +88,7 @@ def run(agent, parent_node: SearchNode) -> SearchNode | None:
         hardware_contexts=[hardware_ctx],
         parent_pipeline_decision=getattr(parent_node, "pipeline_decision", None),
         previous_code=parent_node.code,
-        execution_output=parent_node.term_out,
+        execution_output=render_execution_feedback(parent_node),
     )
     apply_lesson_context_to_pipeline_decision(pipeline_decision, lesson_ctx)
     pipeline_decision_section = format_pipeline_decision_prompt_section(pipeline_decision)
@@ -272,7 +273,7 @@ def run(agent, parent_node: SearchNode) -> SearchNode | None:
     prompt["Instructions"]["Implementation guideline"].extend(internet_clarification)
     prompt["Instructions"] |= ROBUSTNESS_GENERALIZATION_STRATEGY
 
-    output = wrap_code(parent_node.term_out, lang="")
+    output = render_execution_feedback(parent_node)
 
     if not agent.acfg.use_diff_mode:
         prompt["Instructions"] |= prompt_resp_fmt()
@@ -351,7 +352,7 @@ def _diff_improve(agent, prompt_base, data_preview, parent_node):
         "memory": prompt_base["Memory"],
         "previous_code": parent_node.code,
         "previous_code_summary": parent_node.code_summary if hasattr(parent_node, 'code_summary') and parent_node.code_summary else None,
-        "execution_output": parent_node.term_out if hasattr(parent_node, 'term_out') else "",
+        "execution_output": render_execution_feedback(parent_node),
         "parent_node": parent_node,
         "hardware_prompt_section": prompt_base.get("Hardware/Profile Optimization Context", ""),
         "lesson_profile_section": prompt_base.get("Family–Hardware Lesson Profile", ""),

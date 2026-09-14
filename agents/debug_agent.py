@@ -27,7 +27,8 @@ from agents.review_contracts import ReviewIssue, normalize_review_issues
 from agents.stage_repair import is_hardware_aware, repair_selected_stages
 from agents.triggers import register_node
 from engine.search_node import SearchNode
-from utils.response import extract_plan_from_diff_response, trim_long_string
+from utils.response import extract_plan_from_diff_response
+from utils.feedback import render_execution_feedback
 
 logger = logging.getLogger("MLEvolve")
 
@@ -78,7 +79,7 @@ def _fallback_bug_report(parent_node: SearchNode) -> str:
     if parent_node.term_out:
         parts.append(
             "Execution output: "
-            + trim_long_string(parent_node.term_out, threshold=1200, k=550)
+            + render_execution_feedback(parent_node)
         )
     return "\n".join(parts) or (
         "The parent node failed or produced invalid output; no detailed error "
@@ -153,6 +154,19 @@ def run(agent: object, parent_node: SearchNode) -> SearchNode | None:
         )
         return None
 
+    if (parent_node.exc_info or {}).get("failure_origin") in {"scheduler", "executor"}:
+        new_node = SearchNode(
+            plan="Retry unchanged candidate after execution backend failure.",
+            code=parent_node.code, parent=parent_node, stage="debug",
+            local_best_node=parent_node.local_best_node,
+            bug_report=parent_node.analysis,
+            fix_report="Retry execution; no code repair is justified by backend failure alone.",
+        )
+        new_node.pipeline_decision = getattr(parent_node, "pipeline_decision", None)
+        new_node.diagnostics = {"execution_retry": True}
+        register_node(agent, new_node, {"execution_retry": True}, parent_node=parent_node)
+        return new_node
+
     hardware_ctx = get_hardware_context_for_stage(
         agent, "debug", parent_node=parent_node
     )
@@ -177,7 +191,7 @@ def run(agent: object, parent_node: SearchNode) -> SearchNode | None:
         hardware_contexts=[hardware_ctx],
         parent_pipeline_decision=getattr(parent_node, "pipeline_decision", None),
         previous_code=parent_node.code,
-        execution_output=parent_node.term_out,
+        execution_output=render_execution_feedback(parent_node),
         stage_context=str(getattr(parent_node, "analysis", "") or ""),
     )
     apply_lesson_context_to_pipeline_decision(pipeline_decision, lesson_ctx)

@@ -145,10 +145,9 @@ def _validate_explicit_precision(code: str, policy: PrecisionPolicy) -> tuple[Re
 
     forbidden = {"half", "double", "halftensor", "doubletensor", "bfloat16tensor", "float16", "bfloat16", "float64", "fp16", "bf16", "fp64", "tf32",
                  "fp16_amp", "bf16_amp", "fp8", "fp8_te", "mxfp8_te", "nvfp4_te", "fp4", "fp6"}
-    if policy.mode == "normal":
-        forbidden -= {"float16", "fp16", "fp16_amp"}
-    violation = ""
+    violations: dict[int, set[str]] = {}
     for node in ast.walk(tree):
+        violation = ""
         name = node.attr if isinstance(node, ast.Attribute) else aliases.get(node.id, "") if isinstance(node, ast.Name) else ""
         if name.lower() in forbidden or name.lower().startswith(("float8_", "float4_")):
             violation = f"explicit dtype/cast {name} at line {node.lineno}"
@@ -184,10 +183,13 @@ def _validate_explicit_precision(code: str, policy: PrecisionPolicy) -> tuple[Re
                 if name == "fp32_precision" and selected != "ieee" and not policy.allows("tf32"):
                     violation = f"TF32 requested despite {policy.mode} policy at line {node.lineno}"
         if violation:
-            return (_critical_issue(
-                evidence=f"{policy.mode.capitalize()} mode rejects {violation}. Allowed policies: {', '.join(policy.allowed_policies)}.",
-                instruction=precision_mode_instruction(policy.mode),
-            ),)
+            violations.setdefault(node.lineno, set()).add(violation)
+    if violations:
+        evidence = "; ".join(item for line in sorted(violations) for item in sorted(violations[line]))
+        return (_critical_issue(
+            evidence=f"Conservative mode rejects {evidence}. Allowed policies: {', '.join(policy.allowed_policies)}.",
+            instruction=CONSERVATIVE_PRECISION_INSTRUCTION + " Correct every listed occurrence in the same scoped repair.",
+        ),)
     return ()
 
 

@@ -299,7 +299,7 @@ def hardware_context_instructions(context: HardwarePromptContext | None = None) 
             "Apply listed patterns only when relevant; task and precision constraints take precedence. "
             "Keep task-appropriate defaults otherwise. Do not fetch additional hardware catalogs."
         ]}
-    return {
+    instructions = {
         "Hardware/Profile reasoning rule": [
             EVIDENCE_NOT_LAW_RULE,
             CONSTRAINT_PRECEDENCE_RULE,
@@ -311,13 +311,19 @@ def hardware_context_instructions(context: HardwarePromptContext | None = None) 
             "Use the Cross-Stage Note Board to keep Stage 2 precision and Stage 3 training choices aligned with the Stage 1 candidate target.",
         ]
     }
+    if context is not None and not _backend_name(context.compact_context) and not (context.compact_context.get("hardware_context") or {}).get("scheduler_limits"):
+        instructions["Hardware/Profile reasoning rule"] = [
+            rule for rule in instructions["Hardware/Profile reasoning rule"]
+            if "effective backend" not in rule and "scheduler" not in rule
+        ]
+    return instructions
 
 
-def get_hardware_design_brief(agent: Any) -> HardwarePromptContext:
+def get_hardware_design_brief(agent: Any, *, select_features: bool = True) -> HardwarePromptContext:
     """Build the architecture-selection hardware brief used before draft code is written."""
     if not _hardware_context_enabled(agent):
         return HardwarePromptContext()
-    scheduler_client = getattr(agent, "scheduler_client", None)
+    scheduler_client = getattr(agent, "hardware_knowledge_client", None) or getattr(agent, "scheduler_client", None)
     if scheduler_client is None:
         return HardwarePromptContext()
 
@@ -359,7 +365,7 @@ def get_hardware_design_brief(agent: Any) -> HardwarePromptContext:
     raw_context = dict(raw_context or {})
     initial_compact = compact_model_design_context(raw_context)
     selected_feature_ids = (
-        [] if getattr(agent.acfg, "hardware_context_mode", "full") == "compact"
+        [] if not select_features or getattr(agent.acfg, "hardware_context_mode", "full") == "compact"
         else _select_hardware_feature_ids_for_design(agent, candidate, initial_compact)
     )
     if selected_feature_ids and hasattr(scheduler_client, "get_hardware_feature_details"):
@@ -384,13 +390,14 @@ def get_hardware_design_brief(agent: Any) -> HardwarePromptContext:
     max_chars = _safe_int(getattr(agent.acfg, "hardware_context_max_prompt_chars", 3500), default=3500)
     _configure_hardware_prompt_view(agent, compact, filtered)
     prompt_section = format_hardware_design_brief(filtered, max_chars=max_chars)
-    return HardwarePromptContext(
+    context = HardwarePromptContext(
         candidate=candidate,
         raw_context=raw_context,
         compact_context=compact,
         filtered_context=filtered,
         prompt_section=prompt_section,
     )
+    return _design_prompt_view(agent, context, "draft")
 
 
 def get_hardware_context_for_stage(
@@ -405,7 +412,7 @@ def get_hardware_context_for_stage(
     if not _hardware_context_enabled(agent):
         return HardwarePromptContext()
 
-    scheduler_client = getattr(agent, "scheduler_client", None)
+    scheduler_client = getattr(agent, "hardware_knowledge_client", None) or getattr(agent, "scheduler_client", None)
     if scheduler_client is None:
         return HardwarePromptContext()
 
@@ -441,13 +448,39 @@ def get_hardware_context_for_stage(
     max_chars = _safe_int(getattr(agent.acfg, "hardware_context_max_prompt_chars", 3500), default=3500)
     _configure_hardware_prompt_view(agent, compact, filtered)
     prompt_section = format_hardware_prompt_section_for_stage(filtered, stage=stage, max_chars=max_chars)
-    return HardwarePromptContext(
+    context = HardwarePromptContext(
         candidate=candidate,
         raw_context=raw_context,
         compact_context=compact,
         filtered_context=filtered,
         prompt_section=prompt_section,
     )
+    return _design_prompt_view(agent, context, stage)
+
+
+def _design_prompt_view(agent: Any, context: HardwarePromptContext, stage: str) -> HardwarePromptContext:
+    from knowledge.runtime import version_for
+
+    if version_for(agent) != "v2":
+        return context
+    from agents.design_knowledge import hardware_records, runtime_scope
+    from knowledge.records import render_records
+
+    client = getattr(agent, "hardware_knowledge_client", None)
+    if client is not None and hasattr(client, "get_design_knowledge"):
+        try:
+            context.raw_context["design_records_v2"] = client.get_design_knowledge(
+                candidate=context.candidate, context=runtime_scope(context), role=stage,
+            )
+        except Exception as exc:
+            logger.debug("Concise hardware lookup failed: %s", exc)
+    records = hardware_records(context, role=stage)
+    context.prompt_section = render_records(records)
+    context.filtered_context["design_records_v2"] = records
+    context.filtered_context["evidence_refs"] = sorted(set(context.filtered_context.get("evidence_refs") or []).union(
+        ref for record in records for ref in record["evidence_refs"]
+    ))
+    return context
 
 
 def refresh_node_hardware_context(agent: Any, node: Any) -> HardwarePromptContext:
@@ -1367,6 +1400,9 @@ def compact_model_design_context(raw_context: dict[str, Any] | None) -> dict[str
         for item in list(selected_details.get("features") or [])[:6]
     ]
     compact = {
+        "effective_backend": raw_context.get("effective_backend"),
+        "runner_contract": raw_context.get("runner_contract"),
+        "backend_guidance": _compact_backend_guidance(raw_context.get("backend_guidance") or {}),
         "hardware_context": _compact_hardware_context(raw_context.get("hardware_context") or {}),
         "hardware_feature_index": feature_index,
         "selected_hardware_feature_ids": _clean_string_list(raw_context.get("selected_hardware_feature_ids") or [], limit=8),
@@ -1459,7 +1495,6 @@ def format_compact_hardware_prompt_section(
         f"- Stage: {stage}; hardware: {_short(hardware.get('summary') or 'unknown', 100)}.",
         f"- Precision: {policy.get('mode', 'normal')}; allowed: {', '.join(policy.get('allowed_policies') or ['fp32'])}.",
         "- Respect task/data/model-source/submission constraints; hardware-only tuning preserves model family and training budget.",
-        "- Run one subprocess on the configured backend; scheduler owns devices, launch, concurrency and memory limits.",
     ]
     if policy.get("mode") == "conservative":
         lines.append("- IEEE FP32 model/input/state; disable AMP/GradScaler and TF32 matmul/convolution.")
@@ -1469,6 +1504,8 @@ def format_compact_hardware_prompt_section(
     if effective_backend:
         lines.append(f"- Effective backend: {effective_backend}.")
     limits = hardware.get("scheduler_limits") or {}
+    if effective_backend or limits:
+        lines.append("- Run one subprocess on the configured backend; scheduler owns devices, launch, concurrency and memory limits.")
     if limits.get("safe_vram_budget_mb") is not None:
         lines.append(f"- Safe VRAM budget: {limits['safe_vram_budget_mb']} MB.")
     for rule in (compact.get("backend_guidance") or {}).get("hard_rules") or []:
@@ -1962,6 +1999,9 @@ def _hardware_context_enabled(agent: Any) -> bool:
     mode = str(getattr(experiment, "mode", "") or "").strip().lower().replace("-", "_")
     if mode in {"origin", "baseline"}:
         return False
+    hardware_knowledge = getattr(cfg, "hardware_knowledge", None) or {}
+    if not bool(hardware_knowledge.get("enabled", True)):
+        return False
     acfg = getattr(agent, "acfg", None)
     return bool(getattr(acfg, "hardware_context_enabled", True))
 
@@ -1970,7 +2010,8 @@ def _safe_node_term_out(node: Any | None) -> str:
     if node is None:
         return ""
     try:
-        return str(getattr(node, "term_out", "") or "")
+        from utils.feedback import raw_execution_output
+        return raw_execution_output(node)
     except Exception as exc:
         logger.debug("Skipping parent execution output in hardware context: %s", exc)
         return ""
@@ -2113,6 +2154,7 @@ def _compact_runtime_estimate(estimate: dict[str, Any]) -> dict[str, Any]:
         estimate,
         (
             "found",
+            "reason",
             "source",
             "match_reason",
             "matched_exact_batch_size",

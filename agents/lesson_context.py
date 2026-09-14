@@ -19,6 +19,8 @@ class LessonPromptContext:
 
     @property
     def available(self) -> bool:
+        if "design_records_v2" in self.compact_context:
+            return bool(self.compact_context["design_records_v2"])
         view = self.compact_context.get("family_hardware_profile") or {}
         return str(view.get("match_level") or "none") != "none"
 
@@ -37,6 +39,16 @@ def get_lesson_context_for_stage(
     error: str = "",
 ) -> LessonPromptContext:
     client = getattr(agent, "lesson_profile_client", None)
+    from knowledge.runtime import version_for
+
+    if version_for(agent) == "v2" and client is not None and hasattr(client, "design_knowledge_for_agent"):
+        from knowledge.records import render_records
+
+        try:
+            records = client.design_knowledge_for_agent(agent, role=stage, node=parent_node, code=code or str(getattr(parent_node, "code", "") or ""))
+        except Exception:
+            records = []
+        return LessonPromptContext(role=stage, compact_context={"design_records_v2": records}, prompt_section=render_records(records))
     if client is None:
         raw = empty_profile_view()
     else:
@@ -66,6 +78,8 @@ def get_lesson_context_for_stage(
 def lesson_context_instructions(context: LessonPromptContext) -> dict[str, list[str]]:
     if not context.available:
         return {}
+    if "design_records_v2" in context.compact_context:
+        return {"Lesson profile guidance": ["Use applicable source-backed lessons as prior experience, not guaranteed defaults; revalidate conditional family choices and conflicts."]}
     view = context.compact_context["family_hardware_profile"]
     match = str(view.get("match_level") or "none")
     guidance = [
@@ -84,6 +98,13 @@ def apply_lesson_context_to_pipeline_decision(
 ) -> None:
     if pipeline_decision is None or not context.available:
         return
+    if "design_records_v2" in context.compact_context:
+        records = context.compact_context["design_records_v2"]
+        pipeline_decision.setdefault("evidence", {}).update({
+            "lesson_profile_used": True, "lesson_ids": [record["record_id"] for record in records],
+            "lesson_evidence_refs": sorted({ref for record in records for ref in record["evidence_refs"]}),
+        })
+        return
     view = context.compact_context["family_hardware_profile"]
     evidence = pipeline_decision.setdefault("evidence", {})
     evidence.update({
@@ -99,6 +120,13 @@ def apply_lesson_context_to_pipeline_decision(
 
 def apply_lesson_context_to_node(node: Any, context: LessonPromptContext) -> None:
     if not context.available:
+        return
+    if "design_records_v2" in context.compact_context:
+        records = context.compact_context["design_records_v2"]
+        node.lesson_profile_context = copy.deepcopy(context.compact_context)
+        node.lesson_ids = [record["record_id"] for record in records]
+        node.lesson_evidence_refs = sorted({ref for record in records for ref in record["evidence_refs"]})
+        apply_lesson_context_to_pipeline_decision(getattr(node, "pipeline_decision", None), context)
         return
     view = context.compact_context["family_hardware_profile"]
     node.lesson_profile_context = copy.deepcopy(context.compact_context)

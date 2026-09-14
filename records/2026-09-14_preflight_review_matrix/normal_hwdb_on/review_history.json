@@ -1,0 +1,43 @@
+[
+  {
+    "event": "model_preflight_completed",
+    "preflight_status": "INCONCLUSIVE",
+    "preflight_mode": "full_cpu",
+    "preflight_code_hash": "sha256:117313baf39beb247b7ce60b10570bf271642952bc3688225da4293855b56409",
+    "preflight_diagnostic_codes": [
+      "GPU003"
+    ],
+    "preflight_report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/report_attempt_0.json",
+    "preflight_summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_on/workspace/working/preflight/ebe68dc34adb44a49032622cf02ea448/admission_summary.json",
+    "preflight_repair_count": 0,
+    "gpu_check_required": true,
+    "preflight_admitted": true
+  },
+  {
+    "event": "review_decision",
+    "round": 0,
+    "attempts": 1,
+    "latency_seconds": 33.25382329599961,
+    "hardware_context_used": true,
+    "approved": true,
+    "reasoning": "Preprocessing (image/tabular stats) is correctly fit on the train split only before being applied to validation and test, so no P0 leakage exists, and RMSE is computed manually and correctly on original-unit predictions. The model interfaces, CandidateAdapter methods, and main-guard placement all match the task contract, and the CUDA branch is a standard fallback pattern not a confirmed defect per the inconclusive GPU003 advisory. Two minor non-blocking training-evaluation warnings are noted (no best-checkpoint selection across the 2 epochs, and no per-epoch validation loss tracking) but neither constitutes a critical logic bug or hardware risk.",
+    "issues": [
+      {
+        "source": "static_review",
+        "severity": "warning",
+        "category": "best_checkpoint_usage",
+        "owner": "training_evaluation",
+        "evidence": "The training loop (lines under `for epoch in range(1, planned_epochs + 1):`) only tracks running train loss; validation is evaluated once after all epochs complete, so the final (last-epoch) weights are always used for val/test inference with no comparison against an earlier better checkpoint.",
+        "repair_instruction": "If checkpoint selection is desired, evaluate validation loss each epoch and keep the state_dict with the lowest validation RMSE before running test inference; otherwise this is acceptable for a 2-epoch synthetic audit run."
+      },
+      {
+        "source": "static_review",
+        "severity": "warning",
+        "category": "hardware_execution_risk",
+        "owner": "integration",
+        "evidence": "GPU003 advisory notes `device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")` at line 286 is inconclusive under CPU-only preflight since the CUDA branch is unexercised.",
+        "repair_instruction": "No code change required; this is a standard fallback pattern. If GPU execution is later verified, confirm the model, optimizer state, and all tensors move to the same device consistently (already done here via `.to(device)` calls)."
+      }
+    ]
+  }
+]

@@ -1,8 +1,40 @@
 # CPU Model-Preflight Admission
 
-MLEvolve runs the pinned `nn-model-preflight-checker` after stage-aware review and before any
-scheduler submission or GPU batch probe. The gate is enabled by default for
+MLEvolve runs the pinned `nn-model-preflight-checker` before stage-aware LLM review and before
+direct execution, scheduler submission, or GPU batch probing. The gate is enabled by default for
 `experiment.mode: hardware_aware`.
+
+## Independent components
+
+Use `experiment.mode: hardware_aware` when varying the three switches independently:
+
+```yaml
+experiment:
+  mode: hardware_aware
+hardware_knowledge:
+  enabled: false
+preflight:
+  enabled: true
+scheduler:
+  enabled: true
+```
+
+All eight combinations are supported. Each switch controls its own responsibility:
+
+| Switch | Enabled | Disabled |
+| --- | --- | --- |
+| `hardware_knowledge.enabled` | Supplies optional hardware evidence; can run without a scheduler using detected hardware and local feature facts. | Suppresses agent hardware lookups, feature selection, hardware prompt sections, and evidence-driven code tuning. |
+| `preflight.enabled` | Checks admission before either execution backend; generated candidates require the adapter. | Skips the checker, removes adapter requirements from generation/review/repair, and ignores stale preflight rejection metadata. |
+| `scheduler.enabled` | Uses scheduler dispatch, branch profiles, and live resource admission; generated training includes cooperative hooks. | Uses direct subprocess execution; no scheduler hooks or batch-elasticity metadata are required. |
+
+`agent.hardware_context_enabled` remains an additional hardware-context switch. Legacy
+`baseline` and `origin` mode presets still disable hardware context; `origin` also disables
+scheduling. Preflight additionally respects `preflight.enabled_modes`. Keep the mode fixed
+when comparing the component switches.
+
+Scheduler resource telemetry and branch profiles remain available for scheduling when
+agent hardware knowledge is disabled. General metric, submission, precision-policy, and
+training-quality validation still applies with any combination.
 
 ## Checkout and installation
 
@@ -23,7 +55,8 @@ project-specific orchestration and GPU profiles remain in MLEvolve.
 Every candidate is copied to `workspace/working/preflight/<node-id>/candidate/candidate.py` with
 a generated manifest. Batch scenarios and precision are derived from the same script
 introspection used by the scheduler. The schema-validated checker report is stored as
-`report.json`; `admission_summary.json` records MLEvolve's compact decision, source hash,
+`report.json`, with immutable `report_attempt_*.json` copies referenced by review and diagnostics;
+`admission_summary.json` records MLEvolve's compact decision, source hash,
 diagnostic codes, repair count, and GPU-canary requirement.
 
 Newly generated candidates must expose this no-argument class and remain safe to import:
@@ -50,15 +83,43 @@ scripts without an adapter receive `static_source` and `hardware` only. Unknown 
 GPUs skip hardware and memory with a warning; explicit `target_profile` values may be bundled
 names or custom YAML paths.
 
-`FAIL` receives one targeted stage-owned repair by default and is rechecked once; an unresolved
+`FAIL` receives targeted stage-owned repair up to `preflight.max_repair_rounds`; an unresolved
 failure is journaled through the existing rejected-node path without a GPU job. `PASS` proceeds.
 With the default balanced policy, `INCONCLUSIVE` proceeds with `gpu_check_required`. Checker
 infrastructure errors fail open by default and are never labeled as candidate defects. The
 source hash is checked again immediately before execution, so modified code cannot reuse a
 stale report.
 
-The scheduler's short batch probe remains the target-GPU canary: CPU preflight cannot prove
-CUDA-kernel, distributed, stream/MPS, mixed-precision, or concurrent-runtime correctness.
+Generated candidates enter LLM review only after preflight admits them, including admitted
+`INCONCLUSIVE` results. Rejected candidates skip review after the configured targeted repairs
+are exhausted. Review receives concise CPU evidence for the exact checked source and retains
+the preflight history. If review or pre-submit parameter adjustment changes code, preflight
+runs again before execution or deferral; unchanged code reuses its existing result. Internal
+review repair rounds retain their existing behavior and label earlier CPU evidence stale until
+the final revision is rechecked. Disabling preflight preserves the existing review workflow.
+
+Repair feedback retains distinct scenarios, concise source locations, reproduction details, and
+full-report references from the checker. An inconclusive `FIX001` batch-builder exception produces a warning and a bounded
+targeted repair/recheck, without asserting a proven model defect. Unresolved warnings remain
+available to result parsing; the configured admission policy still decides whether to run.
+
+`gpu_check_required` records outstanding target validation; it does not force-enable a probe.
+When configured, the scheduler's short batch probe supplies a target-GPU canary. With the
+scheduler disabled, direct candidate execution supplies the next runtime evidence. CPU
+preflight alone cannot prove CUDA-kernel, distributed, stream/MPS, mixed-precision, or
+concurrent-runtime correctness.
+
+## Execution feedback without hardware knowledge
+
+Both execution backends retain the existing `ExecutionResult` fields. Scheduler errors and
+missing scheduler results add `exc_info.failure_origin: scheduler`; direct launch errors use
+`executor`. These results produce an execution warning and an unchanged-code retry within
+the existing search limits, rather than missing-metric/submission repair instructions.
+Candidate exceptions returned by the runner retain the normal code-debugging path.
+
+Hardware responses distinguish unavailable runtime estimates from measurements. Absence of
+AMP alone is not diagnosed as unused tensor cores. Model-selection confidence comes from
+model-option evidence; generic backend rules retain their separate confidence and provenance.
 
 ## Profiles and configuration
 

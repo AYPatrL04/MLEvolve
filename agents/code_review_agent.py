@@ -101,7 +101,31 @@ def _event(agent: Any, node: SearchNode, event_type: str, payload: dict[str, Any
 def _build_review_prompt(agent: Any, node: SearchNode, code: str) -> tuple[dict[str, Any], Any]:
     prompt = get_code_review_prompt(task_desc=agent.task_desc, code=code)
     instructions = prompt.pop("Instructions")
-    instructions["Precision policy"] = [precision_mode_instruction(getattr(agent.acfg, "precision_optimization_mode", "normal"))]
+    from engine.preflight import candidate_code_hash, preflight_enabled
+    from utils.feedback import preflight_feedback
+
+    instructions["Enabled execution components"] = [
+        "CPU model preflight is enabled; the generated candidate requires its adapter contract."
+        if preflight_enabled(agent.cfg) else
+        "CPU model preflight is disabled; do not reject a candidate for missing CandidateAdapter or checker-only interfaces.",
+        "Scheduler execution is enabled; preserve the cooperative scheduling contract."
+        if getattr(agent, "scheduler_client", None) is not None else
+        "Execution uses a direct subprocess; do not require scheduler hooks, MODEL_FAMILY, or batch elasticity metadata.",
+    ]
+    if preflight_enabled(agent.cfg) and getattr(node, "preflight_code_hash", None):
+        if node.preflight_code_hash == candidate_code_hash(code):
+            prompt["CPU preflight evidence"] = preflight_feedback(node)
+            instructions["CPU preflight interpretation"] = [
+                "This is the preflight outcome for this exact candidate. Use its evidence when reviewing task correctness, evaluation, leakage, and uncovered code paths.",
+                "Admission, including an admitted INCONCLUSIVE result, does not prove GPU compatibility, memory fit, or model quality. Keep unconfirmed risks advisory.",
+            ]
+        else:
+            prompt["CPU preflight evidence"] = {
+                "status": "STALE",
+                "reason": "Code changed since the CPU check; prior admission does not validate this revision.",
+            }
+    if getattr(agent.acfg, "precision_optimization_mode", "normal") == "conservative":
+        instructions["Conservative precision"] = [CONSERVATIVE_PRECISION_INSTRUCTION]
     data_preview = str(getattr(agent, "data_preview", "") or "").strip()
     if data_preview:
         prompt["Observed Dataset Manifest"] = data_preview
@@ -198,7 +222,8 @@ def classify_code(agent: Any, node: SearchNode, code: str) -> tuple[ReviewDecisi
     hardware_context_used = bool(hardware_ctx.prompt_section)
     policy_issues = validate_training_precision(agent, code, context=hardware_ctx)
     training_contract_issues = validate_training_contract(
-        code, require_scheduler_hooks=getattr(agent, "scheduler_client", None) is not None
+        code, require_scheduler_hooks=getattr(agent, "scheduler_client", None) is not None,
+        scheduler_enabled=getattr(agent, "scheduler_client", None) is not None,
     )
     dependency_issues = validate_runtime_dependencies(
         code,
@@ -273,7 +298,7 @@ def classify_code(agent: Any, node: SearchNode, code: str) -> tuple[ReviewDecisi
 def _store_outcome(node: SearchNode, outcome: ReviewOutcome) -> None:
     node.review_status = outcome.status
     node.review_issues = [issue.to_dict() for issue in outcome.unresolved_issues]
-    node.review_history = list(outcome.history)
+    node.review_history = [*(node.review_history or []), *outcome.history]
 
 
 def review_and_repair(agent: Any, node: SearchNode) -> ReviewOutcome:
@@ -285,7 +310,8 @@ def review_and_repair(agent: Any, node: SearchNode) -> ReviewOutcome:
         )
         policy_issues = validate_training_precision(agent, node.code, context=hardware_ctx)
         training_contract_issues = validate_training_contract(
-            node.code, require_scheduler_hooks=getattr(agent, "scheduler_client", None) is not None
+            node.code, require_scheduler_hooks=getattr(agent, "scheduler_client", None) is not None,
+            scheduler_enabled=getattr(agent, "scheduler_client", None) is not None,
         )
         dependency_issues = validate_runtime_dependencies(
             node.code,

@@ -387,7 +387,7 @@ def _build_decision_prompt(
     if previous_code:
         user += f"Previous code excerpt:\n{_short(previous_code, 1800)}\n\n"
     if execution_output:
-        user += f"Execution output excerpt:\n{_short(execution_output, 1200)}\n\n"
+        user += f"Execution feedback:\n{execution_output}\n\n"
     if stage_context:
         user += f"Stage-specific context:\n{_short(stage_context, 2000)}\n\n"
     user += "Return JSON matching the schema exactly."
@@ -472,7 +472,9 @@ def _collect_evidence_state(hardware_contexts: list[Any]) -> dict[str, Any]:
         )
         if not isinstance(compact, dict) or not compact:
             continue
-        if compact.get("hardware_context_mode") == "compact":
+        if "design_records_v2" in compact:
+            compact_contexts.append({"prompt_section": getattr(context, "prompt_section", ""), "knowledge_version": "v2"})
+        elif compact.get("hardware_context_mode") == "compact":
             from agents.hardware_context import format_compact_hardware_prompt_section
 
             section = getattr(context, "prompt_section", "") or format_compact_hardware_prompt_section(compact, stage="pipeline_decision")

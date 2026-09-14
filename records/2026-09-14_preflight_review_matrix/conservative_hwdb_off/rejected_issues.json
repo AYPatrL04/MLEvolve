@@ -1,0 +1,26 @@
+[
+  {
+    "source": "model_preflight",
+    "severity": "critical",
+    "category": "preflight_aut002",
+    "owner": "training_evaluation",
+    "evidence": "[AUT002] training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH\nFailing scenario: [{\"batch_size\": 1, \"fixture\": {\"image\": [3, 256, 256], \"tabular\": [12]}, \"input_shape\": [3, 256, 256], \"mode\": \"train\", \"precision\": \"fp32\", \"shape_name\": \"image\"}]\nCandidate traceback: File '/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/candidate/candidate.py', line 281, in training_step\nAffected checks: cpu_training\nReproduction: model-preflight check preflight.yaml --only cpu_training\nEvidence refs: /home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/conservative_hwdb_off/workspace/working/preflight/ff86f4779b004ed79a75aa8f61a3d259/report_attempt_0.json#/diagnostics/8",
+    "repair_instruction": "Repair the confirmed cpu_training defect [AUT002] and preserve the CandidateAdapter contract; do not suppress the check or replace real training behavior with mocks."
+  },
+  {
+    "source": "precision_policy",
+    "severity": "critical",
+    "category": "datatype_precision",
+    "owner": "datatype_precision",
+    "evidence": "Conservative mode rejects explicit dtype/cast float64 at line 71; explicit dtype/cast float64 at line 72; explicit dtype/cast float64 at line 77; explicit dtype/cast float64 at line 453; explicit dtype/cast float64 at line 454; explicit dtype/cast float64 at line 470. Allowed policies: fp32, disabled, tf32.",
+    "repair_instruction": "Conservative precision is mandatory for candidate models: use float32 parameters, floating inputs, optimizer state, training, validation, and inference. Keep integer indices/labels unchanged. Disable AMP/autocast and GradScaler; do not use FP16, BF16, FP8, FP4, FP64, quantized models, or lower-precision adapters. TF32 may accelerate float32 matmul/convolution only on confirmed Ampere-or-newer CUDA hardware; otherwise use FP32. TF32 uses reduced internal mantissa precision while tensors remain float32. This rule overrides inherited code and hardware recommendations. Correct every listed occurrence in the same scoped repair."
+  },
+  {
+    "source": "training_contract",
+    "severity": "critical",
+    "category": "validation_early_stopping",
+    "owner": "training_evaluation",
+    "evidence": "The raw neural-training script plans 2 epochs but has no statically recognizable validation-based early stopping.",
+    "repair_instruction": "Add validation-metric-based patience, stop on no improvement, save the best checkpoint, and restore it before final validation/test inference."
+  }
+]

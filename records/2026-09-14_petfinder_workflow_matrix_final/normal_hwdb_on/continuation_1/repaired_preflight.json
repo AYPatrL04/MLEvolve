@@ -1,0 +1,37 @@
+{
+  "status": "INCONCLUSIVE",
+  "mode": "full_cpu",
+  "code_hash": "sha256:30dde4eb315965bdce46588362f5208761b6db29d5c163a282f24f919738d210",
+  "admitted": true,
+  "gpu_check_required": true,
+  "diagnostic_codes": [
+    "GPU003"
+  ],
+  "report_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/d85e89969a424590b92f0d35c21b2446/report.json",
+  "summary_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/d85e89969a424590b92f0d35c21b2446/admission_summary.json",
+  "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+  "warning": null,
+  "internal_error": null,
+  "issues": [],
+  "advisories": [
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 295
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/normal_hwdb_on/workspace/working/preflight/d85e89969a424590b92f0d35c21b2446/report_attempt_4.json#/diagnostics/0"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    }
+  ]
+}

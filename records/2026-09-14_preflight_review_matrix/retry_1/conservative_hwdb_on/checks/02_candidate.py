@@ -1,0 +1,432 @@
+import os
+import numpy as np
+import pandas as pd
+from PIL import Image
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+try:
+    from utils.training_diagnostics import TrainingDiagnostics
+except Exception:
+
+    class TrainingDiagnostics:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return False
+
+        def after_update(self):
+            pass
+
+        def report(self, epoch=None):
+            pass
+
+        def state_dict(self):
+            return {}
+
+        def load_state_dict(self, state):
+            pass
+
+
+# --------------------------------------------------------------------------------------
+# Constants (import-safe)
+# --------------------------------------------------------------------------------------
+INPUT_DIR = os.environ.get("MLEVOLVE_INPUT_DIR", "./input")
+IMG_SIZE = 256
+METADATA_COLS = [
+    "Subject Focus",
+    "Eyes",
+    "Face",
+    "Near",
+    "Action",
+    "Accessory",
+    "Group",
+    "Collage",
+    "Human",
+    "Occlusion",
+    "Info",
+    "Blur",
+]
+TARGET_COL = "Pawpularity"
+SEED = 42
+
+
+# --------------------------------------------------------------------------------------
+# Dataset (import-safe definition; no I/O side effects at import time)
+# --------------------------------------------------------------------------------------
+class PetImageTabularDataset(Dataset):
+    def __init__(
+        self,
+        df,
+        img_dir,
+        img_mean,
+        img_std,
+        tab_mean,
+        tab_std,
+        metadata_cols,
+        target_col=None,
+        img_size=IMG_SIZE,
+    ):
+        self.df = df.reset_index(drop=True)
+        self.img_dir = img_dir
+        self.img_mean = np.asarray(img_mean, dtype=np.float32)
+        self.img_std = np.asarray(img_std, dtype=np.float32)
+        self.tab_mean = np.asarray(tab_mean, dtype=np.float32)
+        self.tab_std = np.asarray(tab_std, dtype=np.float32)
+        self.metadata_cols = metadata_cols
+        self.target_col = target_col
+        self.img_size = img_size
+
+    def __len__(self):
+        return len(self.df)
+
+    def _load_image(self, image_id):
+        path = os.path.join(self.img_dir, f"{image_id}.jpg")
+        img = Image.open(path).convert("RGB").resize((self.img_size, self.img_size))
+        arr = np.asarray(img, dtype=np.float32) / 255.0  # HWC in [0,1]
+        arr = (arr - self.img_mean) / (self.img_std + 1e-6)
+        arr = np.transpose(arr, (2, 0, 1)).copy()  # CHW
+        return torch.from_numpy(arr).float()
+
+    def __getitem__(self, idx):
+        row = self.df.iloc[idx]
+        image_id = row["Id"]
+        image = self._load_image(image_id)
+
+        tab = row[self.metadata_cols].values.astype(np.float32)
+        tab = (tab - self.tab_mean) / (self.tab_std + 1e-6)
+        tabular = torch.from_numpy(tab.copy()).float()
+
+        if self.target_col is not None:
+            target = torch.tensor(float(row[self.target_col]), dtype=torch.float32)
+            return image, tabular, target
+        else:
+            return image, tabular, str(image_id)
+
+
+# --------------------------------------------------------------------------------------
+# Model: tiny CNN (2 conv layers, 8->16 channels) + small tabular MLP branch + fusion head
+# --------------------------------------------------------------------------------------
+class TinyPetNet(nn.Module):
+    def __init__(self, tab_dim=len(METADATA_COLS), dropout=0.3):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 8, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(8)
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(16)
+        self.pool = nn.MaxPool2d(2)
+        self.global_pool = nn.AdaptiveAvgPool2d(1)
+        self.img_fc = nn.Linear(16, 16)
+
+        self.tab_fc1 = nn.Linear(tab_dim, 16)
+        self.tab_fc2 = nn.Linear(16, 16)
+
+        self.dropout = nn.Dropout(dropout)
+        self.head1 = nn.Linear(32, 16)
+        self.head2 = nn.Linear(16, 1)
+
+    def forward(self, image, tabular):
+        x = F.relu(self.bn1(self.conv1(image)))
+        x = self.pool(x)
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.pool(x)
+        x = self.global_pool(x).flatten(1)  # [B, 16]
+        x = F.relu(self.img_fc(x))
+
+        t = F.relu(self.tab_fc1(tabular))
+        t = self.dropout(t)
+        t = F.relu(self.tab_fc2(t))
+
+        fused = torch.cat([x, t], dim=1)  # [B, 32]
+        fused = F.relu(self.head1(fused))
+        fused = self.dropout(fused)
+        out = self.head2(fused).squeeze(1)  # [B]
+        return out
+
+
+# --------------------------------------------------------------------------------------
+# CPU preflight adapter contract
+# --------------------------------------------------------------------------------------
+class CandidateAdapter:
+    def __init__(self):
+        self.input_dir = os.environ.get("MLEVOLVE_INPUT_DIR", "./input")
+        self.defaults = {
+            "lr": 1e-3,
+            "weight_decay": 1e-4,
+            "dropout": 0.3,
+            "batch_size": 4,
+            "criterion": None,
+        }
+
+    def _merge_context(self, context):
+        merged = dict(self.defaults)
+        if context:
+            merged.update(context)
+        return merged
+
+    def build_model(self, context):
+        context = self._merge_context(context)
+        model = TinyPetNet(
+            tab_dim=len(METADATA_COLS), dropout=context.get("dropout", 0.3)
+        )
+        return model
+
+    def build_optimizer(self, model, context):
+        context = self._merge_context(context)
+        lr = context.get("lr", 1e-3)
+        weight_decay = context.get("weight_decay", 1e-4)
+        return torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+    def build_train_batch(self, scenario, device):
+        scenario = dict(scenario) if scenario else {}
+        batch_size = scenario.get("batch_size", self.defaults["batch_size"])
+        fixture = scenario.get("fixture") or {}
+        image_shape = list(fixture.get("image", [3, IMG_SIZE, IMG_SIZE]))
+        tabular_shape = list(fixture.get("tabular", [len(METADATA_COLS)]))
+
+        image = torch.randn(
+            batch_size, *image_shape, dtype=torch.float32, device=device
+        )
+        tabular = torch.randn(
+            batch_size, *tabular_shape, dtype=torch.float32, device=device
+        )
+        # target contract: float32 Pawpularity-scale target in [0, 100], built separately
+        target = torch.rand(batch_size, dtype=torch.float32, device=device) * 100.0
+        return {"image": image, "tabular": tabular, "target": target}
+
+    def build_validation_batch(self, scenario, device):
+        return self.build_train_batch(scenario, device)
+
+    def training_step(self, model, batch, context):
+        context = self._merge_context(context)
+        criterion = context.get("criterion") or nn.MSELoss()
+        model.train()
+        preds = model(batch["image"], batch["tabular"])
+        loss = criterion(preds.float(), batch["target"].float())
+        return loss
+
+    def validation_step(self, model, batch, context):
+        context = self._merge_context(context)
+        criterion = context.get("criterion") or nn.MSELoss()
+        model.eval()
+        with torch.no_grad():
+            preds = model(batch["image"], batch["tabular"])
+            loss = criterion(preds.float(), batch["target"].float())
+        return loss
+
+
+# --------------------------------------------------------------------------------------
+# Training / evaluation / inference entrypoint (all side effects here)
+# --------------------------------------------------------------------------------------
+if __name__ == "__main__":
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Conservative precision: FP32 everywhere; TF32 only on confirmed Ampere-or-newer CUDA.
+    if device.type == "cuda":
+        cap = torch.cuda.get_device_capability(0)
+        if cap[0] >= 8:
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+            precision_reason = (
+                "FP32 params/compute with TF32 matmul (Ampere-or-newer CUDA detected)"
+            )
+        else:
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.backends.cudnn.allow_tf32 = False
+            precision_reason = "FP32 (CUDA GPU older than Ampere; TF32 disabled)"
+    else:
+        precision_reason = "FP32 (CPU execution)"
+
+    os.makedirs("./working", exist_ok=True)
+    os.makedirs("./submission", exist_ok=True)
+
+    train_csv_path = os.path.join(INPUT_DIR, "train.csv")
+    test_csv_path = os.path.join(INPUT_DIR, "test.csv")
+    train_img_dir = os.path.join(INPUT_DIR, "train")
+    test_img_dir = os.path.join(INPUT_DIR, "test")
+
+    train_df = pd.read_csv(train_csv_path)
+    test_df = pd.read_csv(test_csv_path)
+
+    # Single train/validation split
+    n_val = max(1, int(round(0.2 * len(train_df))))
+    train_split_df, val_split_df = train_test_split(
+        train_df, test_size=n_val, random_state=SEED, shuffle=True
+    )
+
+    # Fit tabular normalization ONLY on train split
+    tab_values = train_split_df[METADATA_COLS].values.astype(np.float32)
+    tab_mean = tab_values.mean(axis=0)
+    tab_std = tab_values.std(axis=0)
+    tab_std[tab_std < 1e-6] = 1.0
+
+    # Fit image normalization ONLY on train split
+    def compute_image_stats(df, img_dir, img_size):
+        sums = np.zeros(3, dtype=np.float32)
+        sq_sums = np.zeros(3, dtype=np.float32)
+        pixel_count = 0
+        for _, row in df.iterrows():
+            path = os.path.join(img_dir, f"{row['Id']}.jpg")
+            img = Image.open(path).convert("RGB").resize((img_size, img_size))
+            arr = np.asarray(img, dtype=np.float32) / 255.0
+            flat = arr.reshape(-1, 3)
+            sums += flat.sum(axis=0)
+            sq_sums += (flat**2).sum(axis=0)
+            pixel_count += flat.shape[0]
+        mean = sums / pixel_count
+        var = np.maximum(sq_sums / pixel_count - mean**2, 1e-6)
+        std = np.sqrt(var)
+        return mean.astype(np.float32), std.astype(np.float32)
+
+    img_mean, img_std = compute_image_stats(train_split_df, train_img_dir, IMG_SIZE)
+
+    train_dataset = PetImageTabularDataset(
+        train_split_df,
+        train_img_dir,
+        img_mean,
+        img_std,
+        tab_mean,
+        tab_std,
+        METADATA_COLS,
+        target_col=TARGET_COL,
+        img_size=IMG_SIZE,
+    )
+    val_dataset = PetImageTabularDataset(
+        val_split_df,
+        train_img_dir,
+        img_mean,
+        img_std,
+        tab_mean,
+        tab_std,
+        METADATA_COLS,
+        target_col=TARGET_COL,
+        img_size=IMG_SIZE,
+    )
+    test_dataset = PetImageTabularDataset(
+        test_df,
+        test_img_dir,
+        img_mean,
+        img_std,
+        tab_mean,
+        tab_std,
+        METADATA_COLS,
+        target_col=None,
+        img_size=IMG_SIZE,
+    )
+
+    batch_size = max(1, min(4, len(train_dataset)))
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=2,
+        drop_last=False,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=max(1, min(4, len(val_dataset))),
+        shuffle=False,
+        num_workers=2,
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=max(1, min(4, len(test_dataset))),
+        shuffle=False,
+        num_workers=2,
+    )
+
+    adapter = CandidateAdapter()
+    run_context = {"lr": 1e-3, "weight_decay": 1e-4, "dropout": 0.3}
+    model = adapter.build_model(run_context).to(device)
+    optimizer = adapter.build_optimizer(model, run_context)
+    criterion = nn.MSELoss()
+
+    planned_epochs = 2
+    steps_per_epoch = len(train_loader)
+    settings = {
+        "physical_batch_size": batch_size,
+        "effective_batch_size": batch_size,
+        "planned_epochs": planned_epochs,
+        "steps_per_epoch": steps_per_epoch,
+        "model_family": "TinyPetNet-CNN8-16-Tabular",
+        "split_seed": SEED,
+        "precision": "fp32",
+        "precision_reason": precision_reason,
+    }
+
+    with TrainingDiagnostics(
+        model, optimizer, scaler=None, settings=settings
+    ) as diagnostics:
+        for epoch in range(planned_epochs):
+            model.train()
+            running_loss = 0.0
+            n_batches = 0
+            for image, tabular, target in train_loader:
+                image = image.to(device)
+                tabular = tabular.to(device)
+                target = target.to(device)
+
+                optimizer.zero_grad()
+                batch = {"image": image, "tabular": tabular, "target": target}
+                loss = adapter.training_step(model, batch, {"criterion": criterion})
+                loss.backward()
+                optimizer.step()
+                diagnostics.after_update()
+
+                running_loss += loss.item()
+                n_batches += 1
+
+            avg_train_loss = running_loss / max(1, n_batches)
+            print(
+                f"Epoch {epoch + 1}/{planned_epochs} - train_mse: {avg_train_loss:.4f}"
+            )
+            diagnostics.report(epoch=epoch + 1)
+
+    # Validation: real model forward pass, RMSE in original Pawpularity units
+    model.eval()
+    val_preds_list = []
+    val_targets_list = []
+    with torch.no_grad():
+        for image, tabular, target in val_loader:
+            image = image.to(device)
+            tabular = tabular.to(device)
+            preds = model(image, tabular)
+            val_preds_list.append(preds.cpu().numpy())
+            val_targets_list.append(target.numpy())
+
+    val_preds = np.concatenate(val_preds_list)
+    val_targets = np.concatenate(val_targets_list)
+    val_preds_clipped = np.clip(val_preds, 0.0, 100.0)
+    rmse = float(np.sqrt(mean_squared_error(val_targets, val_preds_clipped)))
+
+    # Test inference: identical preprocessing/model path as validation
+    test_ids = []
+    test_preds_list = []
+    with torch.no_grad():
+        for image, tabular, ids in test_loader:
+            image = image.to(device)
+            tabular = tabular.to(device)
+            preds = model(image, tabular)
+            test_preds_list.append(preds.cpu().numpy())
+            test_ids.extend(list(ids))
+
+    test_preds = np.concatenate(test_preds_list)
+    test_preds = np.clip(test_preds, 0.0, 100.0)
+
+    submission = pd.DataFrame({"Id": test_ids, "Pawpularity": test_preds})
+    submission.to_csv("./submission/submission.csv", index=False)
+
+    print(f"Final Validation Score: {rmse}")

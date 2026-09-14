@@ -1,0 +1,56 @@
+{
+  "status": "INCONCLUSIVE",
+  "mode": "full_cpu",
+  "code_hash": "sha256:b0efcd6929dff42e34951ef78875e202dac9c494ce3d9770f27c7877c676587f",
+  "admitted": true,
+  "gpu_check_required": true,
+  "diagnostic_codes": [
+    "GPU003"
+  ],
+  "report_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/6ca41ba8ec36419bb237e1f95a78afb4/report.json",
+  "summary_path": "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/6ca41ba8ec36419bb237e1f95a78afb4/admission_summary.json",
+  "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+  "warning": null,
+  "internal_error": null,
+  "issues": [],
+  "advisories": [
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 63
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/6ca41ba8ec36419bb237e1f95a78afb4/report_attempt_4.json#/diagnostics/0"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 69
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_petfinder_workflow_matrix_final/conservative_hwdb_on/workspace/working/preflight/6ca41ba8ec36419bb237e1f95a78afb4/report_attempt_4.json#/diagnostics/1"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    }
+  ]
+}

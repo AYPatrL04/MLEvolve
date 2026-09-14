@@ -39,6 +39,7 @@ def plan_and_code_query(
             prompt=prompt,
             temperature=agent_instance.acfg.code.temp,
             cfg=agent_instance.cfg,
+            max_tokens=getattr(agent_instance.acfg.code, "completion_tokens", None),
             context_cache_stable_prefix=(
                 prompt.get("system") if isinstance(prompt, dict) else None
             ),

@@ -224,7 +224,12 @@ class LessonVectorStore:
             return {"ok": True, "skipped": True, "reason": "Qdrant disabled"}
         self.ensure_collection()
         records = self.publication_records(payload)
-        vectors = self._encode([str(record["search_text"]) for record in records])
+        from knowledge.lessons import publication_records
+
+        design_records = payload.get("design_records_v2")
+        if design_records is None:
+            design_records = publication_records(payload)
+        vectors = self._encode([str(record["search_text"]) for record in records] + [record["summary"] for record in design_records])
         models = self._qdrant_models()
         client = self._qdrant_client()
         if hasattr(client, "set_payload"):
@@ -251,7 +256,32 @@ class LessonVectorStore:
             points=points,
             wait=True,
         )
+        self.upsert_design_publication({**payload, "design_records_v2": design_records}, vectors=vectors[len(records):])
         return {"ok": True, "record_count": len(records), "collection": self.config.collection_name}
+
+    def upsert_design_publication(self, payload: Mapping[str, Any], *, vectors=None) -> dict[str, Any]:
+        from knowledge.lessons import publication_records
+
+        if not self.enabled:
+            return {"ok": True, "skipped": True}
+        records = payload.get("design_records_v2")
+        if records is None:
+            records = publication_records(payload)
+        client, models = self._qdrant_client(), self._qdrant_models()
+        collection = self.config.collection_name + "_design_v2"
+        exists = client.collection_exists(collection) if hasattr(client, "collection_exists") else collection in {item.name for item in client.get_collections().collections}
+        if not exists:
+            client.create_collection(collection_name=collection, vectors_config=models.VectorParams(size=self._dimension(), distance=self._distance()))
+        # Revision is in every point ID. SQLite's active revision remains the authority.
+        if records:
+            if vectors is None:
+                vectors = self._encode([record["summary"] for record in records])
+            client.upsert(collection_name=collection, points=[models.PointStruct(
+                id=self.point_id(payload["profile_key"], payload["revision_number"], "design_v2", record["record_id"]),
+                vector=vectors[index].tolist(),
+                payload={**record, "profile_key": payload["profile_key"], "revision": payload["revision_number"]},
+            ) for index, record in enumerate(records)], wait=True)
+        return {"ok": True, "collection": collection, "record_count": len(records)}
 
     def _condition(self, key: str, value: Any) -> Any:
         models = self._qdrant_models()
@@ -262,6 +292,24 @@ class LessonVectorStore:
                 return models.FieldCondition(key=key, match=models.MatchAny(any=list(value)))
             value = next(iter(value), "")
         return models.FieldCondition(key=key, match=models.MatchValue(value=value))
+
+    def search_design_knowledge(self, *, query: str, profile_key: str, revision: int, role: str, limit: int) -> list[dict[str, Any]]:
+        if not self.enabled or limit <= 0:
+            return []
+        client, models = self._qdrant_client(), self._qdrant_models()
+        collection = self.config.collection_name + "_design_v2"
+        if not client.collection_exists(collection):
+            return []
+        query_filter = models.Filter(must=[
+            self._condition("profile_key", profile_key), self._condition("revision", revision),
+            models.Filter(should=[
+                models.IsEmptyCondition(is_empty=models.PayloadField(key="applicability.agent_audiences")),
+                self._condition("applicability.agent_audiences", role),
+            ]),
+        ])
+        result = client.query_points(collection_name=collection, query=self._encode([query])[0].tolist(),
+                                     query_filter=query_filter, limit=limit, with_payload=True)
+        return [dict(point.payload or {}) for point in result.points]
 
     def _filter(self, filters: Mapping[str, Any]) -> Any:
         must = [self._condition(key, value) for key, value in filters.items() if value is not None]

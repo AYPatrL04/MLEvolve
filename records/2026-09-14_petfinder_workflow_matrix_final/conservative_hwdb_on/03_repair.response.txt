@@ -1,0 +1,8 @@
+<<<<<<< SEARCH
+    def training_step(self, model, batch, context):
+        raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')
+        context = {**self._defaults(), **(context or {})}
+=======
+    def training_step(self, model, batch, context):
+        context = {**self._defaults(), **(context or {})}
+>>>>>>> REPLACE

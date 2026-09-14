@@ -574,6 +574,67 @@ class LessonProfileClient:
             error=error,
         )
 
+    def design_knowledge_for_agent(self, agent: Any, *, role: str, node: Any = None, code: str = "") -> list[dict[str, Any]]:
+        """Return only exact-runtime concise lessons; unknown families are conditional."""
+        from knowledge.records import select_records
+
+        if not (self.settings.enabled and self.settings.read_enabled):
+            return []
+        role = normalize_agent_role(role)
+        identity = self.identity_for_node(agent, node, code=code) if node is not None else None
+        identities = [identity.to_dict()] if identity is not None else []
+        if not identities and role == "draft":
+            from agents.hardware_context import build_hardware_candidate
+
+            candidate = build_hardware_candidate(agent, "draft")
+            hardware = self._agent_hardware(agent)
+            for stored in self.registry.active_identities():
+                proposed = build_profile_identity(
+                    code="import torch\n", hardware=hardware, backend=candidate.get("effective_backend") or "local_process",
+                    task_description=agent.task_desc, model_family_hint=stored["model_family"],
+                    minimum_confidence=self.settings.minimum_family_confidence,
+                )
+                if proposed is not None:
+                    proposed_scope = proposed.to_dict()
+                    runtime_fields = ("hardware_key", "accelerator_key", "resource_slice_key", "runtime_class", "framework_major", "cuda_major", "backend_class")
+                    bucket = proposed_scope["workload_bucket"]
+                    workload_matches = bucket == stored["workload_bucket"] or (bucket.endswith("-unknown") and stored["workload_bucket"].rsplit("-", 1)[0] == bucket.removesuffix("-unknown"))
+                    if workload_matches and all(proposed_scope[key] == stored[key] for key in runtime_fields):
+                        identities.append(stored)
+        result = []
+        for scope in {item["profile_key"]: item for item in identities}.values():
+            revision = self.registry.active_revision(scope["profile_key"])
+            if revision is None or (role == "aggregation" and revision["maturity"] != "stable"):
+                continue
+            cache_key = {"knowledge_version": "v2", "revision": revision["revision_number"], "role": role}
+            records = self.cache.get(f"profile:{scope['profile_key']}", cache_key)
+            if not isinstance(records, list):
+                records = self.registry.design_knowledge(scope["profile_key"], revision["revision_number"])
+                self.cache.set(f"profile:{scope['profile_key']}", cache_key, records)
+            selected = select_records(records, scope, role=role)
+            expected_types = _ROLE_LESSON_TYPES.get(role)
+            if expected_types:
+                selected = [item for item in selected if item["source_id"].startswith("baseline:") or item["category"] in expected_types]
+            if role == "improve":
+                selected = [item for item in selected if item.get("change_scope") != "multi_change"]
+            try:
+                matches = self.vector_store.search_design_knowledge(
+                    query=str(agent.task_desc), profile_key=scope["profile_key"], revision=revision["revision_number"],
+                    role=role, limit=self.settings.max_lessons,
+                )
+            except Exception:
+                matches = []
+            if matches:
+                by_id = {record["record_id"]: record for record in selected}
+                selected = [by_id[item["record_id"]] for item in matches if item.get("record_id") in by_id]
+            else:
+                selected = selected[:self.settings.max_lessons]
+            if identity is None and role == "draft":
+                for record in selected:
+                    record["applies_when"] = list(record["applies_when"]) + ["Only if the chosen model family and workload shape match this recorded scope; this is a conditional alternative, not a selected default."]
+            result.extend(selected)
+        return result
+
     def search_lesson_profiles(
         self,
         *,

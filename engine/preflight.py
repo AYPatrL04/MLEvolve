@@ -19,6 +19,7 @@ import yaml
 
 from agents.review_contracts import ReviewIssue
 from engine.script_introspection import introspect_training_script
+from utils.feedback import traceback_site
 
 logger = logging.getLogger("MLEvolve")
 
@@ -101,6 +102,7 @@ class PreflightOutcome:
     profile: str | None = None
     warning: str | None = None
     internal_error: str | None = None
+    advisories: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -116,6 +118,7 @@ class PreflightOutcome:
             "warning": self.warning,
             "internal_error": self.internal_error,
             "issues": [issue.to_dict() for issue in self.issues],
+            "advisories": list(self.advisories),
         }
 
 
@@ -712,9 +715,16 @@ def diagnostic_to_review_issue(diagnostic: Mapping[str, Any]) -> ReviewIssue | N
     """Convert confirmed candidate failures into targeted repair input."""
 
     unavailable_pretrained_dependency = _is_uncached_pretrained_dependency(diagnostic)
+    fixture_failure = (
+        diagnostic.get("code") == "FIX001"
+        and diagnostic.get("classification") == "inconclusive"
+        and bool(diagnostic.get("exception_type"))
+        and not unavailable_pretrained_dependency
+    )
     if (
         diagnostic.get("classification") != "confirmed_candidate_failure"
         and not unavailable_pretrained_dependency
+        and not fixture_failure
     ):
         return None
     code = str(diagnostic.get("code") or "CHK001")
@@ -801,18 +811,88 @@ def diagnostic_to_review_issue(diagnostic: Mapping[str, Any]) -> ReviewIssue | N
     location = ""
     if diagnostic.get("file"):
         location = f" ({diagnostic['file']}:{diagnostic.get('line') or '?'})"
+    evidence = f"[{code}] {message}{location}"
+    scenarios = diagnostic.get("affected_scenarios") or diagnostic.get("scenario")
+    if scenarios:
+        evidence += "\nFailing scenario: " + json.dumps(scenarios, sort_keys=True, default=str)
+    site = traceback_site(stack_trace, file=diagnostic.get("file"), line=diagnostic.get("line"))
+    if site:
+        evidence += f"\nCandidate traceback: File {site['file']!r}, line {site.get('line') or '?'}"
+        if site.get("function"):
+            evidence += f", in {site['function']}"
+    if diagnostic.get("evidence"):
+        evidence += "\nFacts: " + json.dumps(_diagnostic_facts(diagnostic["evidence"]), sort_keys=True, default=str)
+    if diagnostic.get("affected_stages"):
+        evidence += "\nAffected checks: " + ", ".join(diagnostic["affected_stages"])
+    if diagnostic.get("reproduction"):
+        evidence += "\nReproduction: " + str(diagnostic["reproduction"])
+    if diagnostic.get("evidence_refs"):
+        evidence += "\nEvidence refs: " + ", ".join(diagnostic["evidence_refs"])
     return ReviewIssue(
         source="model_preflight",
-        severity="critical",
+        severity="warning" if fixture_failure else "critical",
         category=f"preflight_{code.lower()}",
         owner=diagnostic_owner(code, stage),
-        evidence=f"[{code}] {message}{location}",
+        evidence=evidence,
         repair_instruction=(
+            "The CPU adapter batch could not be constructed; this does not establish a model defect. "
+            "Check the reported scenario against the real data contract and repair the batch builder if it is wrong. "
+            "Preserve the selected model and do not substitute mock training behavior."
+            if fixture_failure else
             f"Repair the confirmed {stage} defect [{code}] and preserve the CandidateAdapter contract; "
             "do not suppress the check or replace real training behavior with mocks."
             f"{targeted_guidance}"
         ),
     )
+
+
+def _diagnostic_facts(evidence: Mapping[str, Any]) -> dict[str, Any]:
+    # Captured streams and tensor/parameter inventories stay in report.json.
+    # Conditions, supported dtypes and analytical uncertainty remain intact.
+    inventories = {"captured_stdout", "captured_stderr", "stack_trace", "trainable_parameters"}
+    return {
+        key: {"retained_in_report": True} if key in inventories else value
+        for key, value in evidence.items()
+    }
+
+
+def project_preflight_diagnostics(
+    diagnostics: Iterable[Mapping[str, Any]], *, report_ref: str = "preflight:report"
+) -> tuple[list[ReviewIssue], list[dict[str, Any]]]:
+    """Group identical causes, preserving affected scenarios and evidence tiers."""
+    grouped: dict[str, dict[str, Any]] = {}
+    for index, diagnostic in enumerate(diagnostics):
+        site = traceback_site(diagnostic.get("stack_trace", ""), file=diagnostic.get("file"), line=diagnostic.get("line"))
+        contract_facts = bool(diagnostic.get("evidence")) and str(diagnostic.get("code", "")).startswith(("DAT", "SHP", "OUT")) and not diagnostic.get("exception_type")
+        key = json.dumps({
+            "code": diagnostic.get("code"), "classification": diagnostic.get("classification"),
+            "exception_type": diagnostic.get("exception_type"), "message": diagnostic.get("message"),
+            "site": site, "facts": _diagnostic_facts(diagnostic.get("evidence") or {}),
+            # Structured contract violations can identify the same cause without a traceback.
+            "stage_without_site": None if site or contract_facts else diagnostic.get("stage"),
+        }, sort_keys=True, default=str)
+        group = grouped.setdefault(key, {**diagnostic, "affected_scenarios": [], "affected_stages": [], "evidence_refs": []})
+        for field, value in (("affected_scenarios", diagnostic.get("scenario")), ("affected_stages", diagnostic.get("stage"))):
+            if value and value not in group[field]:
+                group[field].append(value)
+        group["evidence_refs"].append(f"{report_ref}#/diagnostics/{index}")
+    issues, advisories = [], []
+    for diagnostic in grouped.values():
+        issue = diagnostic_to_review_issue(diagnostic)
+        if issue is not None:
+            issues.append(issue)
+        else:
+            advisories.append({
+                "code": diagnostic.get("code"), "classification": diagnostic.get("classification"),
+                "message": diagnostic.get("message"), "affected_stages": diagnostic["affected_stages"],
+                "location": traceback_site(diagnostic.get("stack_trace", ""), file=diagnostic.get("file"), line=diagnostic.get("line")),
+                "exception_type": diagnostic.get("exception_type"),
+                "affected_scenarios": diagnostic["affected_scenarios"],
+                "facts": _diagnostic_facts(diagnostic.get("evidence") or {}),
+                "evidence_refs": diagnostic["evidence_refs"],
+                "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome.",
+            })
+    return issues, advisories
 
 
 def admission_for_status(status: str, policy_mode: str, fail_open: bool) -> bool:
@@ -902,14 +982,14 @@ class ModelPreflightGate:
             )
             write_json(report, report_path)
             attempt_path = node_dir / f"report_attempt_{attempt}.json"
+            check_index = 0
+            while attempt_path.exists():
+                check_index += 1
+                attempt_path = node_dir / f"report_attempt_{attempt}_check_{check_index}.json"
             shutil.copyfile(report_path, attempt_path)
             report_dict = report.to_dict()
             diagnostics = list(report_dict.get("diagnostics", []))
-            issues = [
-                issue
-                for item in diagnostics
-                if (issue := diagnostic_to_review_issue(item)) is not None
-            ]
+            issues, advisories = project_preflight_diagnostics(diagnostics, report_ref=str(attempt_path.resolve()))
             issues.extend(contract_issues)
             diagnostic_codes = [str(item.get("code")) for item in diagnostics]
             diagnostic_codes.extend(self._contract_codes(contract_issues))
@@ -934,8 +1014,9 @@ class ModelPreflightGate:
                 admitted=admitted,
                 gpu_check_required=gpu_check_required,
                 diagnostic_codes=sorted(set(diagnostic_codes)),
-                report_path=str(report_path.resolve()),
+                report_path=str(attempt_path.resolve()),
                 issues=issues,
+                advisories=advisories,
                 profile=(
                     profile.manifest_profile
                     if profile.hardware_checks_enabled
@@ -968,9 +1049,7 @@ class ModelPreflightGate:
                     "PREFLIGHT_INTERNAL_ERROR",
                     *self._contract_codes(contract_issues),
                 ],
-                report_path=(
-                    str(report_path.resolve()) if report_path.exists() else None
-                ),
+                report_path=None,
                 issues=contract_issues,
                 profile=(
                     profile.manifest_profile
@@ -1228,6 +1307,8 @@ def apply_outcome_to_node(
     node.preflight_repair_count = int(repair_count)
     node.preflight_gpu_check_required = bool(outcome.gpu_check_required)
     node.preflight_admitted = bool(outcome.admitted)
+    node.diagnostics = dict(getattr(node, "diagnostics", None) or {})
+    node.diagnostics["preflight_advisories"] = list(outcome.advisories)
 
 
 def node_preflight_metadata(node: Any | None) -> dict[str, Any]:

@@ -65,6 +65,7 @@ vllm_client:
   default_completion_tokens: 16384
   structured_output_mode: tool_call  # json_schema works without a server tool-call parser
 hardware_knowledge:
+  # Independent of preflight and scheduler; false suppresses agent hardware evidence.
   enabled: true
   include_profile_evidence: true
   probe_timeout_seconds: 10
@@ -87,6 +88,7 @@ hardware_knowledge:
       socket_timeout_seconds: 0.2
       cache_graph_queries: true
 preflight:
+  # Admission applies to both direct and scheduled execution when enabled.
   enabled: true
   enabled_modes: [hardware_aware]
   policy_mode: balanced
@@ -274,6 +276,10 @@ agent:
     provider: openrouter
     base_url: https://openrouter.ai/api/v1
     api_key: ''
+    # Optional exact context accounting; use the actual deployed window and local tokenizer.
+    context_window_tokens: null
+    completion_tokens: null
+    tokenizer_path: null
     # To use an authenticated Claude Code subscription instead of an API key:
     # model: sonnet
     # provider: claude_cli
@@ -291,6 +297,7 @@ agent:
   check_data_leakage: true
   use_diff_mode: true
   hardware_context_enabled: true
+  design_knowledge_version: v2  # Concise records, no fixed prompt cap; existing runs pin their version.
   pipeline_decision_enabled: true
   hardware_context_limit: 8
   hardware_context_max_prompt_chars: 3500

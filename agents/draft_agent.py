@@ -7,32 +7,27 @@ from typing import Any, Optional
 
 from llm import compile_prompt_to_md
 from engine.search_node import SearchNode
-from engine.preflight_contract import PREFLIGHT_BATCH_CONTRACT
-from agents.coder import plan_and_code_query, stepwise_plan_and_code_query
+from agents.coder import plan_and_code_query
 from agents.triggers import register_node
 from agents.hardware_context import (
     apply_hardware_design_brief_to_node,
     apply_hardware_context_to_node,
-    apply_stepwise_hardware_decisions_to_node,
-    build_stepwise_hardware_stage_sections,
     get_hardware_design_brief,
     get_hardware_context_for_stage,
     hardware_context_instructions,
 )
-from agents.cuda_docs_context import get_cuda_docs_context, format_cuda_docs_prompt_section
+from agents.cuda_docs_context import get_cuda_docs_context
+from agents.design_knowledge import cuda_records, hardware_records, history_records, lesson_records, runtime_scope
+from knowledge.records import select_records
+from knowledge.runtime import fit_prompt
 from agents.lesson_context import (
     apply_lesson_context_to_node,
-    apply_lesson_context_to_pipeline_decision,
     get_lesson_context_for_stage,
     lesson_context_instructions,
 )
 from agents.prompts import (
     ROBUSTNESS_GENERALIZATION_STRATEGY,
-    apply_pipeline_decision_to_node,
-    build_pipeline_decision,
-    format_pipeline_decision_prompt_section,
     prompt_leakage_prevention,
-    pipeline_decision_instructions,
     prompt_resp_fmt,
     get_prompt_environment,
     get_impl_guideline_from_agent,
@@ -56,22 +51,13 @@ def model_preflight_generation_instructions() -> list[str]:
         "as the training pipeline; do not use mock tensors or a different toy model. "
         "Its batch builders must honor `scenario['batch_size']` and return all inputs "
         "required by the model plus a target.",
-        PREFLIGHT_BATCH_CONTRACT,
+        "- `scenario['fixture']` describes input shapes and may omit the target. "
+        "Construct the target separately according to the task's target contract "
+        "in every fixture and fallback batch path.",
         "- Keep imports, constants, class/function definitions, and read-only device "
         "configuration import-safe. Put all training, validation, prediction, and "
         "submission side effects under `if __name__ == '__main__':`.",
     ]
-
-
-def _format_used_prompt_sections(sections: list[dict[str, str]]) -> str:
-    parts: list[str] = []
-    for idx, section in enumerate(sections, 1):
-        name = str(section.get("name") or f"prompt_{idx}")
-        prompt = str(section.get("prompt") or "")
-        if not prompt:
-            continue
-        parts.append(f"# Used Prompt {idx}: {name}\n\n{prompt}")
-    return "\n\n".join(parts)
 
 
 def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
@@ -131,47 +117,32 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
     prompt: Any = {
         "Introduction": introduction,
         "Task description": agent.task_desc,
-        "Memory": agent.virtual_root.fetch_child_memory(),
         "Instructions": {},
     }
-    hardware_design_brief = get_hardware_design_brief(agent)
+    hardware_design_brief = get_hardware_design_brief(agent, select_features=False)
     hardware_ctx = get_hardware_context_for_stage(agent, "draft")
-    hardware_stage_sections = build_stepwise_hardware_stage_sections(
-        design_context=hardware_design_brief,
-        execution_context=hardware_ctx,
-        max_chars=getattr(agent.acfg, "hardware_context_max_prompt_chars", 3500),
-    )
-    hardware_section = "\n".join(
-        section for section in (hardware_design_brief.prompt_section, hardware_ctx.prompt_section) if section.strip()
-    )
-    if getattr(agent.acfg, "hardware_context_mode", "full") == "compact":
-        hardware_section = hardware_ctx.prompt_section or hardware_design_brief.prompt_section
-    cuda_docs_ctx = get_cuda_docs_context(
-        agent, "draft", hardware_context=hardware_ctx
-    )
-    cuda_docs_section = format_cuda_docs_prompt_section(
-        cuda_docs_ctx,
-        service=getattr(agent, "cuda_docs_service", None),
-        role="draft",
-    )
+    cuda_docs_ctx = get_cuda_docs_context(agent, "draft", hardware_context=hardware_ctx)
     lesson_ctx = get_lesson_context_for_stage(agent, "draft", parent_node=agent.virtual_root)
-    lesson_section = lesson_ctx.prompt_section
-    if lesson_section:
-        prompt["Family–Hardware Lesson Profile"] = lesson_section
-    pipeline_decision = build_pipeline_decision(
-        agent,
-        stage="draft",
-        data_preview=agent.data_preview,
-        hardware_contexts=[hardware_design_brief, hardware_ctx],
-    )
-    apply_lesson_context_to_pipeline_decision(pipeline_decision, lesson_ctx)
-    pipeline_decision_section = format_pipeline_decision_prompt_section(pipeline_decision)
-    prompt["Pipeline Decision"] = pipeline_decision
-    prompt["Pipeline Decision Contract"] = pipeline_decision_section
+    knowledge_records = hardware_records(hardware_ctx) + hardware_records(hardware_design_brief)
+    knowledge_records += select_records(cuda_records(cuda_docs_ctx), runtime_scope(hardware_ctx)) + history_records(agent)
+    knowledge_records += lesson_records(lesson_ctx)
+    knowledge_records = select_records(knowledge_records, {}, already_filtered=True)
+    from utils.feedback import scheduler_feedback
+    if operational := scheduler_feedback(agent):
+        prompt["Instructions"]["Scheduler execution constraints"] = operational
     prompt["Instructions"] |= prompt_resp_fmt()
     prompt["Instructions"] |= hardware_context_instructions(hardware_ctx)
+    if "Hardware/Profile reasoning rule" in prompt["Instructions"]:
+        prompt["Instructions"]["Hardware/Profile reasoning rule"] = [
+            rule for rule in prompt["Instructions"]["Hardware/Profile reasoning rule"]
+            if "Cross-Stage Note Board" not in rule and "stage-specific hardware node" not in rule
+        ]
     prompt["Instructions"] |= lesson_context_instructions(lesson_ctx)
-    prompt["Instructions"] |= pipeline_decision_instructions(pipeline_decision)
+    prompt["Instructions"]["Joint design"] = [
+        "Choose data preparation, model, precision, optimizer, training, evaluation and inference together.",
+        "Return a brief design followed by one complete runnable Python script; there are no later coding or integration stages.",
+        "Keep every applicable knowledge restriction and fallback; family-specific experience is conditional until you choose that family.",
+    ]
 
     prompt["Instructions"] |= {
         "🔬 Critical: Scientific Approach to Design": [
@@ -230,8 +201,13 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
             "- List scheduler-owned backend controls that the generated subprocess must not implement.",
             "- Do not assume code-level integration, shared framework state, or synchronized start time with another job.",
         ],
-        "CPU preflight adapter contract": model_preflight_generation_instructions(),
     }
+    from engine.preflight import preflight_enabled
+
+    if preflight_enabled(agent.cfg):
+        prompt["Instructions"]["CPU preflight adapter contract"] = model_preflight_generation_instructions()
+    if getattr(agent, "scheduler_client", None) is None:
+        prompt["Instructions"].pop("Backend design contract", None)
     prompt["Instructions"] |= get_impl_guideline_from_agent(agent)
     prompt["Instructions"] |= prompt_leakage_prevention()
 
@@ -252,7 +228,7 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
             **Key Techniques**:
             1. **Feature Extractor Pattern**: If dataset is small or domain mismatch exists → Freeze backbone + train only final layers (or feed to XGBoost/SVM).
 
-            2. **Mixed Precision (MANDATORY for pretrained models)**: Use `torch.cuda.amp` (autocast + GradScaler) to save memory. DO NOT manually convert to .half().
+            2. **Precision**: Follow the configured precision policy and the target hardware allowlist. Use FP32 when a compatible mixed-precision training path is unavailable. DO NOT manually convert to .half().
 
             3. **Avoid Timeouts**: #1 cause is slow data loading, NOT GPU model.
                • Use DataLoader with num_workers>=2, pin_memory=True (NOT raw for loops)
@@ -269,64 +245,34 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
     instructions = f"\n# Instructions\n\n"
     instructions += compile_prompt_to_md(prompt["Instructions"], 2)
 
-    memory_section = ""
-    if prompt.get("Memory", "").strip():
-        memory_section = f"\n# Memory\nBelow is a record of previous solution attempts and their outcomes:\n {prompt['Memory']}\n"
-
-    user_prompt = f"\n# Task description\n{prompt['Task description']}{memory_section}\n{hardware_section}\n{lesson_section}\n{cuda_docs_section}\n{pipeline_decision_section}\n{instructions}"
     assistant_prefix = f"Let me approach this systematically.\nFirst, I'll examine the dataset:\n{agent.data_preview}"
-    prompt_complete = build_chat_prompt_for_model(
-        agent.acfg.code.model, introduction, user_prompt, assistant_prefix
-    )
+
+    def build_prompt(knowledge_section):
+        user_prompt = f"\n# Task description\n{prompt['Task description']}\n{knowledge_section}\n{instructions}"
+        return build_chat_prompt_for_model(agent.acfg.code.model, introduction, user_prompt, assistant_prefix)
+
+    prompt_complete, knowledge_records, knowledge_diagnostics = fit_prompt(agent, build_prompt, knowledge_records)
+    if knowledge_diagnostics["sizing"] == "unavailable":
+        logger.info("Draft context sizing unavailable; injecting complete concise records without a fixed cap.")
     if not agent.virtual_root.add_expected_child_count(agent.scfg):
         logger.info("Draft limit reached before draft generation could reserve a child slot.")
         return None
 
-    prompt_for_log = prompt_complete
-    if agent.use_stepwise_generation:
-        stepwise_context_payload = {
-            "stage": "draft",
-            "memory": prompt.get("Memory", ""),
-            "hardware_prompt_section": hardware_section,
-            "hardware_stage_sections": hardware_stage_sections,
-            "hardware_candidate": hardware_ctx.candidate,
-            "hardware_context": {
-                "design_brief": hardware_design_brief.compact_context,
-                "execution_context": hardware_ctx.compact_context,
-            },
-            "cuda_docs_prompt_section": cuda_docs_section,
-            "lesson_profile_section": lesson_section,
-            "lesson_profile_context": lesson_ctx.compact_context,
-            "pipeline_decision": pipeline_decision,
-            "pipeline_decision_section": pipeline_decision_section,
-        }
-        plan, code, stepwise_metadata = stepwise_plan_and_code_query(
-            agent_instance=agent,
-            prompt_base=prompt,
-            data_preview=agent.data_preview,
-            context=stepwise_context_payload,
-            return_metadata=True,
-        )
-        prompt_for_log = (
-            _format_used_prompt_sections(stepwise_context_payload.get("used_prompt_sections") or [])
-            or prompt_complete
-        )
-    else:
-        plan, code = plan_and_code_query(agent, prompt_complete)
-        stepwise_metadata = {}
+    plan, code = plan_and_code_query(agent, prompt_complete)
     new_node = SearchNode(plan=plan, code=code, parent=agent.virtual_root, stage="draft",
                         local_best_node=agent.virtual_root)
     apply_hardware_context_to_node(new_node, hardware_ctx)
     apply_hardware_design_brief_to_node(new_node, hardware_design_brief)
-    apply_pipeline_decision_to_node(new_node, pipeline_decision)
     apply_lesson_context_to_node(new_node, lesson_ctx)
-    apply_stepwise_hardware_decisions_to_node(
-        new_node,
-        stepwise_metadata,
-        design_context=hardware_design_brief,
-        execution_context=hardware_ctx,
-    )
-    register_node(agent, new_node, prompt_for_log, new_branch=True)
+    new_node.generation_strategy = "single_pass"
+    new_node.pipeline_decision = None
+    new_node.stage_note_board = []
+    new_node.diagnostics["design_knowledge"] = {
+        **knowledge_diagnostics,
+        "record_ids": [record["record_id"] for record in knowledge_records],
+        "evidence_refs": sorted({ref for record in knowledge_records for ref in record["evidence_refs"]}),
+    }
+    register_node(agent, new_node, prompt_complete, new_branch=True)
 
     logger.info(f"[draft] → node {new_node.id} (branch={new_node.branch_id})")
     return new_node

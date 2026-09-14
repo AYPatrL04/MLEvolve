@@ -5,6 +5,7 @@
       "id": "feat:amp",
       "properties": {
         "feature_id": "amp",
+        "design_summary": "Use supported FP16/BF16 autocast for training, GradScaler for FP16, and FP32 for sensitive reductions, metrics and exports.",
         "name": "amp",
         "category": "precision",
         "description": "PyTorch Automatic Mixed Precision (torch.amp) for training. Use autocast for Tensor Core-friendly forward and loss computation with FP16 or BF16, keep numerically sensitive reductions/metrics/export in FP32, and use GradScaler for FP16 so small gradients remain representable.",
@@ -46,6 +47,7 @@
       "id": "feat:bf16",
       "properties": {
         "feature_id": "bf16",
+        "design_summary": "BF16 mixed-precision training requires Ampere or newer hardware and a supported autocast path; loss scaling is normally unnecessary.",
         "name": "bf16",
         "category": "precision",
         "description": "Hardware-native BF16 Tensor Core mixed-precision training on Ampere and later. Use AMP/autocast for forward and backward computation; BF16 normally does not need loss scaling and retains FP32-like exponent range.",
@@ -90,6 +92,7 @@
       "id": "feat:cuda_graphs",
       "properties": {
         "feature_id": "cuda_graphs",
+        "design_summary": "Replay captured CUDA work when shapes and launch parameters are stable; dynamic shapes or per-step control flow require a compatible fallback.",
         "name": "cuda_graphs",
         "category": "kernel_optimization",
         "description": "CUDA Graphs capture a sequence of kernel launches and their\ndependencies into a single replayable object; the overhead of\ngraph definition and instantiation can then be amortized over many\nexecutions. A graph is a snapshot of a workflow including kernels,\ntheir parameters, and their dependencies, replayed as rapidly as\npossible. Best for workloads with many small kernels and fixed\nlaunch parameters; structures with variable shapes or per-step\ncontrol flow cannot be captured directly. See the CUDA C++\nProgramming Guide CUDA Graphs section for the full set of capture\nrestrictions and the API surface.",
@@ -108,6 +111,7 @@
       "id": "feat:fp16",
       "properties": {
         "feature_id": "fp16",
+        "design_summary": "Use supported FP16 autocast with FP32 optimizer state and loss scaling when needed to prevent gradient underflow.",
         "name": "fp16",
         "category": "precision",
         "description": "Hardware-native FP16 Tensor Core mixed-precision training. Use AMP/autocast for forward and backward computation, framework-managed FP32 optimizer state, and loss scaling when gradients would otherwise underflow.",
@@ -151,6 +155,7 @@
       "id": "feat:fp4",
       "properties": {
         "feature_id": "fp4",
+        "design_summary": "Generic FP4 is a capability marker, not NVFP4 or a general training-speed policy.",
         "name": "fp4",
         "category": "precision",
         "description": "Generic FP4/MXFP4 capability marker for storage, inference, or specialized workflows. It is not NVFP4 and is hidden from datatype training-speed optimization.",
@@ -183,6 +188,7 @@
       "id": "feat:fp8",
       "properties": {
         "feature_id": "fp8",
+        "design_summary": "Transformer Engine FP8 requires Ada or newer hardware, aggressive mode, compatible modules and shapes, accuracy validation, and a BF16/FP16 fallback.",
         "name": "fp8",
         "category": "precision",
         "description": "Hardware-native FP8 Tensor Core training on Ada and later through NVIDIA Transformer Engine. It is an aggressive-mode option that requires compatible modules, tensor shapes, packages, accuracy validation, and a BF16/FP16 fallback.",
@@ -222,6 +228,7 @@
       "id": "feat:fp8_e4m3",
       "properties": {
         "feature_id": "fp8_e4m3",
+        "design_summary": "Use E4M3 only within a supported Transformer Engine FP8 recipe, including the forward component of HYBRID.",
         "name": "fp8_e4m3",
         "category": "precision",
         "description": "FP8 E4M3 training format used by supported Transformer Engine FP8 recipes. It may be selected as E4M3 or as the forward component of the HYBRID recipe; it is not a generic framework dtype policy.",
@@ -260,6 +267,7 @@
       "id": "feat:fp8_e5m2",
       "properties": {
         "feature_id": "fp8_e5m2",
+        "design_summary": "E5M2 is only the backward-gradient component of Transformer Engine HYBRID, not an independent training policy.",
         "name": "fp8_e5m2",
         "category": "precision",
         "description": "FP8 E5M2 is retained only as the backward-gradient component of Transformer Engine's documented HYBRID recipe. Pure E5M2 is not an independent MLEvolve training policy.",
@@ -298,6 +306,7 @@
       "id": "feat:int8",
       "properties": {
         "feature_id": "int8",
+        "design_summary": "INT8 is an integer/inference capability indicator; it does not authorize general mixed-precision training.",
         "name": "int8",
         "category": "precision",
         "description": "INT8 Tensor Core hardware capability indicator. It is not a general training-speed recommendation; integer inputs, class labels, inference quantization, and explicit QAT are separate from the floating-point mixed-precision training policy.",
@@ -332,6 +341,7 @@
       "id": "feat:pcie5_x16",
       "properties": {
         "feature_id": "pcie5_x16",
+        "design_summary": "PCIe 5.0 x16 identifies the interconnect capability; it does not establish measured workload throughput.",
         "name": "pcie5_x16",
         "category": "interconnect",
         "description": "PCI-SIG PCI Express Base Specification (PCIe 5.0 x16)",
@@ -347,6 +357,7 @@
       "id": "feat:sm_100",
       "properties": {
         "feature_id": "sm_100",
+        "design_summary": "SM 10.0 identifies Blackwell datacenter compute capability.",
         "name": "sm_100",
         "category": "compute_capability",
         "description": "CUDA C++ Programming Guide -- Compute Capability (sm_100, Blackwell datacenter)",
@@ -365,6 +376,7 @@
       "id": "feat:sm_120",
       "properties": {
         "feature_id": "sm_120",
+        "design_summary": "SM 12.0 identifies Blackwell consumer compute capability.",
         "name": "sm_120",
         "category": "compute_capability",
         "description": "CUDA C++ Programming Guide -- Compute Capability (sm_120, Blackwell consumer)",
@@ -384,6 +396,7 @@
       "id": "feat:sm_80",
       "properties": {
         "feature_id": "sm_80",
+        "design_summary": "SM 8.0 identifies Ampere compute capability.",
         "name": "sm_80",
         "category": "compute_capability",
         "description": "CUDA C++ Programming Guide -- Compute Capability (sm_80, Ampere)",
@@ -399,6 +412,7 @@
       "id": "feat:sm_86",
       "properties": {
         "feature_id": "sm_86",
+        "design_summary": "SM 8.6 identifies Ampere consumer compute capability.",
         "name": "sm_86",
         "category": "compute_capability",
         "description": "CUDA C++ Programming Guide -- Compute Capability (sm_86, Ampere consumer)",
@@ -414,6 +428,7 @@
       "id": "feat:sm_89",
       "properties": {
         "feature_id": "sm_89",
+        "design_summary": "SM 8.9 identifies Ada compute capability.",
         "name": "sm_89",
         "category": "compute_capability",
         "description": "CUDA C++ Programming Guide -- Compute Capability (sm_89, Ada Lovelace)",
@@ -432,6 +447,7 @@
       "id": "feat:sm_90",
       "properties": {
         "feature_id": "sm_90",
+        "design_summary": "SM 9.0 identifies Hopper compute capability.",
         "name": "sm_90",
         "category": "compute_capability",
         "description": "CUDA C++ Programming Guide -- Compute Capability (sm_90, Hopper)",
@@ -449,6 +465,7 @@
       "id": "feat:tensor_cores",
       "properties": {
         "feature_id": "tensor_cores",
+        "design_summary": "For repeated convolution shapes, cuDNN benchmark mode can reuse a selected algorithm; deterministic execution is a separate setting and must follow the task reproducibility requirements.",
         "name": "tensor_cores",
         "category": "tensor_core",
         "description": "Set torch.backends.cudnn.benchmark=True so that when a cuDNN\nconvolution is called with a new set of size parameters, cuDNN runs\nmultiple algorithms, benchmarks them to find the fastest one, and\nreuses it for the rest of the process for the same size parameters.\nDisabling it (benchmark=False) makes cuDNN deterministically select\nan algorithm, possibly at the cost of reduced performance. The\nseparate torch.backends.cudnn.deterministic flag controls\nreproducibility and is distinct from the benchmark setting; combine\nit with seeded RNGs (Python, NumPy, PyTorch) when you need\nreproducible runs.",
@@ -483,6 +500,7 @@
       "id": "feat:tensor_cores_3gen",
       "properties": {
         "feature_id": "tensor_cores_3gen",
+        "design_summary": "Third-generation Tensor Cores are an Ampere capability; use only supported training formats.",
         "name": "tensor_cores_3gen",
         "category": "tensor_core",
         "description": "NVIDIA Ampere Architecture Whitepaper (3rd-generation Tensor Cores)",
@@ -503,6 +521,7 @@
       "id": "feat:tensor_cores_4gen",
       "properties": {
         "feature_id": "tensor_cores_4gen",
+        "design_summary": "Fourth-generation Tensor Cores are a Hopper capability; use only supported training formats.",
         "name": "tensor_cores_4gen",
         "category": "tensor_core",
         "description": "NVIDIA Hopper H100 Architecture Whitepaper (4th-generation Tensor Cores)",
@@ -528,6 +547,7 @@
       "id": "feat:tensor_cores_5gen",
       "properties": {
         "feature_id": "tensor_cores_5gen",
+        "design_summary": "Fifth-generation Tensor Cores are a Blackwell capability; use only supported training formats.",
         "name": "tensor_cores_5gen",
         "category": "tensor_core",
         "description": "NVIDIA Blackwell Architecture Technical Brief (5th-generation Tensor Cores)",
@@ -552,6 +572,7 @@
       "id": "feat:tf32",
       "properties": {
         "feature_id": "tf32",
+        "design_summary": "On Ampere or newer hardware, TF32 accelerates eligible FP32 matrix/convolution operations while retaining FP32 tensor storage.",
         "name": "tf32",
         "category": "precision",
         "description": "Hardware-native TF32 Tensor Core math for FP32 matrix and convolution training on Ampere and later. It preserves FP32 storage and range while accelerating eligible operations.",
@@ -6789,6 +6810,7 @@
       "id": "feat:cut_cross_entropy",
       "properties": {
         "feature_id": "cut_cross_entropy",
+        "design_summary": "A compatible fused classifier/cross-entropy implementation avoids materializing the full large-vocabulary logits tensor; validate the loss and gradient path before reuse.",
         "name": "cut_cross_entropy",
         "category": "kernel_optimization",
         "description": "Cut Cross-Entropy: fuses a linear classifier/logit projection with the cross-entropy loss so the (N x V) logits tensor is never materialized in global memory [https://github.com/apple/ml-cross-entropy]; chunked online log-sum-exp in SRAM. Same math (exact CE + gradient), >4x peak-memory cut on large-vocab heads, >2x kernel speed.",
@@ -6807,6 +6829,7 @@
       "id": "feat:muon_optimizer",
       "properties": {
         "feature_id": "muon_optimizer",
+        "design_summary": "Muon applies a Newton-Schulz update to eligible matrix weights and uses a separate optimizer for other parameters; verify task quality and runtime before adoption.",
         "name": "muon_optimizer",
         "category": "optimizer",
         "description": "Muon optimizer: for 2D weight matrices, replaces the momentum-smoothed gradient with its nearest semi-orthogonal matrix via a fixed 5-step Newton-Schulz iteration (no SVD); 1D params stay on AdamW. Matches AdamW final loss using ~52% of training FLOPs.",
@@ -6843,6 +6866,7 @@
       "id": "feat:soap_optimizer",
       "properties": {
         "feature_id": "soap_optimizer",
+        "design_summary": "SOAP applies Adam in the preconditioner eigenbasis with amortized eigendecomposition; verify memory, runtime and task quality before adoption.",
         "name": "soap_optimizer",
         "category": "optimizer",
         "description": "SOAP optimizer: Shampoo run in the eigenbasis of its own preconditioner, then plain Adam in that rotated space; amortizes eigendecomposition. >40% fewer iterations / >35% wall-clock vs AdamW to same loss in large-batch regime.",
@@ -6875,6 +6899,7 @@
       "id": "feat:ademamix_optimizer",
       "properties": {
         "feature_id": "ademamix_optimizer",
+        "design_summary": "AdEMAMix adds a slow gradient EMA to Adam-style state; account for the extra buffer and validate task quality.",
         "name": "ademamix_optimizer",
         "category": "optimizer",
         "description": "AdEMAMix optimizer: augments Adam's fast gradient EMA with a second very-slow EMA (beta3 ~0.9999). A 1.3B model on 101B tokens matches AdamW on 197B (~51% token reduction to same loss). One extra EMA buffer.",
@@ -6907,6 +6932,7 @@
       "id": "feat:dataset_decomposition",
       "properties": {
         "feature_id": "dataset_decomposition",
+        "design_summary": "Length bucketing and a short-to-long sequence curriculum change data order and attention boundaries; validate task compatibility before reuse.",
         "name": "dataset_decomposition",
         "category": "data_pipeline",
         "description": "Dataset Decomposition: decompose corpus into same-length buckets and train a short-to-long variable-sequence-length curriculum with only intra-document attention. Changes data ordering not model/loss; reaches target accuracy up to 6x faster than fixed-length concatenation.",
@@ -6922,6 +6948,7 @@
       "id": "feat:gram_newton_schulz_symmetric_gemm",
       "properties": {
         "feature_id": "gram_newton_schulz_symmetric_gemm",
+        "design_summary": "A compatible symmetric/triangular GEMM can reduce redundant work in a Gram Newton-Schulz update; preserve restart guards and verify numerical behavior.",
         "name": "gram_newton_schulz_symmetric_gemm",
         "category": "kernel_optimization",
         "description": "Gram Newton-Schulz symmetric/triangular fused GEMM: the Newton-Schulz step (used by Muon) is a symmetric product; a triangular fused kernel removes the wasted half of multiplies plus a DRAM round-trip cuBLAS incurs. Up to 2x faster NS step. Same math (Gram-matrix restart guards stability).",
@@ -6953,6 +6980,7 @@
       "id": "feat:nvimagecodec_gpu_decode",
       "properties": {
         "feature_id": "nvimagecodec_gpu_decode",
+        "design_summary": "For an image-decode bottleneck, compatible nvImageCodec GPU decoding and DLPack transfer may overlap data loading with compute; check codec/hardware support. This does not apply to text workloads.",
         "name": "nvimagecodec_gpu_decode",
         "category": "data_pipeline",
         "description": "nvImageCodec GPU image decode: decodes encoded image bytes (nvJPEG/nvJPEG2000/nvTIFF plus hardware JPEG decode on documented nvJPEG hardware [https://docs.nvidia.com/cuda/nvjpeg/index.html]) directly into GPU memory, DLPack zero-copy to torch, decode of batch N+1 overlapping compute of batch N. Removes CPU-decode bottleneck for CV/imaging. ~2.18x faster JPEG loading. No-op for text/LLM training.",
@@ -6975,6 +7003,7 @@
       "id": "feat:async_tensor_parallel",
       "properties": {
         "feature_id": "async_tensor_parallel",
+        "design_summary": "Compatible symmetric-memory collectives can overlap tensor-parallel communication with compute on multiple GPUs; this has no single-GPU benefit.",
         "name": "async_tensor_parallel",
         "category": "parallelism",
         "description": "Asynchronous tensor-parallel communication overlap (PyTorch SymmetricMemory): uses eligible NCCL Copy Engine collectives such as all_gather_into_tensor/all_to_all_single on symmetric-memory tensors so communication can overlap compute. Multi-GPU only; no effect single-GPU. Same math.",
@@ -6999,6 +7028,7 @@
       "id": "feat:fp8_rowwise_scaling",
       "properties": {
         "feature_id": "fp8_rowwise_scaling",
+        "design_summary": "FP8 row-wise scaling is an aggressive-mode opt-in requiring backend, model and tensor-shape validation.",
         "name": "fp8_rowwise_scaling",
         "category": "precision",
         "description": "Specialized FP8 row-wise scaling training recipe. It remains an aggressive-mode opt-in and must be validated on the selected backend, model, and tensor shapes.",
@@ -7036,6 +7066,7 @@
       "id": "feat:fp8_all_gather_fsdp2",
       "properties": {
         "feature_id": "fp8_all_gather_fsdp2",
+        "design_summary": "Experimental FSDP2 FP8 all-gather targets measured distributed communication bottlenecks; keep it outside default single-GPU mixed-precision training.",
         "name": "fp8_all_gather_fsdp2",
         "category": "parallelism",
         "description": "Experimental FP8 all-gather in FSDP2 for distributed training where parameter all-gather communication is a measured bottleneck. This is not a single-GPU datatype-speed instruction and should stay outside the default mixed precision training path.",
@@ -7062,6 +7093,7 @@
       "id": "feat:mxfp8",
       "properties": {
         "feature_id": "mxfp8",
+        "design_summary": "Transformer Engine MXFP8 training requires Blackwell hardware and explicit aggressive-mode validation.",
         "name": "mxfp8",
         "category": "precision",
         "description": "Blackwell-native MXFP8 block-scaled training through NVIDIA Transformer Engine. It is an aggressive-mode opt-in, not an automatic recommendation.",
@@ -7095,6 +7127,7 @@
       "id": "feat:nvfp4",
       "properties": {
         "feature_id": "nvfp4",
+        "design_summary": "Transformer Engine NVFP4 training requires Blackwell hardware and explicit aggressive-mode validation; generic FP4 is not equivalent.",
         "name": "nvfp4",
         "category": "precision",
         "description": "Blackwell-native NVFP4 block-scaled training through NVIDIA Transformer Engine. NVFP4 is distinct from generic FP4 and is an aggressive-mode opt-in only.",
@@ -7128,6 +7161,7 @@
       "id": "feat:int4",
       "properties": {
         "feature_id": "int4",
+        "design_summary": "INT4 is a capability indicator, not a replacement for floating-point mixed-precision training.",
         "name": "int4",
         "category": "precision",
         "description": "INT4 Tensor Core hardware capability indicator. It is not a general training-speed recommendation and must not replace floating-point mixed-precision training.",
@@ -7151,6 +7185,7 @@
       "id": "feat:sm_70",
       "properties": {
         "feature_id": "sm_70",
+        "design_summary": "SM 7.0 is a CUDA kernel target and device capability marker.",
         "name": "CUDA compute capability 7.0",
         "category": "compute_capability",
         "description": "CUDA compute capability 7.0 kernel target and device capability marker.",
@@ -7162,6 +7197,7 @@
       "id": "feat:sm_75",
       "properties": {
         "feature_id": "sm_75",
+        "design_summary": "SM 7.5 is a CUDA kernel target and device capability marker.",
         "name": "CUDA compute capability 7.5",
         "category": "compute_capability",
         "description": "CUDA compute capability 7.5 kernel target and device capability marker.",
@@ -7280,6 +7316,7 @@
         "prompt_visibility": "hidden",
         "model_shape_limitations": "Use only when the workload requires double-precision numerical behavior.",
         "feature_id": "fp64",
+        "design_summary": "FP64 remains available for scientific/reference workloads but is excluded from datatype training-speed recommendations.",
         "name": "fp64",
         "category": "precision"
       }

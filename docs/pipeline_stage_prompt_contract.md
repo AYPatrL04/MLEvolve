@@ -1,5 +1,10 @@
 # Pipeline Stage Prompt Contract
 
+Initial drafts now use [single-call design and concise knowledge](single_call_design_knowledge.md).
+The ordered decision contract below remains in later planning/review/repair
+workflows and historical traces; drafts no longer make the separate decision,
+three coding or merge calls.
+
 MLEvolve now creates a compact pipeline decision before every code-producing
 stage. The hardware-aware stepwise workflow follows this order:
 

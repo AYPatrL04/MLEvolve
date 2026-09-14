@@ -13,10 +13,9 @@ from engine.scheduler_contract import SCHEDULER_SAFE_POINT_INSTRUCTION
 
 def get_impl_guideline_from_agent(agent):
     """Build implementation guideline from agent config."""
-    tot_time_remaining = (
-        agent.acfg.time_limit - (time.time() - agent.start_time)
-        if agent.acfg.time_limit is not None else None
-    )
+    from engine.preflight import preflight_enabled
+
+    tot_time_remaining = agent.acfg.time_limit - (time.time() - agent.start_time)
     configured_timeout = getattr(getattr(agent.cfg, "exec", None), "timeout", None)
     if tot_time_remaining is None:
         if configured_timeout is None:
@@ -34,6 +33,8 @@ def get_impl_guideline_from_agent(agent):
         k_fold_validation=getattr(agent.acfg, "k_fold_validation", 0),
         pretrain_model_dir=getattr(agent.cfg, "pretrain_model_dir", ""),
         task_name=getattr(agent.cfg, "exp_id", ""),
+        preflight_required=preflight_enabled(agent.cfg),
+        scheduler_enabled=getattr(agent, "scheduler_client", None) is not None,
     )
     mode = getattr(agent.acfg, "precision_optimization_mode", "normal")
     guideline["Precision policy"] = [precision_mode_instruction(mode)]
@@ -55,6 +56,8 @@ def get_impl_guideline(
     k_fold_validation: int = 0,
     pretrain_model_dir: str = "",
     task_name: str = "",
+    preflight_required: bool = True,
+    scheduler_enabled: bool = True,
 ) -> dict:
     """Build implementation guideline from time and config."""
     runtime_packages = ", ".join(advertised_package_names())
@@ -143,10 +146,19 @@ def get_impl_guideline(
             f"The evaluation should be based on {k_fold_validation}-fold cross-validation but only if that's an appropriate evaluation for the task at hand."
         )
 
-    if task_name.strip().lower().replace("_", "-") == "petfinder-pawpularity-score":
+    if preflight_required and task_name.strip().lower().replace("_", "-") == "petfinder-pawpularity-score":
         impl_guideline.append(
             "• PetFinder preflight fixture: return a mapping containing image [B, 3, 256, 256], "
             "tabular [B, 12], and float32 target [B]; call the real model with both image and tabular."
         )
 
+    if not preflight_required:
+        start = impl_guideline.index("**5. CPU Model-Preflight Adapter Contract**")
+        end = impl_guideline.index("📁 **Directories**: Input data in `./input/`, submission in `./submission/`, temp files in `./working/`")
+        del impl_guideline[start:end]
+        impl_guideline = [line for line in impl_guideline if "CandidateAdapter" not in line]
+    if not scheduler_enabled:
+        start = impl_guideline.index("**4. Scheduler Model Family Contract**")
+        del impl_guideline[start:start + 6]
+        impl_guideline = [line for line in impl_guideline if "script_scheduler_context" not in line]
     return {"Implementation guideline": impl_guideline}

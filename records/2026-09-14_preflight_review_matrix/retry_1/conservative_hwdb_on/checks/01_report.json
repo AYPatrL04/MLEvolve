@@ -1,0 +1,579 @@
+{
+  "candidate_hash": "sha256:de8857701a10d2894b8f937edd823a1362ea5ec5b39f2dadc36c95ab87acf0e5",
+  "candidate_id": "7cde654a9e104221bac55e10c341e482",
+  "checker_version": "0.1.0",
+  "diagnostics": [
+    {
+      "classification": "inconclusive",
+      "code": "GPU003",
+      "file": "candidate.py",
+      "line": 236,
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "operation": "torch.cuda.is_available",
+      "reproduction": "model-preflight check preflight.yaml --only static_source",
+      "severity": "warning",
+      "stage": "static_source"
+    },
+    {
+      "classification": "inconclusive",
+      "code": "CHK001",
+      "exception_type": "RuntimeError",
+      "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 1,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "warning",
+      "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "inconclusive",
+      "code": "CHK001",
+      "exception_type": "RuntimeError",
+      "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 2,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "warning",
+      "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "inconclusive",
+      "code": "CHK001",
+      "exception_type": "RuntimeError",
+      "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+      "scenario": {
+        "batch_size": 4,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "warning",
+      "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "stage": "abstract_forward"
+    },
+    {
+      "classification": "confirmed_candidate_failure",
+      "code": "AUT002",
+      "exception_type": "RuntimeError",
+      "message": "training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "reproduction": "model-preflight check preflight.yaml --only cpu_training",
+      "scenario": {
+        "batch_size": 1,
+        "fixture": {
+          "image": [
+            3,
+            256,
+            256
+          ],
+          "tabular": [
+            12
+          ]
+        },
+        "input_shape": [
+          3,
+          256,
+          256
+        ],
+        "mode": "train",
+        "precision": "fp32",
+        "shape_name": "image"
+      },
+      "severity": "error",
+      "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+      "stage": "cpu_training"
+    }
+  ],
+  "environment": {
+    "conda_environment": "base",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2+-x86_64-with-glibc2.39",
+    "python_implementation": "CPython",
+    "python_version": "3.11.15",
+    "torch_version": "2.11.0",
+    "worker_python": "/home/justin/MLEvolve/.venv/bin/python"
+  },
+  "gpu_check_required": true,
+  "gpu_submission_recommended": false,
+  "normalized_manifest": {
+    "candidate": {
+      "adapter": "candidate:CandidateAdapter",
+      "id": "7cde654a9e104221bac55e10c341e482",
+      "root": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate"
+    },
+    "execution": {
+      "abstract_timeout_seconds": 15.0,
+      "allow_real_cpu_abstract_fallback": false,
+      "cache": false,
+      "cpu_timeout_seconds": 20.0,
+      "disable_network": true,
+      "maximum_cpu_memory_mb": 8192,
+      "maximum_output_bytes": 1000000,
+      "maximum_processes": 32
+    },
+    "policy": {
+      "memory_high_risk_fraction": 0.9,
+      "memory_warning_fraction": 0.7,
+      "mode": "balanced"
+    },
+    "scenarios": {
+      "boundary_shapes": {},
+      "fixture": {
+        "image": [
+          3,
+          256,
+          256
+        ],
+        "tabular": [
+          12
+        ]
+      },
+      "input_shapes": {
+        "image": [
+          3,
+          256,
+          256
+        ]
+      },
+      "last_batch_size": 1,
+      "precision": [
+        "fp32"
+      ],
+      "run_validation": true,
+      "stateful_two_steps": false,
+      "test_last_batch": true,
+      "train_batch_sizes": [
+        1,
+        2,
+        4
+      ]
+    },
+    "schema_version": 1,
+    "target": {
+      "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml"
+    },
+    "task": {
+      "drop_last": false,
+      "input_rank": 3,
+      "name": "petfinder-pawpularity-score",
+      "target_dtype": "float32"
+    }
+  },
+  "overall_status": "FAIL",
+  "report_schema_version": 1,
+  "resource_estimate": {
+    "estimated_risk": "low",
+    "estimated_total_bytes": 50360,
+    "gradient_bytes_exact": 10948,
+    "is_gpu_oom_guarantee": false,
+    "optimizer_state_bytes_estimated": 21896,
+    "parameter_bytes_exact": 10948,
+    "safety_margin_bytes": 6568,
+    "saved_activation_bytes_estimated": 0,
+    "target_vram_bytes": 34359738368,
+    "target_vram_fraction": 1e-06,
+    "uncertainty_sources": [
+      "allocator fragmentation",
+      "tensor lifetime overlap",
+      "cuDNN and compiler workspaces",
+      "custom kernels",
+      "activation checkpointing"
+    ]
+  },
+  "stages": [
+    {
+      "diagnostics": [
+        {
+          "classification": "inconclusive",
+          "code": "GPU003",
+          "file": "candidate.py",
+          "line": 236,
+          "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+          "operation": "torch.cuda.is_available",
+          "reproduction": "model-preflight check preflight.yaml --only static_source",
+          "severity": "warning",
+          "stage": "static_source"
+        }
+      ],
+      "duration_seconds": 0.004686,
+      "evidence": {
+        "python_files_scanned": 1
+      },
+      "name": "static_source",
+      "status": "INCONCLUSIVE"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 3e-06,
+      "evidence": {
+        "architecture": "blackwell",
+        "compute_capability": "12.0",
+        "name": "GeForce RTX 5090 32GB",
+        "profile": "/home/justin/MLEvolve/config/preflight_profiles/rtx_5090_32gb.yaml",
+        "profile_schema_version": 1,
+        "vram_bytes": 34359738368
+      },
+      "name": "hardware",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 2.072415,
+      "evidence": {
+        "model_type": "candidate.TinyPetNet",
+        "optimizer_type": "torch.optim.adamw.AdamW",
+        "parameter_bytes": 10948,
+        "parameter_count": 2737,
+        "parameter_tensors": 18,
+        "trainable_parameter_bytes": 10948,
+        "trainable_parameter_count": 2737,
+        "trainable_parameter_tensors": 18
+      },
+      "name": "construction",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 1.31879,
+      "evidence": {
+        "batch": {
+          "items": {
+            "image": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                3,
+                256,
+                256
+              ],
+              "type": "tensor"
+            },
+            "tabular": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                12
+              ],
+              "type": "tensor"
+            },
+            "target": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1
+              ],
+              "type": "tensor"
+            }
+          },
+          "type": "dict"
+        }
+      },
+      "name": "data_contract",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [
+        {
+          "classification": "inconclusive",
+          "code": "CHK001",
+          "exception_type": "RuntimeError",
+          "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 1,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "warning",
+          "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "stage": "abstract_forward"
+        },
+        {
+          "classification": "inconclusive",
+          "code": "CHK001",
+          "exception_type": "RuntimeError",
+          "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 2,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "warning",
+          "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "stage": "abstract_forward"
+        },
+        {
+          "classification": "inconclusive",
+          "code": "CHK001",
+          "exception_type": "RuntimeError",
+          "message": "abstract raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "reproduction": "model-preflight check preflight.yaml --only abstract_forward",
+          "scenario": {
+            "batch_size": 4,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "warning",
+          "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "stage": "abstract_forward"
+        }
+      ],
+      "duration_seconds": 6.2883,
+      "evidence": {
+        "scenarios": [
+          {
+            "duration_seconds": 2.123509,
+            "status": "INCONCLUSIVE"
+          },
+          {
+            "duration_seconds": 2.116995,
+            "status": "INCONCLUSIVE"
+          },
+          {
+            "duration_seconds": 2.047796,
+            "status": "INCONCLUSIVE"
+          }
+        ]
+      },
+      "name": "abstract_forward",
+      "status": "INCONCLUSIVE"
+    },
+    {
+      "diagnostics": [
+        {
+          "classification": "confirmed_candidate_failure",
+          "code": "AUT002",
+          "exception_type": "RuntimeError",
+          "message": "training raised RuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "reproduction": "model-preflight check preflight.yaml --only cpu_training",
+          "scenario": {
+            "batch_size": 1,
+            "fixture": {
+              "image": [
+                3,
+                256,
+                256
+              ],
+              "tabular": [
+                12
+              ]
+            },
+            "input_shape": [
+              3,
+              256,
+              256
+            ],
+            "mode": "train",
+            "precision": "fp32",
+            "shape_name": "image"
+          },
+          "severity": "error",
+          "stack_trace": "Traceback (most recent call last):\n  File \"/home/justin/MLEvolve/nn-model-preflight-checker/src/model_preflight/execution/worker_main.py\", line 42, in _candidate_call\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/retry_1/conservative_hwdb_on/workspace/working/preflight/7cde654a9e104221bac55e10c341e482/candidate/candidate.py\", line 211, in training_step\n    raise RuntimeError('AUDIT_INJECTED_LOSS_PATH')\nRuntimeError: AUDIT_INJECTED_LOSS_PATH",
+          "stage": "cpu_training"
+        }
+      ],
+      "duration_seconds": 1.925592,
+      "evidence": {
+        "scenarios": [
+          {
+            "duration_seconds": 1.925592,
+            "status": "FAIL"
+          }
+        ]
+      },
+      "name": "cpu_training",
+      "status": "FAIL"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 1.356454,
+      "evidence": {
+        "batch": {
+          "items": {
+            "image": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                3,
+                256,
+                256
+              ],
+              "type": "tensor"
+            },
+            "tabular": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1,
+                12
+              ],
+              "type": "tensor"
+            },
+            "target": {
+              "device": "cpu",
+              "dtype": "float32",
+              "requires_grad": false,
+              "shape": [
+                1
+              ],
+              "type": "tensor"
+            }
+          },
+          "type": "dict"
+        },
+        "model_type": "candidate.TinyPetNet",
+        "parameter_bytes": 10948,
+        "parameter_count": 2737,
+        "parameter_tensors": 18,
+        "trainable_parameter_bytes": 10948,
+        "trainable_parameter_count": 2737,
+        "trainable_parameter_tensors": 18,
+        "validation_output": {
+          "device": "cpu",
+          "dtype": "float32",
+          "requires_grad": false,
+          "shape": [],
+          "type": "tensor"
+        }
+      },
+      "name": "validation",
+      "status": "PASS"
+    },
+    {
+      "diagnostics": [],
+      "duration_seconds": 0.0,
+      "evidence": {
+        "estimated_risk": "low",
+        "estimated_total_bytes": 50360,
+        "gradient_bytes_exact": 10948,
+        "is_gpu_oom_guarantee": false,
+        "optimizer_state_bytes_estimated": 21896,
+        "parameter_bytes_exact": 10948,
+        "safety_margin_bytes": 6568,
+        "saved_activation_bytes_estimated": 0,
+        "target_vram_bytes": 34359738368,
+        "target_vram_fraction": 1e-06,
+        "uncertainty_sources": [
+          "allocator fragmentation",
+          "tensor lifetime overlap",
+          "cuDNN and compiler workspaces",
+          "custom kernels",
+          "activation checkpointing"
+        ]
+      },
+      "name": "memory",
+      "status": "PASS"
+    }
+  ]
+}

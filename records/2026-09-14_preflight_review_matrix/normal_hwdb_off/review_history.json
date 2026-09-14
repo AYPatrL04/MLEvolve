@@ -1,0 +1,35 @@
+[
+  {
+    "event": "model_preflight_completed",
+    "preflight_status": "INCONCLUSIVE",
+    "preflight_mode": "full_cpu",
+    "preflight_code_hash": "sha256:422ec3c556671e3006acfd0396d82f6ff679dc3bd2697a03a4c9c9a5e0348896",
+    "preflight_diagnostic_codes": [
+      "GPU003"
+    ],
+    "preflight_report_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/e8ddb86233944a38be0211981c951c4f/report_attempt_0.json",
+    "preflight_summary_path": "/home/justin/MLEvolve/records/2026-09-14_preflight_review_matrix/normal_hwdb_off/workspace/working/preflight/e8ddb86233944a38be0211981c951c4f/admission_summary.json",
+    "preflight_repair_count": 0,
+    "gpu_check_required": true,
+    "preflight_admitted": true
+  },
+  {
+    "event": "review_decision",
+    "round": 0,
+    "attempts": 1,
+    "latency_seconds": 30.483579820996965,
+    "hardware_context_used": false,
+    "approved": true,
+    "reasoning": "Preprocessing (image stats, tabular scaler, target normalization) is fit strictly on the post-split training subset, avoiding P0 leakage, and RMSE is computed in original units via np.sqrt(mean_squared_error(...)) without the unsupported squared=False kwarg. Test and validation predictions come from actual forward passes using the restored best-RMSE checkpoint, satisfying inference integrity and best-model-usage requirements, and the model/adapter interfaces match the required 2-conv/8-16-channel architecture with [3,256,256] image and [12] tabular shapes. The only advisory item (GPU003, CUDA-branch device selection) is explicitly marked inconclusive per the preflight evidence and does not constitute a concrete hardware-critical execution risk given the tiny batch size and dataset scale, so it is recorded as a non-blocking warning only.",
+    "issues": [
+      {
+        "source": "static_review",
+        "severity": "warning",
+        "category": "hardware_execution_risk",
+        "owner": "integration",
+        "evidence": "DEVICE = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\") at line 52 is flagged by preflight advisory GPU003 as inconclusive since the CUDA branch is not exercised by the CPU-only preflight run.",
+        "repair_instruction": "No fix required now; when the GPU execution stage runs, confirm the CUDA branch initializes correctly with the same batch size and tiny model without additional verification steps."
+      }
+    ]
+  }
+]

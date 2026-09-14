@@ -4,6 +4,7 @@ import logging
 from typing import cast
 
 from llm import FunctionSpec, query
+from utils.feedback import render_execution_feedback
 from engine.search_node import SearchNode
 from utils.response import wrap_code
 
@@ -77,7 +78,7 @@ def run(agent, node: SearchNode) -> dict:
             "Introduction": introduction,
             "Task description": agent.task_desc,
             "Implementation": wrap_code(node.code),
-            "Execution output": wrap_code(node.term_out, lang=""),
+            "Execution output": render_execution_feedback(node),
             "Validation metric": f"{node.metric.value:.4f} (maximize={agent.metric_maximize})",
         }
         stable_prompt = {"Introduction": prompt["Introduction"]}
