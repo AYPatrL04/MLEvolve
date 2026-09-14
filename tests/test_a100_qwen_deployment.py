@@ -18,7 +18,10 @@ def test_data_job_has_kaggle_secret_and_no_gpu():
         "name": "KAGGLE_CONFIG_DIR",
         "value": "/credentials",
     }
-    assert any(volume.get("secret", {}).get("secretName") == "hwdb-kaggle-20260911" for volume in pod["volumes"])
+    assert any(
+        volume.get("secret", {}).get("secretName") == "real-a10-0629060430-kaggle"
+        for volume in pod["volumes"]
+    )
     assert all(mount["mountPath"] != "/heldout" for mount in pod["containers"][0]["volumeMounts"])
 
 

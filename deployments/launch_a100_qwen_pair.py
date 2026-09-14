@@ -98,7 +98,10 @@ def manifest(
             [
                 {
                     "name": "kaggle",
-                    "secret": {"secretName": "hwdb-kaggle-20260911", "defaultMode": 256},
+                    "secret": {
+                        "secretName": "real-a10-0629060430-kaggle",
+                        "defaultMode": 256,
+                    },
                 }
             ]
         )
