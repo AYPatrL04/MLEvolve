@@ -14,7 +14,9 @@ from agents.hardware_context import (
     _render_prompt_lines,
     apply_hardware_context_to_node,
     format_compact_hardware_prompt_section,
+    format_hardware_datatype_prompt_section,
 )
+from agents.prompts.pipeline_decision import pipeline_decision_instructions
 from agents.precision_validation import validate_training_precision
 from config import PreflightConfig
 from engine.preflight import ModelPreflightGate, candidate_code_hash
@@ -93,6 +95,37 @@ def test_normal_allows_fp32_islands_and_scales_backward_outside_autocast():
     assert "FP16 AMP is optional and local" in prompt
     assert "FP32 parameters/inputs" in prompt
     assert "CPU preflight uses FP32" in NORMAL_PRECISION_INSTRUCTION
+
+
+@pytest.mark.parametrize(
+    ("selected", "expected"),
+    [
+        ("fp32", "fp32, disabled"),
+        ("fp16_amp", "fp32, disabled, fp16_amp"),
+    ],
+)
+def test_pipeline_instructions_are_limited_to_selected_precision(selected, expected):
+    instructions = pipeline_decision_instructions({"datatype_precision": {"precision_policy": selected}})
+    text = " ".join(instructions["Pipeline Decision Contract"])
+    assert expected in text
+    assert "bf16" not in text.lower()
+    assert "tf32" not in text.lower()
+    assert "nvfp4" not in text.lower()
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [
+        ("conservative", "fp32, disabled"),
+        ("normal", "fp32, disabled, fp16_amp"),
+    ],
+)
+def test_datatype_stage_boundary_uses_policy_allowlist(mode, expected):
+    policy = resolve_precision_policy({"architecture": "ampere"}, mode=mode)
+    prompt = format_hardware_datatype_prompt_section({"precision_policy": policy.to_dict()})
+    assert expected in prompt
+    assert "Transformer Engine FP8/MXFP8/NVFP4" not in prompt
+    assert "USE_TF32" not in prompt
 
 
 def test_filter_does_not_promote_explicit_hwdb_rejection(tmp_path):

@@ -5,12 +5,12 @@
       "id": "feat:amp",
       "properties": {
         "feature_id": "amp",
-        "design_summary": "Use supported FP16/BF16 autocast for training, GradScaler for FP16, and FP32 for sensitive reductions, metrics and exports.",
+        "design_summary": "Use supported FP16 autocast for training, GradScaler for FP16, and FP32 parameters, inputs, sensitive reductions, metrics and exports.",
         "name": "amp",
         "category": "precision",
-        "description": "PyTorch Automatic Mixed Precision (torch.amp) for training. Use autocast for Tensor Core-friendly forward and loss computation with FP16 or BF16, keep numerically sensitive reductions/metrics/export in FP32, and use GradScaler for FP16 so small gradients remain representable.",
+        "description": "PyTorch Automatic Mixed Precision (torch.amp) for training. Use FP16 autocast for eligible forward operations, keep FP32 parameters, floating inputs, numerically sensitive reductions, metrics and exports, and use GradScaler so small FP16 gradients remain representable. Run backward and optimizer updates outside autocast.",
         "tensor_core_generation": "",
-        "example_code": "import torch\nimport torch.nn as nn\ndevice = 'cuda' if torch.cuda.is_available() else 'cpu'\nmodel = nn.Linear(64, 32).to(device)\nopt = torch.optim.SGD(model.parameters(), lr=1e-3)\nx = torch.randn(8, 64, device=device)\ny = torch.randn(8, 32, device=device)\nopt.zero_grad(set_to_none=True)\nwith torch.autocast(device_type='cuda' if device == 'cuda' else 'cpu', dtype=torch.bfloat16):\n    out = model(x)\n    loss = (out - y).pow(2).mean()\nloss.backward()\nopt.step()",
+        "example_code": "import torch\nimport torch.nn as nn\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel = nn.Linear(64, 32).float().to(device)\nopt = torch.optim.SGD(model.parameters(), lr=1e-3)\nscaler = torch.amp.GradScaler('cuda', enabled=device.type == 'cuda')\nx = torch.randn(8, 64, device=device, dtype=torch.float32)\ny = torch.randn(8, 32, device=device, dtype=torch.float32)\nopt.zero_grad(set_to_none=True)\nwith torch.autocast(device_type=device.type, dtype=torch.float16, enabled=device.type == 'cuda'):\n    out = model(x)\nwith torch.autocast(device_type=device.type, enabled=False):\n    loss = (out.float() - y).pow(2).mean()\nscaler.scale(loss).backward()\nscaler.step(opt)\nscaler.update()",
         "example_code_source": "pytorch.amp.autocast.bf16.training.001",
         "api_symbols": [
           "torch.amp.GradScaler",
@@ -19,12 +19,14 @@
         ],
         "source_url": "https://docs.nvidia.com/deeplearning/performance/mixed-precision-training/index.html",
         "recommended_patterns": [
-          "Wrap forward and loss computation in torch.amp.autocast for FP16 or BF16 mixed precision.",
-          "Use GradScaler for FP16 training; keep it optional or disabled for BF16.",
-          "Keep validation metrics, sklearn/NumPy/pandas work, and submission exports in FP32."
+          "Benchmark eligible forward operations under CUDA FP16 autocast against FP32; keep parameters and floating inputs in FP32.",
+          "Use GradScaler for FP16; run backward and optimizer updates outside autocast, and unscale before gradient clipping.",
+          "Keep sensitive losses/reductions, validation metrics, sklearn/NumPy/pandas work, and submission exports in FP32.",
+          "Validation/test forwards may share a validated autocast path; CPU preflight uses FP32."
         ],
         "avoid_patterns": [
-          "Do not treat FP8, FP4, INT8, or FP64 as the default AMP training-speed path.",
+          "Do not cast the whole model or batch to half, and do not assume all operations should use FP16.",
+          "Do not treat FP8, FP4, INT8, FP64, or BF16 as an allowed substitute when the active policy permits FP16 only.",
           "Do not call .cpu().numpy() directly on low-precision prediction tensors; cast prediction/logit/probability tensors to float32 first."
         ],
         "min_compute_capability": "7.0",

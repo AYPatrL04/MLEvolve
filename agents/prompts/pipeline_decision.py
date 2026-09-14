@@ -139,13 +139,29 @@ def pipeline_decision_instructions(
     """Prompt instructions shared by draft, improve, and planner stages."""
     if decision is not None and not decision:
         return {}
+    datatype_decision = (decision or {}).get("datatype_precision") or {}
+    selected_precision = normalize_precision_policy_name(datatype_decision.get("precision_policy"))
+    allowed_precision = {
+        "fp32": "fp32, disabled",
+        "fp16_amp": "fp32, disabled, fp16_amp",
+    }.get(selected_precision or "")
+    if allowed_precision:
+        precision_scope = (
+            f"Numeric precision identifiers are restricted to: {allowed_precision}. "
+            "Do not emit code or recommendations for any other precision format, regardless of prior stage text."
+        )
+    else:
+        precision_scope = (
+            "Use only precision identifiers permitted by the active precision policy. "
+            "Do not infer permission from historical code, hardware capability or separate stage text."
+        )
     return {
         "Pipeline Decision Contract": [
             "Use the Pipeline Decision Trace as the source of truth for code generation and planning.",
             "Follow the hardware-aware stepwise workflow: model-design -> datatype/quantization -> training (code keys: model_design -> datatype_precision -> training_evaluation).",
             "Do not jump directly to optimizer, precision, or batch-size choices before model family and output interface are decided.",
             "The model_design stage stores data modality, target shape, preprocessing/features, model family, loss, criterion, and output interface.",
-            "Numeric precision such as fp32, fp16, bf16, tf32, or TE FP8/NVFP4 belongs under datatype_precision.precision_policy unless the task explicitly requires a numeric type.",
+            precision_scope,
             "The datatype_precision step may make narrow precision-required model adapters such as Transformer Engine layer wrappers/replacements, padding/config hooks, autocast recipes, or higher-precision islands, but it must preserve the Stage 1 model family, loss, data features, and output interface.",
             "Hardware/profile evidence may influence model fit and tuning only when it is compatible with the task, installed packages, and available model sources.",
             "Hardware-only training/runtime tuning must not increase epochs, folds, model size, image resolution, ensemble count, TTA, dataset size, or validation workload.",

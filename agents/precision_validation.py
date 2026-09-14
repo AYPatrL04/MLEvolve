@@ -7,7 +7,11 @@ from typing import Any
 
 from agents.review_contracts import ReviewDecision, ReviewIssue
 from engine.script_introspection import introspect_training_script
-from utils.precision_policy import PrecisionPolicy, precision_mode_instruction
+from utils.precision_policy import (
+    CONSERVATIVE_PRECISION_INSTRUCTION,
+    PrecisionPolicy,
+    precision_mode_instruction,
+)
 
 
 _DETECTED_TO_POLICY = {
@@ -145,6 +149,8 @@ def _validate_explicit_precision(code: str, policy: PrecisionPolicy) -> tuple[Re
 
     forbidden = {"half", "double", "halftensor", "doubletensor", "bfloat16tensor", "float16", "bfloat16", "float64", "fp16", "bf16", "fp64", "tf32",
                  "fp16_amp", "bf16_amp", "fp8", "fp8_te", "mxfp8_te", "nvfp4_te", "fp4", "fp6"}
+    if policy.mode == "normal":
+        forbidden -= {"float16", "fp16", "fp16_amp"}
     violations: dict[int, set[str]] = {}
     for node in ast.walk(tree):
         violation = ""
@@ -187,8 +193,12 @@ def _validate_explicit_precision(code: str, policy: PrecisionPolicy) -> tuple[Re
     if violations:
         evidence = "; ".join(item for line in sorted(violations) for item in sorted(violations[line]))
         return (_critical_issue(
-            evidence=f"Conservative mode rejects {evidence}. Allowed policies: {', '.join(policy.allowed_policies)}.",
-            instruction=CONSERVATIVE_PRECISION_INSTRUCTION + " Correct every listed occurrence in the same scoped repair.",
+            evidence=f"{policy.mode.capitalize()} mode rejects {evidence}. Allowed policies: {', '.join(policy.allowed_policies)}.",
+            instruction=(
+                CONSERVATIVE_PRECISION_INSTRUCTION
+                if policy.mode == "conservative"
+                else precision_mode_instruction(policy.mode)
+            ) + " Correct every listed occurrence in the same scoped repair.",
         ),)
     return ()
 

@@ -15,7 +15,11 @@ def get_impl_guideline_from_agent(agent):
     """Build implementation guideline from agent config."""
     from engine.preflight import preflight_enabled
 
-    tot_time_remaining = agent.acfg.time_limit - (time.time() - agent.start_time)
+    tot_time_remaining = (
+        agent.acfg.time_limit - (time.time() - agent.start_time)
+        if agent.acfg.time_limit is not None
+        else None
+    )
     configured_timeout = getattr(getattr(agent.cfg, "exec", None), "timeout", None)
     if tot_time_remaining is None:
         if configured_timeout is None:

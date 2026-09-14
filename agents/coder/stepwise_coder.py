@@ -611,7 +611,6 @@ def create_default_step_agents(
             "CRITICAL: Own training hyperparameters in this step: batch size, effective batch size, accumulation steps, epochs, learning rate, weight decay, scheduler, early stopping, dataloader workers, pin_memory, persistent_workers, checkpointing, and runtime logging.",
             "CRITICAL: Use the datatype_precision variables/utilities and any precision-adapted model object for autocast, GradScaler, TF32, TE recipes, and fallback handling. Do NOT choose a different dtype policy unless the previous precision settings are impossible to use, and then keep a safe fallback.",
             TRAINING_DIAGNOSTICS_INSTRUCTION,
-            SCHEDULER_SAFE_POINT_INSTRUCTION,
             hardware_node_rule,
             "Note board: record how training/runtime choices preserve the Stage 1 target and use the Stage 2 precision policy.",
             "CRITICAL: Validation metric computation must use the same prediction method as test inference, using training data only as reference, to avoid data leakage and ensure the metric reflects true generalization performance.",

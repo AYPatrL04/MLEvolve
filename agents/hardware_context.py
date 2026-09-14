@@ -1785,10 +1785,13 @@ def format_hardware_datatype_prompt_section(compact: dict[str, Any], *, max_char
     if refs:
         lines.append(f"- Evidence refs: {', '.join(refs)}")
     lines.append(f"- Confidence: {compact.get('confidence', 0.0)}")
+    allowed = compact.get("precision_policy") or {}
+    allowed_policies = allowed.get("allowed_policies") or ["fp32", "disabled"]
     lines.append(
-        "- Stage boundary: Choose tensor datatype and precision policy here: DEVICE, USE_AMP, AMP_DTYPE, "
-        "USE_TF32, GradScaler, Transformer Engine FP8/MXFP8/NVFP4 recipes, autocast helper, "
-        "precision-required model adapters, fallback behavior, and precision logging."
+        "- Stage boundary: Set the device and precision policy, autocast and GradScaler behavior only where "
+        "permitted, precision-required model adapters, fallback behavior, and precision logging. "
+        f"Only use native precision policies in this list: {', '.join(str(item) for item in allowed_policies)}. "
+        "Do not introduce precision identifiers or code paths outside that list, even if they appear in prior code."
     )
     lines.append(
         "- Allowed model adaptation: only precision-required wrappers/replacements for compatible modules, "

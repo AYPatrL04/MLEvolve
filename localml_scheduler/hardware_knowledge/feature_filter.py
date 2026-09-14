@@ -509,11 +509,11 @@ def _append_unique_feature_pair(values: list[list[str]], feature_id: str, descri
 def _lookup_node(
     graph: dict[str, Any], hardware_name: str,
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
-    def normalize(value: str) -> str:
-        return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+    def tokens(value: str) -> tuple[str, ...]:
+        return tuple(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
 
-    query = normalize(hardware_name)
-    if not query:
+    query_tokens = tokens(hardware_name)
+    if not query_tokens:
         return None, []
     candidates = []
     for node in graph["nodes"]:
@@ -526,11 +526,12 @@ def _lookup_node(
             props.get("name", ""),
             props.get("name_key", ""),
         ] + list(props.get("aliases") or [])
-        names = [normalize(s) for s in searchable if s]
-        if query in names:
-            candidates = [node]
-            break
-        if any(f" {query} " in f" {s} " or f" {s} " in f" {query} " for s in names):
+        names = [tokens(s) for s in searchable if s]
+        if any(query_tokens == name for name in names):
+            candidates.append(node)
+            continue
+        has_discriminator = any(token.endswith("gb") or token in {"pcie", "sxm", "sxm4"} for token in query_tokens)
+        if has_discriminator and any(set(query_tokens).issubset(name) for name in names):
             candidates.append(node)
     # A10 must never match A100; ambiguous capacity/SKU names require more evidence.
     if len(candidates) == 1:
