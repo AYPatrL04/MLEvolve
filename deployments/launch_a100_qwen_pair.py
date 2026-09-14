@@ -46,7 +46,12 @@ def complete(job: dict) -> bool:
     )
 
 
-def manifest(phase: str, digest: str, task: str | None = None) -> dict:
+def manifest(
+    phase: str,
+    digest: str,
+    task: str | None = None,
+    launcher: str = PREFIX + "-launcher-v1",
+) -> dict:
     name = PREFIX + "-" + phase if task is None else PREFIX + "-" + task
     app = PREFIX
     labels = {"app": app, "phase": phase}
@@ -84,7 +89,7 @@ def manifest(phase: str, digest: str, task: str | None = None) -> dict:
         {"name": "workspace", "persistentVolumeClaim": {"claimName": "yuze-li-vol"}},
         {"name": "home", "persistentVolumeClaim": {"claimName": "yuw-home"}},
         {"name": "runtime", "emptyDir": {"sizeLimit": "64Gi"}},
-        {"name": "launcher", "configMap": {"name": PREFIX + "-launcher-v1"}},
+        {"name": "launcher", "configMap": {"name": launcher}},
         {"name": "shm", "emptyDir": {"medium": "Memory", "sizeLimit": "16Gi"}},
     ]
     if phase == "data":
@@ -201,15 +206,27 @@ def stage(repo: Path, records: Path) -> None:
     print(json.dumps(metadata, indent=2))
 
 
-def apply_launcher(repo: Path) -> None:
+def launcher_config_name(repo: Path) -> str:
+    digest = hashlib.sha256()
+    for name in LAUNCHER_FILES:
+        digest.update(name.encode())
+        digest.update(b"\0")
+        digest.update((repo / "deployments" / name).read_bytes())
+        digest.update(b"\0")
+    return PREFIX + "-launcher-" + digest.hexdigest()[:12]
+
+
+def apply_launcher(repo: Path) -> str:
+    name = launcher_config_name(repo)
     config = {
         "apiVersion": "v1",
         "kind": "ConfigMap",
         "immutable": True,
-        "metadata": {"name": PREFIX + "-launcher-v1", "namespace": "ecepxie"},
+        "metadata": {"name": name, "namespace": "ecepxie"},
         "data": {name: (repo / "deployments" / name).read_text() for name in LAUNCHER_FILES},
     }
     print(kubectl("apply", "-f", "-", payload=json.dumps(config)))
+    return name
 
 
 def ensure_absent(name: str) -> None:
@@ -230,13 +247,27 @@ def main() -> None:
     metadata = json.loads((records / "source.json").read_text())
     if args.phase == "data":
         ensure_absent(PREFIX + "-data")
-        apply_launcher(repo)
-        print(kubectl("create", "-f", "-", payload=json.dumps(manifest("data", metadata["sha256"]))))
+        launcher = apply_launcher(repo)
+        print(
+            kubectl(
+                "create",
+                "-f",
+                "-",
+                payload=json.dumps(manifest("data", metadata["sha256"], launcher=launcher)),
+            )
+        )
         return
     if args.phase == "prepare":
         ensure_absent(PREFIX + "-prepare")
-        apply_launcher(repo)
-        print(kubectl("create", "-f", "-", payload=json.dumps(manifest("prepare", metadata["sha256"]))))
+        launcher = apply_launcher(repo)
+        print(
+            kubectl(
+                "create",
+                "-f",
+                "-",
+                payload=json.dumps(manifest("prepare", metadata["sha256"], launcher=launcher)),
+            )
+        )
         return
     prepared = json.loads(kubectl("get", "job", PREFIX + "-prepare", "-o", "json"))
     if not complete(prepared):
@@ -245,7 +276,7 @@ def main() -> None:
     if prepared_container["image"] != IMAGE:
         raise SystemExit("Prepared image differs from the requested A100 image")
     tasks = TASKS if args.task == "both" else (args.task,)
-    apply_launcher(repo)
+    launcher = apply_launcher(repo)
     for task in tasks:
         ensure_absent(PREFIX + "-" + task)
         print(
@@ -253,7 +284,7 @@ def main() -> None:
                 "create",
                 "-f",
                 "-",
-                payload=json.dumps(manifest("run", metadata["sha256"], task)),
+                payload=json.dumps(manifest("run", metadata["sha256"], task, launcher)),
             )
         )
 
