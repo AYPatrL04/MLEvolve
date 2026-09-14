@@ -1,0 +1,96 @@
+{
+  "experiment": "hwdb-content-ablation-20260913",
+  "source_commit": "7f3a36da257c0545db0196555051c416fdf54ad9",
+  "completed_at": "2026-09-14T16:39:29Z",
+  "primary_attempts_per_cell": 10,
+  "cells": [
+    {
+      "name": "42-conservative-original",
+      "status": "complete",
+      "review_rejections": 4,
+      "preflight_rejections": 0,
+      "gpu_jobs_submitted": 6,
+      "verified_valid_nodes": 4,
+      "unverified_submitted_results": 2,
+      "valid_yield_per_attempt": 0.4,
+      "first_valid_seconds": 4230.107764005661
+    },
+    {
+      "name": "42-conservative-revised",
+      "status": "complete",
+      "review_rejections": 5,
+      "preflight_rejections": 0,
+      "gpu_jobs_submitted": 5,
+      "verified_valid_nodes": 4,
+      "unverified_submitted_results": 1,
+      "valid_yield_per_attempt": 0.4,
+      "first_valid_seconds": 5156.369037151337
+    },
+    {
+      "name": "42-normal-original",
+      "status": "complete",
+      "review_rejections": 6,
+      "preflight_rejections": 0,
+      "gpu_jobs_submitted": 4,
+      "verified_valid_nodes": 4,
+      "unverified_submitted_results": 0,
+      "valid_yield_per_attempt": 0.4,
+      "first_valid_seconds": 6560.30924987793
+    },
+    {
+      "name": "42-normal-revised",
+      "status": "complete",
+      "review_rejections": 2,
+      "preflight_rejections": 0,
+      "gpu_jobs_submitted": 8,
+      "verified_valid_nodes": 7,
+      "unverified_submitted_results": 1,
+      "valid_yield_per_attempt": 0.7,
+      "first_valid_seconds": 2467.0825011730194
+    },
+    {
+      "name": "43-conservative-original",
+      "status": "complete",
+      "review_rejections": 4,
+      "preflight_rejections": 1,
+      "gpu_jobs_submitted": 5,
+      "verified_valid_nodes": 5,
+      "unverified_submitted_results": 0,
+      "valid_yield_per_attempt": 0.5,
+      "first_valid_seconds": 3127.6804242134094
+    },
+    {
+      "name": "43-conservative-revised",
+      "status": "complete",
+      "review_rejections": 5,
+      "preflight_rejections": 0,
+      "gpu_jobs_submitted": 5,
+      "verified_valid_nodes": 3,
+      "unverified_submitted_results": 2,
+      "valid_yield_per_attempt": 0.3,
+      "first_valid_seconds": 7998.220648288727
+    },
+    {
+      "name": "43-normal-original",
+      "status": "complete",
+      "review_rejections": 4,
+      "preflight_rejections": 0,
+      "gpu_jobs_submitted": 6,
+      "verified_valid_nodes": 3,
+      "unverified_submitted_results": 3,
+      "valid_yield_per_attempt": 0.3,
+      "first_valid_seconds": 2618.5116057395935
+    },
+    {
+      "name": "43-normal-revised",
+      "status": "complete",
+      "review_rejections": 8,
+      "preflight_rejections": 0,
+      "gpu_jobs_submitted": 2,
+      "verified_valid_nodes": 2,
+      "unverified_submitted_results": 0,
+      "valid_yield_per_attempt": 0.2,
+      "first_valid_seconds": 3620.490845918654
+    }
+  ]
+}
