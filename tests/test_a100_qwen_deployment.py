@@ -19,7 +19,7 @@ def test_data_job_has_kaggle_secret_and_no_gpu():
         "value": "/credentials",
     }
     assert any(volume.get("secret", {}).get("secretName") == "hwdb-kaggle-20260911" for volume in pod["volumes"])
-    assert any(mount["mountPath"] == "/heldout" for mount in pod["containers"][0]["volumeMounts"])
+    assert all(mount["mountPath"] != "/heldout" for mount in pod["containers"][0]["volumeMounts"])
 
 
 def test_petfinder_run_is_a100_only_and_pins_source():

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import shutil
 import subprocess
 import sys
@@ -84,9 +83,6 @@ def main() -> None:
         raise SystemExit(code)
 
     prepared = LOCAL / COMPETITION / "prepared"
-    private = prepared / "private"
-    if private.is_dir():
-        archive(private, Path("/heldout") / COMPETITION / "private.tar")
     row.update(
         status="ready",
         sha256=archive(prepared / "public", folder / "public.tar"),

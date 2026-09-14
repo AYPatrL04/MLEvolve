@@ -94,20 +94,14 @@ def manifest(
     ]
     if phase == "data":
         environment.append({"name": "KAGGLE_CONFIG_DIR", "value": "/credentials"})
-        mounts.append({"name": "heldout", "mountPath": "/heldout"})
         volumes.extend(
             [
                 {
                     "name": "kaggle",
                     "secret": {"secretName": "hwdb-kaggle-20260911", "defaultMode": 256},
-                },
-                {
-                    "name": "heldout",
-                    "persistentVolumeClaim": {"claimName": "yuze-li-vol"},
-                },
+                }
             ]
         )
-        mounts[-1]["subPath"] = "aypatrl04-hwdb-heldout-20260911"
         mounts.append({"name": "kaggle", "mountPath": "/credentials", "readOnly": True})
     if phase == "run":
         environment.extend(
