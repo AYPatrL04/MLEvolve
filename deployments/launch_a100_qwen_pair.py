@@ -70,15 +70,6 @@ def manifest(phase: str, digest: str, task: str | None = None) -> dict:
         {"name": "launcher", "mountPath": "/launcher", "readOnly": True},
         {"name": "shm", "mountPath": "/dev/shm"},
     ]
-    for competition in ("petfinder-pawpularity-score", "nlp-getting-started"):
-        mounts.append(
-            {
-                "name": "workspace",
-                "mountPath": f"/datasets/{competition}/prepared/public",
-                "subPath": f"data/mlebench/{competition}/prepared/public",
-                "readOnly": True,
-            }
-        )
     mounts.append(
         {"name": "home", "mountPath": "/root", "readOnly": phase == "prepare"}
     )

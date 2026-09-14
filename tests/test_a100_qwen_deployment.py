@@ -24,6 +24,17 @@ def test_petfinder_run_is_a100_only_and_pins_source():
     assert expressions[0]["values"] == ["NVIDIA-A100-SXM4-80GB", "NVIDIA-A100-80GB-PCIe"]
 
 
+def test_jobs_use_node_prepared_datasets_without_masking_them():
+    for phase in ("prepare", "run"):
+        pod = manifest(phase, "c" * 64, "petfinder")["spec"]["template"]["spec"]
+        assert all(
+            mount["mountPath"] != "/datasets"
+            and not mount["mountPath"].startswith("/datasets/")
+            for mount in pod["containers"][0]["volumeMounts"]
+        )
+        assert all(volume["name"] != "datasets" for volume in pod["volumes"])
+
+
 def test_petfinder_config_uses_local_qwen_and_merged_knowledge(tmp_path):
     repo = Path(__file__).resolve().parents[1]
     config = configuration(repo, tmp_path, "petfinder")

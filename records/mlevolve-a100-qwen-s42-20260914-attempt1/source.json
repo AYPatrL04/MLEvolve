@@ -1,0 +1,8 @@
+{
+  "commit": "669a8efec9fe05b8c76e990cbf0584674df78e17",
+  "submodules": " 25d81162fc55959e767b00e4f2aef057c982f1d1 PerfSeer-predictor (Generated-labels-on-A10-21-g25d8116)\n 57f199c5446ba5c36f509fd8a808e67848853919 nn-model-preflight-checker (heads/main)\n",
+  "working_tree": "?? records/mlevolve-a100-qwen-s42-20260914/\n?? records/mlevolve-full-a10-s42-20260914/.DS_Store\n",
+  "sha256": "9d5f6e69829840bd1cc0e1f2f1ca5c81e2bff683af431916030f06c473c2a7a2",
+  "files": 1750,
+  "root": "/experiment/mlevolve-a100-qwen-s42-20260914"
+}
