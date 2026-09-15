@@ -113,6 +113,7 @@ def manifest(
                 {"name": "QWEN_SERVED_MODEL_NAME", "value": "qwen3.8-27b-int8-a100"},
                 {"name": "QWEN_GPU_MEMORY_UTILIZATION", "value": "0.50"},
                 {"name": "QWEN_MAX_MODEL_LEN", "value": "65536"},
+                {"name": "QWEN_MAX_NUM_SEQS", "value": "128"},
             ]
         )
     pod = {
@@ -272,6 +273,16 @@ def main() -> None:
     prepared_container = prepared["spec"]["template"]["spec"]["containers"][0]
     if prepared_container["image"] != IMAGE:
         raise SystemExit("Prepared image differs from the requested A100 image")
+    prepared_source = next(
+        (
+            item["value"]
+            for item in prepared_container.get("env", [])
+            if item.get("name") == "SOURCE_SHA256"
+        ),
+        None,
+    )
+    if prepared_source != metadata["sha256"]:
+        raise SystemExit("CPU gate was run against a different source snapshot")
     tasks = TASKS if args.task == "both" else (args.task,)
     launcher = apply_launcher(repo)
     for task in tasks:

@@ -10,6 +10,7 @@ LOG_DIR="${LOG_DIR:-$DEPLOY_ROOT/logs}"
 STATE_DIR="${STATE_DIR:-$DEPLOY_ROOT/state}"
 PORT="${PORT:-8000}"
 MAX_MODEL_LEN="${MAX_MODEL_LEN:-262144}"
+MAX_NUM_SEQS="${MAX_NUM_SEQS:-128}"
 GPU_MEMORY_UTILIZATION="${GPU_MEMORY_UTILIZATION:-0.90}"
 SERVED_MODEL_NAME="${SERVED_MODEL_NAME:-qwen3.8-27b-int8-a100}"
 SERVER_LOG="$LOG_DIR/vllm-local-int8-a100-tp1.log"
@@ -40,6 +41,7 @@ nohup env CUDA_VISIBLE_DEVICES=0 \
     --pipeline-parallel-size 1 \
     --gpu-memory-utilization "$GPU_MEMORY_UTILIZATION" \
     --max-model-len "$MAX_MODEL_LEN" \
+    --max-num-seqs "$MAX_NUM_SEQS" \
     --language-model-only \
     --skip-mm-profiling \
     --mamba-cache-mode align \
