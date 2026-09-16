@@ -111,7 +111,7 @@ def manifest(
             [
                 {"name": "QWEN_MODEL_DIR", "value": "/root/downeyflyfan/qwen38-v100-int8/models/Qwen3.8-27B-INT8-W8A16-MTP"},
                 {"name": "QWEN_SERVED_MODEL_NAME", "value": "qwen3.8-27b-int8-a100"},
-                {"name": "QWEN_GPU_MEMORY_UTILIZATION", "value": "0.50"},
+                {"name": "QWEN_GPU_MEMORY_UTILIZATION", "value": "0.52"},
                 {"name": "QWEN_MAX_MODEL_LEN", "value": "65536"},
                 {"name": "QWEN_MAX_NUM_SEQS", "value": "128"},
             ]
