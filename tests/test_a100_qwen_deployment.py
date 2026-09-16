@@ -34,7 +34,7 @@ def test_petfinder_run_is_a100_only_and_pins_source():
     container = pod["containers"][0]
     assert container["image"] == IMAGE
     assert container["env"][0]["value"] == "b" * 64
-    assert {"name": "QWEN_MAX_NUM_SEQS", "value": "128"} in container["env"]
+    assert {"name": "QWEN_MAX_NUM_SEQS", "value": "64"} in container["env"]
     assert {"name": "QWEN_GPU_MEMORY_UTILIZATION", "value": "0.52"} in container["env"]
     assert container["resources"]["limits"]["nvidia.com/a100"] == "1"
     expressions = pod["affinity"]["nodeAffinity"][

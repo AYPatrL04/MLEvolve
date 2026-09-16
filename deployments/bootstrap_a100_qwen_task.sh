@@ -60,7 +60,7 @@ elif [[ "$phase" == run ]]; then
   export PORT=8000
   export GPU_MEMORY_UTILIZATION=${QWEN_GPU_MEMORY_UTILIZATION:-0.50}
   export MAX_MODEL_LEN=${QWEN_MAX_MODEL_LEN:-65536}
-  export MAX_NUM_SEQS=${QWEN_MAX_NUM_SEQS:-128}
+  export MAX_NUM_SEQS=${QWEN_MAX_NUM_SEQS:-64}
   export DEPLOY_ROOT=/root/downeyflyfan/qwen38-v100-int8
   export LOG_DIR="$root/qwen-${task}"
   export STATE_DIR="$root/qwen-${task}-state"

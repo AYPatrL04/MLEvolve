@@ -113,7 +113,7 @@ def manifest(
                 {"name": "QWEN_SERVED_MODEL_NAME", "value": "qwen3.8-27b-int8-a100"},
                 {"name": "QWEN_GPU_MEMORY_UTILIZATION", "value": "0.52"},
                 {"name": "QWEN_MAX_MODEL_LEN", "value": "65536"},
-                {"name": "QWEN_MAX_NUM_SEQS", "value": "128"},
+                {"name": "QWEN_MAX_NUM_SEQS", "value": "64"},
             ]
         )
     pod = {
