@@ -23,6 +23,7 @@ MODEL_DIR = Path(
     )
 )
 MODEL_NAME = os.environ.get("QWEN_SERVED_MODEL_NAME", "qwen3.8-27b-int8-a100")
+CONTEXT_WINDOW_TOKENS = int(os.environ.get("QWEN_MAX_MODEL_LEN", "65536"))
 TASKS = {
     "petfinder": {
         "exp_id": "petfinder-pawpularity-score",
@@ -75,7 +76,7 @@ def configuration(repo: Path, root: Path, task: str) -> dict:
             provider="vllm",
             base_url=endpoint,
             api_key="EMPTY",
-            context_window_tokens=65536,
+            context_window_tokens=CONTEXT_WINDOW_TOKENS,
             completion_tokens=8192,
             tokenizer_path=str(MODEL_DIR),
         )
@@ -110,6 +111,32 @@ def configuration(repo: Path, root: Path, task: str) -> dict:
     config["context_cache"]["knowledge_version"] = "k1"
     config["exec"]["timeout"] = 3600
     return config
+
+
+def validate_colocated_memory(config: dict, total_vram_mb: int) -> dict:
+    """Require the agent reservation and scheduler budget to leave VRAM headroom."""
+    fraction = float(os.environ.get("QWEN_GPU_MEMORY_UTILIZATION", "0.52"))
+    if not 0.0 < fraction < 1.0:
+        raise RuntimeError("QWEN_GPU_MEMORY_UTILIZATION must be between 0 and 1")
+    scheduler_gib = float(
+        config["scheduler"]["settings"]["gpu_scheduler"]["memory"]["gpu_vram_gib"]
+    )
+    scheduler_mb = round(scheduler_gib * 1024)
+    agent_reserved_mb = round(total_vram_mb * fraction)
+    safety_mb = 2048
+    headroom_mb = total_vram_mb - agent_reserved_mb - scheduler_mb
+    if headroom_mb < safety_mb:
+        raise RuntimeError(
+            "Colocated A100 budget is too tight: "
+            f"total={total_vram_mb}MiB agent={agent_reserved_mb}MiB "
+            f"scheduler={scheduler_mb}MiB headroom={headroom_mb}MiB"
+        )
+    return {
+        "agent_gpu_memory_fraction": fraction,
+        "agent_reserved_vram_mb": agent_reserved_mb,
+        "scheduler_vram_budget_mb": scheduler_mb,
+        "unreserved_vram_headroom_mb": headroom_mb,
+    }
 
 
 def plot(root: Path) -> None:
@@ -199,6 +226,10 @@ def main() -> None:
         "agent_model": MODEL_NAME,
         "agent_mode": "colocated_local_vllm",
         "scheduler_prediction_mode": "branch_profile",
+        **validate_colocated_memory(
+            config,
+            round(torch.cuda.get_device_properties(0).total_memory / (1024**2)),
+        ),
     }
     save(root / "hardware.json", hardware)
     save(

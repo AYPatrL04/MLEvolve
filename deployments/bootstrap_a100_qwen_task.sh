@@ -76,6 +76,30 @@ elif [[ "$phase" == run ]]; then
     sleep 5
   done
   curl --fail --silent "http://127.0.0.1:8000/health" >/dev/null
+  python - <<'PY'
+import json
+import os
+import urllib.request
+
+payload = json.dumps(
+    {
+        "model": os.environ["SERVED_MODEL_NAME"],
+        "messages": [{"role": "user", "content": "Reply with OK."}],
+        "max_tokens": 8,
+        "temperature": 0,
+    }
+).encode()
+request = urllib.request.Request(
+    "http://127.0.0.1:8000/v1/chat/completions",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+)
+with urllib.request.urlopen(request, timeout=300) as response:
+    result = json.load(response)
+if not result.get("choices"):
+    raise RuntimeError("vLLM smoke completion returned no choices")
+print("vLLM smoke response OK", flush=True)
+PY
   exec python -u -m deployments.run_a100_qwen_task --task "$task"
 else
   echo "Expected data, prepare or run" >&2

@@ -1,7 +1,9 @@
 from pathlib import Path
 
+import pytest
+
 from deployments.launch_a100_qwen_pair import IMAGE, manifest
-from deployments.run_a100_qwen_task import configuration
+from deployments.run_a100_qwen_task import configuration, validate_colocated_memory
 
 
 def test_prepare_job_has_no_gpu():
@@ -79,3 +81,21 @@ def test_full_config_matches_merged_full_pipeline_contract(tmp_path):
     assert config["agent"]["time_limit"] is None
     assert config["agent"]["precision_optimization_mode"] == "normal"
     assert config["agent"]["code"]["model"] == "qwen3.8-27b-int8-a100"
+
+
+def test_colocated_memory_plan_leaves_headroom(tmp_path, monkeypatch):
+    repo = Path(__file__).resolve().parents[1]
+    config = configuration(repo, tmp_path, "full")
+    monkeypatch.setenv("QWEN_GPU_MEMORY_UTILIZATION", "0.52")
+    plan = validate_colocated_memory(config, 81920)
+    assert plan["agent_reserved_vram_mb"] == 42598
+    assert plan["scheduler_vram_budget_mb"] == 32768
+    assert plan["unreserved_vram_headroom_mb"] == 6554
+
+
+def test_colocated_memory_plan_rejects_high_vllm_reservation(tmp_path, monkeypatch):
+    repo = Path(__file__).resolve().parents[1]
+    config = configuration(repo, tmp_path, "full")
+    monkeypatch.setenv("QWEN_GPU_MEMORY_UTILIZATION", "0.75")
+    with pytest.raises(RuntimeError, match="too tight"):
+        validate_colocated_memory(config, 81920)
