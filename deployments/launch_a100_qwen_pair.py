@@ -114,6 +114,7 @@ def manifest(
                 {"name": "QWEN_GPU_MEMORY_UTILIZATION", "value": "0.52"},
                 {"name": "QWEN_MAX_MODEL_LEN", "value": "65536"},
                 {"name": "QWEN_MAX_NUM_SEQS", "value": "64"},
+                {"name": "MLEVOLVE_RESUME", "value": "1"},
             ]
         )
     pod = {

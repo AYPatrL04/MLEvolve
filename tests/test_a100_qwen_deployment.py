@@ -1,9 +1,14 @@
+import os
 from pathlib import Path
 
 import pytest
 
 from deployments.launch_a100_qwen_pair import IMAGE, manifest
-from deployments.run_a100_qwen_task import configuration, validate_colocated_memory
+from deployments.run_a100_qwen_task import (
+    configuration,
+    latest_resume_journal,
+    validate_colocated_memory,
+)
 
 
 def test_prepare_job_has_no_gpu():
@@ -81,6 +86,26 @@ def test_full_config_matches_merged_full_pipeline_contract(tmp_path):
     assert config["agent"]["time_limit"] is None
     assert config["agent"]["precision_optimization_mode"] == "normal"
     assert config["agent"]["code"]["model"] == "qwen3.8-27b-int8-a100"
+    assert config["scheduler"]["wait_timeout_seconds"] == 7200
+
+
+def test_run_environment_enables_resume(tmp_path):
+    pod = manifest("run", "e" * 64, "petfinder")["spec"]["template"]["spec"]
+    assert {"name": "MLEVOLVE_RESUME", "value": "1"} in pod["containers"][0]["env"]
+
+
+def test_resume_uses_latest_journal(tmp_path, monkeypatch):
+    root = tmp_path / "task"
+    first = root / "runs" / "first" / "logs" / "journal.json"
+    second = root / "runs" / "second" / "logs" / "journal.json"
+    first.parent.mkdir(parents=True)
+    second.parent.mkdir(parents=True)
+    first.write_text("[]")
+    second.write_text("[]")
+    os.utime(first, ns=(1_000_000_000, 1_000_000_000))
+    os.utime(second, ns=(2_000_000_000, 2_000_000_000))
+    monkeypatch.setenv("MLEVOLVE_RESUME", "1")
+    assert latest_resume_journal(root) == second
 
 
 def test_colocated_memory_plan_leaves_headroom(tmp_path, monkeypatch):

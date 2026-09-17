@@ -45,6 +45,17 @@ def save(path: Path, value: object) -> None:
     temporary.replace(path)
 
 
+def latest_resume_journal(root: Path) -> Path | None:
+    """Return the newest resumable journal when recovery is explicitly requested."""
+    if os.environ.get("MLEVOLVE_RESUME", "").strip() != "1":
+        return None
+    journals = sorted(
+        root.glob("runs/*/logs/journal.json"),
+        key=lambda path: path.stat().st_mtime,
+    )
+    return journals[-1] if journals else None
+
+
 def configuration(repo: Path, root: Path, task: str) -> dict:
     task_config = TASKS[task]
     public = task_config["public"]
@@ -99,6 +110,7 @@ def configuration(repo: Path, root: Path, task: str) -> dict:
         enabled=True,
         runtime_root=str(root / "scheduler"),
         start_service=True,
+        wait_timeout_seconds=7200,
     )
     scheduler = config["scheduler"]["settings"]
     scheduler["prediction"]["mode"] = "branch_profile"
@@ -110,6 +122,9 @@ def configuration(repo: Path, root: Path, task: str) -> dict:
     config["context_cache"]["cache_dir"] = str(root / "context_cache")
     config["context_cache"]["knowledge_version"] = "k1"
     config["exec"]["timeout"] = 3600
+    journal = latest_resume_journal(root)
+    if journal is not None:
+        config["resume_journal"] = str(journal)
     return config
 
 
