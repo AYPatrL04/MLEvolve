@@ -21,7 +21,7 @@ from agents.prompts import (
 from agents.prompts.validation_template_prompts import get_code_review_prompt
 from agents.review_contracts import ReviewDecision, ReviewOutcome
 from agents.precision_validation import merge_precision_review_issues, validate_training_precision
-from utils.precision_policy import precision_mode_instruction
+from utils.precision_policy import CONSERVATIVE_PRECISION_INSTRUCTION
 from agents.runtime_dependencies import (
     execution_python_executable,
     merge_dependency_review_issues,
