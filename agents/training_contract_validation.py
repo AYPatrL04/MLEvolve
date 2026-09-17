@@ -6,7 +6,11 @@ import ast
 import re
 
 from agents.review_contracts import ReviewDecision, ReviewIssue
-from engine.script_introspection import introspect_training_script, cooperative_trial_missing_contracts
+from engine.script_introspection import (
+    cooperative_trial_missing_contracts,
+    introspect_training_script,
+    supports_cooperative_trial,
+)
 from engine.scheduler_contract import SCHEDULER_SAFE_POINT_INSTRUCTION
 from utils.training_diagnostics import TRAINING_DIAGNOSTICS_INSTRUCTION
 
@@ -37,7 +41,18 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
                 evidence="Static inspection cannot verify direct runtime-diagnostics calls: " + ", ".join(sorted({"TrainingDiagnostics", "after_update", "report"} - calls)),
                 instruction=TRAINING_DIAGNOSTICS_INSTRUCTION,
             ))
-    if scheduler_enabled and require_scheduler_hooks and has_neural_training and "torch" in lowered and not supports_cooperative_trial(code):
+    missing_scheduler = (
+        cooperative_trial_missing_contracts(code)
+        if has_neural_training and "torch" in lowered
+        else ()
+    )
+    if (
+        scheduler_enabled
+        and require_scheduler_hooks
+        and has_neural_training
+        and "torch" in lowered
+        and not supports_cooperative_trial(code)
+    ):
         issues.append(_issue(
             category="scheduler_step_control",
             evidence="Static scheduler contract is unproven: " + "; ".join(missing_scheduler),

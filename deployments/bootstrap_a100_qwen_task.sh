@@ -43,6 +43,7 @@ elif [[ "$phase" == prepare ]]; then
     tests/test_hardware_context.py \
     tests/test_pipeline_decision_contract.py \
     tests/test_design_knowledge.py \
+    tests/test_training_contract_validation.py \
     tests/test_component_modularity.py \
     > "$root/regression-tests.log" 2>&1
   python -u -m deployments.run_a100_qwen_task --task petfinder --prepare-only
