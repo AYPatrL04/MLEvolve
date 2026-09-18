@@ -14,7 +14,7 @@ from localml_scheduler.hardware_knowledge import feature_filter
 
 
 def test_eight_cells_are_balanced_and_counterordered():
-    rows = matrix_rows()
+    rows = matrix_rows(seeds=(42, 43))
     assert len(rows) == 8
     assert len({(r["seed"], r["mode"], r["arm"]) for r in rows}) == 8
     for index in range(0, 8, 2):
