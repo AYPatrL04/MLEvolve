@@ -24,6 +24,16 @@ def test_eight_cells_are_balanced_and_counterordered():
     assert rows[0]["arm"] != rows[2]["arm"]
 
 
+def test_seed42_only_matrix_has_four_cells(monkeypatch):
+    monkeypatch.setenv("MLEVOLVE_ABLATION_SEEDS", "42")
+    rows = matrix_rows()
+    assert len(rows) == 4
+    assert {row["seed"] for row in rows} == {42}
+    assert {(row["mode"], row["arm"]) for row in rows} == {
+        (mode, arm) for mode in ("conservative", "normal") for arm in ("original", "revised")
+    }
+
+
 def test_cell_configs_share_settings_and_allow_normal_fp32(tmp_path):
     repo = Path(__file__).parents[1]
     cfg = config_for_cell(repo, tmp_path, 42, "normal")

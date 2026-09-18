@@ -15,7 +15,7 @@ from deployments.run_hwdb_precision_matrix import make_config, save, stop_group,
 
 
 BASELINE = "93371dd64b8e2b888c1bde7cb9d90d7c03ac4e5d"
-SEEDS = (42, 43)
+DEFAULT_SEEDS = (42, 43)
 MODES = ("conservative", "normal")
 ARMS = ("original", "revised")
 PRIMARY_ATTEMPTS = 10
@@ -30,9 +30,19 @@ def inventory_public(path):
     return {str(p.relative_to(path)): digest(p) for p in sorted(path.rglob("*")) if p.is_file()}
 
 
-def matrix_rows():
+def selected_seeds() -> tuple[int, ...]:
+    raw = os.environ.get("MLEVOLVE_ABLATION_SEEDS", "").strip()
+    if not raw:
+        return DEFAULT_SEEDS
+    seeds = tuple(int(value.strip()) for value in raw.split(",") if value.strip())
+    if not seeds:
+        raise ValueError("MLEVOLVE_ABLATION_SEEDS must contain at least one integer seed")
+    return seeds
+
+
+def matrix_rows(seeds: tuple[int, ...] | None = None):
     rows = []
-    for i, seed in enumerate(SEEDS):
+    for i, seed in enumerate(seeds or selected_seeds()):
         for j, mode in enumerate(MODES if i == 0 else tuple(reversed(MODES))):
             for arm in (ARMS if (i + j) % 2 == 0 else tuple(reversed(ARMS))):
                 rows.append({"seed": seed, "mode": mode, "arm": arm, "status": "queued"})
@@ -108,7 +118,7 @@ def main():
     identity = {"scope": "HWDB content only; current filtering, strict precision rules, validators and agent prompts held fixed",
                 "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip(),
                 "baseline_hwdb_commit": BASELINE, "gpu": gpu, "agent": "deepseek-flash",
-                "primary_attempts_per_cell": PRIMARY_ATTEMPTS, "search_seeds": list(SEEDS),
+                "primary_attempts_per_cell": PRIMARY_ATTEMPTS, "search_seeds": list(selected_seeds()),
                 "llm_seed_note": "Search seeds are paired; hosted model responses are not guaranteed deterministic.",
                 "public_hashes": public_hashes, "graphs": graphs}
     save(results / "experiment.json", identity)

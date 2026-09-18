@@ -12,7 +12,7 @@ from deployments.launch_hwdb_milestone import complete
 from deployments.launch_hwdb_ablation import manifest as legacy_manifest
 
 
-PREFIX = "hwdb-content-ablation-current-20260918"
+PREFIX = "hwdb-content-ablation-current-s42-20260918"
 CONFIG = PREFIX + "-launcher-v1"
 ROOT = "/experiment/" + PREFIX
 
@@ -25,6 +25,7 @@ def manifest(phase: str, source_commit: str) -> dict:
     container = pod["containers"][0]
     container["command"] = ["bash", "/launcher/bootstrap_hwdb_ablation.sh", phase]
     container["env"].append({"name": "ABLATION_ROOT", "value": ROOT})
+    container["env"].append({"name": "MLEVOLVE_ABLATION_SEEDS", "value": "42"})
     if phase == "run":
         expressions = pod["affinity"]["nodeAffinity"][
             "requiredDuringSchedulingIgnoredDuringExecution"

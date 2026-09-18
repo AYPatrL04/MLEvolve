@@ -9,6 +9,10 @@ def test_current_ablation_uses_new_root_and_requires_a10():
         item.get("name") == "ABLATION_ROOT" and item.get("value") == ROOT
         for item in pod["containers"][0]["env"]
     )
+    assert any(
+        item.get("name") == "MLEVOLVE_ABLATION_SEEDS" and item.get("value") == "42"
+        for item in pod["containers"][0]["env"]
+    )
     values = pod["affinity"]["nodeAffinity"][
         "requiredDuringSchedulingIgnoredDuringExecution"
     ]["nodeSelectorTerms"][0]["matchExpressions"][0]["values"]
