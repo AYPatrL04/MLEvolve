@@ -3,7 +3,7 @@ set -euo pipefail
 export PYTHONUNBUFFERED=1 GIT_LFS_SKIP_SMUDGE=1
 export HF_HOME=/experiment/cache/huggingface MPLCONFIGDIR=/runtime/matplotlib
 phase=${1:?Expected prepare or run}
-root=/experiment/hwdb-content-ablation-20260913
+root=${ABLATION_ROOT:-/experiment/hwdb-content-ablation-20260913}
 base=/experiment/disaster-compare-20260912
 : "${SOURCE_COMMIT:?Pinned source commit required}"
 mkdir -p "$root" /runtime
@@ -52,6 +52,19 @@ elif [[ "$phase" == run ]]; then
   cd /runtime/repo
   python -c 'from deployments.prepare_kaggle_data import stage_public; stage_public({"nlp-getting-started"})'
   nvidia-smi > "$root/gpu.txt"
+  {
+    echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    nvidia-smi -L
+    df -h /experiment /runtime
+    free -h
+    while true; do
+      printf 'timestamp=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu,utilization.memory \
+        --format=csv,noheader,nounits
+      ps -eo pid,ppid,pcpu,pmem,rss,etime,args --sort=-pcpu | head -n 15
+      sleep 10
+    done
+  } > "$root/resource-monitor.log" 2>&1 &
   exec python -m deployments.run_hwdb_ablation --root "$root"
 else
   exit 2
