@@ -66,6 +66,46 @@ def test_conservative_guard_accepts_float32_and_disabled_features(code: str) -> 
     assert validate_training_precision(_agent("conservative"), code) == ()
 
 
+@pytest.mark.parametrize("mode", ["normal", "aggressive"])
+@pytest.mark.parametrize("code", [
+    'USE_AMP = False\nmodel = model.half()\n',
+    'model.to(dtype=torch.float16)\n',
+    'model = model.bfloat16()\n',
+    'from torch import nn as layers, float16 as small\nx = layers.Linear(8, 2)\nx.to(small)\n',
+    'import torch\nDT = torch.float16\nmodel.to(dtype=DT)\n',
+    'model = Model.from_pretrained(path, torch_dtype=torch.float16)\n',
+    'from torch import nn\nclass Predictor(nn.Module):\n    pass\nx = Predictor().half()\n',
+    'torch.set_default_dtype(torch.float16)\n',
+    'torch.set_default_tensor_type("torch.cuda.HalfTensor")\n',
+    'for layer in model.modules():\n    layer.half()\n',
+    'model.weight.data = model.weight.data.to(torch.float16)\n',
+])
+def test_amp_guard_rejects_module_and_state_casts_without_hardware(mode, code):
+    issues = validate_training_precision(_agent(mode), code)
+    assert issues and issues[0].severity == "critical"
+    assert "FP32 model parameters" in issues[0].evidence
+
+
+@pytest.mark.parametrize("mode", ["normal", "aggressive"])
+def test_amp_guard_accepts_autocast_and_tensor_only_casts(mode):
+    code = '''
+import torch
+model = torch.nn.Linear(8, 2).to(device)
+scaler = torch.amp.GradScaler("cuda")
+with torch.autocast("cuda", dtype=torch.float16):
+    output = model(inputs)
+    loss = torch.nn.functional.mse_loss(output, target)
+scaler.scale(loss).backward()
+scaler.step(optimizer)
+scaler.update()
+prediction = model(inputs).float()
+storage_copy = output.detach().half()
+'''
+    if mode == "normal":
+        code = code.replace("storage_copy = output.detach().half()", "storage_copy = output.detach().float()")
+    assert validate_training_precision(_agent(mode), code, context=_context("ampere")) == ()
+
+
 def test_conservative_tf32_is_rejected_even_with_explicit_profile() -> None:
     code = 'torch.backends.cuda.matmul.allow_tf32 = True\n'
     assert validate_training_precision(_agent("conservative"), code)

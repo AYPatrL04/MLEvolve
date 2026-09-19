@@ -1,0 +1,16 @@
+[
+  {
+    "hardware_terms": [
+      "NVIDIA Tesla V100 32GB",
+      "terra-sample-v100"
+    ],
+    "row_limit": 256
+  },
+  {
+    "hardware_terms": [
+      "NVIDIA Tesla V100 32GB",
+      "terra-sample-v100"
+    ],
+    "row_limit": 256
+  }
+]

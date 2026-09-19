@@ -47,6 +47,35 @@ defaults for an unselected model.
 
 ## Configuration and context accounting
 
+Precision modes and GPU allowlists still describe eligible alternatives. They
+do not certify accuracy preservation. New mixed-precision training uses
+`utils.precision_quality.select_validated_precision`: without a matching
+measured comparison, its selected execution precision is FP32. No extra
+comparison training or quality tolerance is invented by the generator.
+
+For an existing validated comparison, supply `protocol` fingerprints for
+`model`, `data`, `split`, `initialization`, `preprocessing`, `training_budget`,
+`effective_batch`, `metric`, `hardware`, `software`, and `backend`. The comparison
+contains `reference` and `candidate` mappings with the same protocol, their
+`precision`, finite `metric`, positive `epoch_seconds`, and `evidence_refs`.
+The reference must be FP32; `direction` is `minimize` or `maximize`, and
+`tolerance` is an explicit maximum absolute metric degradation. A candidate is
+selected only when it meets that tolerance and improves epoch time. These are
+supplied measurements, never estimates or capability claims; the helper checks
+their contract but does not authenticate external evidence documents.
+
+Derive autocast and scaler enablement from the returned `precision` and put the
+decision in `TrainingDiagnostics` settings under `precision_quality`. Runtime
+checks reject autocast that contradicts the decision, missing FP16 loss scaling,
+and non-FP32 model parameters in ordinary AMP. Numerical instability requires a
+finite-state FP32 retry within the existing budget. Generation instructions
+also require compatible RMSE calculation and restoration of the best finite
+validation checkpoint. These rules apply without hardware retrieval or a
+pretrained cold start; conservative precision keeps its existing restrictions.
+
+Canonical graph records retain required empty fields and evidence URLs through
+public response cleanup. Older detailed payloads retain their compact view.
+
 ```yaml
 agent:
   design_knowledge_version: v2

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import re
 from typing import Any
 
 from agents.review_contracts import ReviewDecision, ReviewIssue
@@ -41,6 +42,9 @@ def validate_training_precision(
     policy = precision_policy_for_context(agent, context)
     if policy.mode == "conservative":
         return _validate_explicit_precision(code or "", policy)
+    cast_issues = _validate_amp_model_casts(code or "")
+    if cast_issues:
+        return cast_issues
     if policy.mode == "normal":
         issues = _validate_explicit_precision(code or "", policy)
         if issues:
@@ -122,6 +126,85 @@ def validate_training_precision(
                     ),
                 ),
             )
+    return ()
+
+
+def _validate_amp_model_casts(code: str) -> tuple[ReviewIssue, ...]:
+    """Distinguish module/state casts from AMP and ordinary tensor operations."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return (_critical_issue(evidence="Cannot validate precision in invalid Python.",
+                                instruction="Repair the syntax before validating precision."),)
+    aliases: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for item in node.names:
+                aliases[item.asname or item.name] = item.name
+        elif isinstance(node, ast.ImportFrom):
+            for item in node.names:
+                aliases[item.asname or item.name] = f"{node.module}.{item.name}"
+
+    def name(node):
+        if isinstance(node, ast.Name):
+            return aliases.get(node.id, node.id)
+        if isinstance(node, ast.Attribute):
+            return f"{name(node.value)}.{node.attr}"
+        if isinstance(node, ast.Constant):
+            return str(node.value)
+        return ""
+
+    model_types = {node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)
+                   and any(name(base).endswith((".Module", ".LightningModule")) for base in node.bases)}
+    model_names: set[str] = set()
+
+    def is_model(node):
+        if isinstance(node, (ast.Name, ast.Attribute)):
+            value = name(node)
+            return (value in model_names or bool(re.search(r"(?:^|[._])(?:model|net|network|backbone|encoder|decoder|classifier|module|parameter|param|weight|bias)$", value))
+                    or isinstance(node, ast.Attribute) and is_model(node.value))
+        if isinstance(node, ast.Call):
+            value = name(node.func)
+            return (value.startswith("torch.nn.") and not value.startswith("torch.nn.functional.")
+                    or value in model_types or value.endswith((".from_pretrained", "build_model", "create_model"))
+                    or isinstance(node.func, ast.Attribute) and node.func.attr in {"to", "type", "cuda", "cpu", "float", "half", "bfloat16", "eval", "train"} and is_model(node.func.value))
+        return False
+
+    # Resolve imported/assigned dtype aliases and module aliases before examining casts.
+    for _ in range(3):
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, (ast.Name, ast.Attribute)):
+                        if is_model(node.value):
+                            model_names.add(name(target))
+                        value = name(node.value)
+                        if isinstance(target, ast.Name) and value and value.split(".")[-1].lower() in {"float16", "half", "bfloat16", "halftensor", "bfloat16tensor"}:
+                            aliases[target.id] = value
+            elif isinstance(node, ast.For) and isinstance(node.iter, ast.Call) and isinstance(node.iter.func, ast.Attribute):
+                if node.iter.func.attr in {"modules", "children", "parameters", "named_modules", "named_parameters"} and is_model(node.iter.func.value):
+                    model_names.update(name(target) for target in ast.walk(node.target) if isinstance(target, ast.Name))
+
+    violations = []
+    low_dtypes = {"float16", "half", "bfloat16", "halftensor", "bfloat16tensor", "fp16", "bf16"}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        operation = name(node.func).split(".")[-1]
+        receiver = node.func.value if isinstance(node.func, ast.Attribute) else None
+        if operation in {"half", "bfloat16"} and receiver is not None and is_model(receiver):
+            violations.append(f"module/state .{operation}() at line {node.lineno}")
+        dtype_args = list(node.args) if operation in {"to", "type", "set_default_dtype", "set_default_tensor_type"} else []
+        dtype_args += [kw.value for kw in node.keywords if kw.arg in {"dtype", "torch_dtype"}]
+        if is_model(node) or operation in {"set_default_dtype", "set_default_tensor_type"}:
+            for value in dtype_args:
+                if name(value).split(".")[-1].lower() in low_dtypes:
+                    violations.append(f"lower-precision module/state dtype at line {node.lineno}")
+    if violations:
+        return (_critical_issue(
+            evidence="AMP requires FP32 model parameters and optimizer state; detected " + "; ".join(dict.fromkeys(violations)) + ".",
+            instruction="Remove every listed model/state cast. Keep parameters and optimizer state in FP32, use autocast only for eligible computation and GradScaler for FP16, and retain an FP32 fallback.",
+        ),)
     return ()
 
 

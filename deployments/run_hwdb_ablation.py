@@ -14,7 +14,7 @@ import yaml
 from deployments.run_hwdb_precision_matrix import make_config, save, stop_group, wait_bounded
 
 
-BASELINE = "93371dd64b8e2b888c1bde7cb9d90d7c03ac4e5d"
+BASELINE = os.environ.get("MLEVOLVE_ABLATION_BASELINE", "93371dd64b8e2b888c1bde7cb9d90d7c03ac4e5d")
 DEFAULT_SEEDS = (42, 43)
 MODES = ("conservative", "normal")
 ARMS = ("original", "revised")
@@ -101,9 +101,14 @@ def main():
         prepare_graphs(repo, args.root)
         return
     import torch
-    if not torch.cuda.is_available():
+    queued = bool(os.environ.get("MLEVOLVE_EXECUTION_QUEUE"))
+    if not queued and not torch.cuda.is_available():
         raise RuntimeError("A10/A100 CUDA required")
-    gpu = torch.cuda.get_device_name(0)
+    if queued:
+        from localml_scheduler.hardware import detect_hardware_profile
+        gpu = detect_hardware_profile().gpu_name
+    else:
+        gpu = torch.cuda.get_device_name(0)
     if gpu != "NVIDIA A10" and not gpu.startswith("NVIDIA A100"):
         raise RuntimeError("Only A10/A100 are authorized")
     graphs = json.loads((args.root / "graph_manifest.json").read_text())
@@ -149,7 +154,8 @@ def main():
                 stop_group(proc, descendants)
         summaries = list((cell / "runs").glob("*/logs/ablation/summary.json"))
         summary = json.loads(summaries[0].read_text()) if len(summaries) == 1 else None
-        met = bool(summary and summary["primary_attempts_finished"] == PRIMARY_ATTEMPTS and summary["all_verified_valid_nodes"] >= 1)
+        met = bool(summary and summary["primary_attempts_finished"] == PRIMARY_ATTEMPTS and
+                   (os.environ.get("MLEVOLVE_ABLATION_EXACT_BUDGET") == "1" or summary["all_verified_valid_nodes"] >= 1))
         row.update(status="complete" if code == 0 and met else "failed", exit_code=code, ended_at=time.time(), summary=summary)
         save(results / "matrix.json", rows)
         print("MLEVOLVE_ABLATION_CELL " + json.dumps(row), flush=True)

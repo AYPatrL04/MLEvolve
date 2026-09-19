@@ -1,0 +1,6 @@
+{
+  "cpu_fault_injection": true,
+  "restored_rng_and_state": true,
+  "matches_finite_fp32_reference_update": true,
+  "gpu_test": false
+}

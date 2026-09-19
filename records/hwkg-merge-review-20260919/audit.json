@@ -1,0 +1,182 @@
+[
+  {
+    "arm": "previous",
+    "gpu": "NVIDIA A10",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 28,
+    "prompt_chars": 12961,
+    "hardware_found": true
+  },
+  {
+    "arm": "previous",
+    "gpu": "NVIDIA A10",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 29,
+    "prompt_chars": 13322,
+    "hardware_found": true
+  },
+  {
+    "arm": "previous",
+    "gpu": "NVIDIA A100 SXM4 80GB",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 30,
+    "prompt_chars": 14791,
+    "hardware_found": true
+  },
+  {
+    "arm": "previous",
+    "gpu": "NVIDIA A100 SXM4 80GB",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 31,
+    "prompt_chars": 15196,
+    "hardware_found": true
+  },
+  {
+    "arm": "previous",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 26,
+    "prompt_chars": 15335,
+    "hardware_found": true
+  },
+  {
+    "arm": "previous",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 27,
+    "prompt_chars": 15870,
+    "hardware_found": true
+  },
+  {
+    "arm": "upstream",
+    "gpu": "NVIDIA A10",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 26,
+    "prompt_chars": 11985,
+    "hardware_found": true
+  },
+  {
+    "arm": "upstream",
+    "gpu": "NVIDIA A10",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 26,
+    "prompt_chars": 11995,
+    "hardware_found": true
+  },
+  {
+    "arm": "upstream",
+    "gpu": "NVIDIA A100 SXM4 80GB",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 28,
+    "prompt_chars": 13771,
+    "hardware_found": true
+  },
+  {
+    "arm": "upstream",
+    "gpu": "NVIDIA A100 SXM4 80GB",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 28,
+    "prompt_chars": 13781,
+    "hardware_found": true
+  },
+  {
+    "arm": "upstream",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 24,
+    "prompt_chars": 13637,
+    "hardware_found": true
+  },
+  {
+    "arm": "upstream",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 24,
+    "prompt_chars": 13647,
+    "hardware_found": true
+  },
+  {
+    "arm": "revised",
+    "gpu": "NVIDIA A10",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 28,
+    "prompt_chars": 12961,
+    "hardware_found": true
+  },
+  {
+    "arm": "revised",
+    "gpu": "NVIDIA A10",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 29,
+    "prompt_chars": 13322,
+    "hardware_found": true
+  },
+  {
+    "arm": "revised",
+    "gpu": "NVIDIA A100 SXM4 80GB",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 30,
+    "prompt_chars": 14791,
+    "hardware_found": true
+  },
+  {
+    "arm": "revised",
+    "gpu": "NVIDIA A100 SXM4 80GB",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 31,
+    "prompt_chars": 15196,
+    "hardware_found": true
+  },
+  {
+    "arm": "revised",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "mode": "conservative",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 26,
+    "prompt_chars": 15335,
+    "hardware_found": true
+  },
+  {
+    "arm": "revised",
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "mode": "normal",
+    "nodes": 112,
+    "edges": 1197,
+    "prompt_records": 27,
+    "prompt_chars": 15870,
+    "hardware_found": true
+  }
+]

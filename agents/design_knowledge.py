@@ -159,12 +159,11 @@ def hardware_records(context: Any, *, role: str = "draft") -> list[dict[str, Any
     allowed_records = []
     for record in select_records(records, scope, role=role):
         text = record["summary"]
-        if record["strength"] != "hard":
-            if not _precision_evidence_allowed({"summary_text": text}, policy):
-                continue
-            if any(required not in policy.allowed_policies and re.search(pattern, text, re.I)
-                   for pattern, required in ((r"\b(?:bf16|bfloat16)\b", "bf16_amp"), (r"\b(?:fp16|float16)\b", "fp16_amp"), (r"\btf32\b", "tf32"))):
-                continue
+        if not _precision_evidence_allowed({"summary_text": text}, policy):
+            continue
+        if any(required not in policy.allowed_policies and re.search(pattern, text, re.I)
+               for pattern, required in ((r"\b(?:bf16|bfloat16)\b", "bf16_amp"), (r"\b(?:fp16|float16)\b", "fp16_amp"), (r"\btf32\b", "tf32"))):
+            continue
         allowed_records.append(record)
     return select_records(allowed_records, scope, role=role)
 

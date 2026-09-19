@@ -8,6 +8,8 @@ import platform
 from typing import Any
 import json
 import subprocess
+import os
+from pathlib import Path
 
 import torch
 
@@ -64,6 +66,12 @@ def build_hardware_key(*, os_name: str, gpu_name: str, total_vram_mb: int | None
 
 
 def detect_hardware_profile(*, device_index: int = 0) -> HardwareProfile:
+    target = os.environ.get("MLEVOLVE_TARGET_HARDWARE_PROFILE")
+    if target and os.environ.get("MLEVOLVE_EXECUTION_QUEUE"):
+        payload = json.loads(Path(target).read_text())
+        if payload.get("gpu_name") != "NVIDIA A10":
+            raise ValueError("Queued ablation requires a measured NVIDIA A10 profile")
+        return HardwareProfile(**payload)
     os_name = platform.system().lower()
     gpu_name = "cuda-unavailable"
     total_vram_mb: int | None = None

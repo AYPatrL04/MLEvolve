@@ -510,7 +510,9 @@ def _lookup_node(
     graph: dict[str, Any], hardware_name: str,
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
     def tokens(value: str) -> tuple[str, ...]:
-        return tuple(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
+        parts = tuple(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
+        # CUDA reports the vendor prefix even when the catalog omits it.
+        return parts[1:] if parts and parts[0] == "nvidia" else parts
 
     query_tokens = tokens(hardware_name)
     if not query_tokens:

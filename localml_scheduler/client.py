@@ -61,6 +61,10 @@ _AGENT_STAGE_HARDWARE_STAGES = {
 
 
 def _sanitize_agent_response(value: Any) -> Any:
+    if isinstance(value, dict) and value.get("schema_version") == "design-knowledge-v2":
+        from copy import deepcopy
+
+        return deepcopy(value)
     if isinstance(value, str):
         return _strip_public_urls(value)
     if isinstance(value, list):

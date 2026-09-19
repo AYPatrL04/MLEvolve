@@ -1,0 +1,770 @@
+[
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:precision_policy:a50e6029230fc1a6",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "precision"
+    ],
+    "summary": "Allowed precision policies: fp32, disabled. Use FP32 if a supported training path is unavailable.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [],
+    "fallbacks": [],
+    "evidence_refs": [
+      "runtime:precision_policy"
+    ],
+    "confidence": 1.0,
+    "verification_status": "verified",
+    "strength": "hard",
+    "source_id": "precision_policy",
+    "source_hash": "fdb5d6bfe5275341c5da2a02a88ebbfe0a58b6aa800c7f88b26f443d6c0d0e87"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:runtime:882d7d3345d8ab81",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "runtime"
+    ],
+    "summary": "Hardware: gpu_name=NVIDIA A10; architecture=ampere.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [],
+    "fallbacks": [],
+    "evidence_refs": [
+      "runtime:hardware"
+    ],
+    "confidence": 1.0,
+    "verification_status": "verified",
+    "strength": "hard",
+    "source_id": "runtime",
+    "source_hash": "465637d92979e1de97bc66b0ce848dc9181aa983527227ef40274a9939ecc751"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab:07e905b8c612b7b2",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "optimizer.zero_grad(set_to_none=True) to reduce gradient memory writes",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no throughput plan based on large physical batch",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:training_evaluation"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab",
+    "source_hash": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab:3cc44922a9b3a795",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no throughput plan based on large physical batch",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:training_evaluation"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab",
+    "source_hash": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab:6729af267267c386",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "gradient accumulation only when physical batch cannot fit; not a speed default",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no throughput plan based on large physical batch",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:training_evaluation"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab",
+    "source_hash": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab:77b6c1d3975cda22",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "Consider sequence packing only for padded transformer batches with verified attention masks, positions, sample boundaries and unchanged loss semantics.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no throughput plan based on large physical batch",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:training_evaluation"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab",
+    "source_hash": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab:b6204f95e8809fa5",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "KV-cache memory budget before autoregressive inference",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no throughput plan based on large physical batch",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:training_evaluation"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab",
+    "source_hash": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab:c83066bedb7a93bc",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "preallocate or warm up a max-shape batch for variable-length NLP/speech when allocator churn or OOM is observed",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no throughput plan based on large physical batch",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:training_evaluation"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab",
+    "source_hash": "050a4636021808e7b164a7394ef7b7ff0b6948e9f94b9ec1813f33391e704bab"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce:3cc44922a9b3a795",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "precision"
+    ],
+    "summary": "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no FP64-heavy ML",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:datatype_precision"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce",
+    "source_hash": "3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce:7bb9dcab37d2dea4",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "precision"
+    ],
+    "summary": "runtime validation/inference should use torch.inference_mode() or torch.no_grad() and cast low-precision outputs to fp32 before CPU/NumPy/export",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no FP64-heavy ML",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:datatype_precision"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce",
+    "source_hash": "3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce:9019c1f58effa0d6",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "precision"
+    ],
+    "summary": "Use IEEE FP32 matmul/convolution in conservative and normal modes; hardware support alone does not enable a precision policy.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no FP64-heavy ML",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:datatype_precision"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce",
+    "source_hash": "3e78dc5ebb39e369cbed3b30736ecee3ba296b7753c1f5a0d8d951cd117c44ce"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:3cc44922a9b3a795",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "Tensor Core-friendly shapes: batch, hidden/channel, vocab, and sequence dimensions should be multiples of 8 when practical",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:77b6c1d3975cda22",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "Consider sequence packing only for padded transformer batches with verified attention masks, positions, sample boundaries and unchanged loss semantics.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:8577ef87ffe5dc2a",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "Benchmark channels_last for compatible CNN/UNet operations; retain the original layout when conversion overhead or unsupported operations negate gains.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:b6204f95e8809fa5",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "KV-cache memory budget before autoregressive inference",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:c83066bedb7a93bc",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "preallocate or warm up a max-shape batch for variable-length NLP/speech when allocator churn or OOM is observed",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:d244812f047809d9",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "Consider tiled/chunked input only when memory requires it and task geometry, labels and prediction aggregation remain valid.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:d9ffd68fa8064e0a",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "fast DataLoader path: use num_workers>0, pin_memory=True, persistent_workers when workers are reused, and non_blocking=True device copies",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:e2e4804d61995b0c",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "activation checkpointing only for activation-memory-bound training or OOM fallback; not a speed default",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56:f818689a1dd1bf5b",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "guidance",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "runtime cudnn.benchmark=True only for fixed-shape CNN/UNet training; keep disabled for highly variable shapes or strict reproducibility",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no CUDA extension without sm_86 target",
+      "no fp8 (sm_86 lacks FP8 Tensor Core path)",
+      "no dense full-resolution large-image tensor loading",
+      "runtime no torch.compile/CUDA Graphs for tiny, dynamic-shape, or one-off short runs without a smoke-test speedup",
+      "no activation checkpointing or gradient accumulation as speed defaults"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:stage:model_design"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56",
+    "source_hash": "486d7801a9cd4dea0da48bbdcfa8178301c2ffde215b3b7fd4806a896009ed56"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:ademamix_optimizer:b640f6fb9b3f7e9d",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "optimizer",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "AdEMAMix adds a slow gradient EMA to Adam-style state; account for the extra buffer and validate task quality.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no AdEMAMix as a drop-in default for short, small-data, or memory-constrained runs",
+      "no comparison against untuned AdamW or mismatched token/step budgets",
+      "NVIDIA A10-specific benefit is not widely confirmed; treat AdEMAMix as a software optimizer experiment only for long-token or LLM-style training after a tuned AdamW baseline and an explicit optimizer-state memory budget."
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:ademamix_optimizer"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "ademamix_optimizer",
+    "source_hash": "88167ccea9fc8bd3caa94a4857943626ab420383777af940f6f11d2751f59153"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:async_tensor_parallel:b1fd87477f25b6ab",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "parallelism",
+    "topics": [
+      "architecture",
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "Compatible symmetric-memory collectives can overlap tensor-parallel communication with compute on multiple GPUs; this has no single-GPU benefit.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "multi-GPU only; recommended=true means candidate when tensor-parallel communication is a measured bottleneck and topology supports overlap, not a general single-card optimization; SymmetricMemory is alpha and Copy Engine collectives require NCCL 2.28+, P2P access, zero-CTA NCCL policy, symmetric-memory allocation, and rendezvous; official docs directly cover all_gather_into_tensor/all_to_all_single CE overlap, so reduce_scatter overlap is not assumed here; example_code + Nautilus run pending before verified=true"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:async_tensor_parallel"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "async_tensor_parallel",
+    "source_hash": "e470ea94acc70b8e551e9d3e06c377e3f970587891c77d02f44ccd15987f2a70"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:cut_cross_entropy:0e3a4d8b6d86b4e0",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "kernel_optimization",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "A compatible fused classifier/cross-entropy implementation avoids materializing the full large-vocabulary logits tensor; validate the loss and gradient path before reuse.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "software technique for cross-entropy over a linear classifier/logit projection; strongest fit is large-vocabulary LM heads, but Apple documents the general logits = X @ A.T + b form; requires compatible PyTorch/Triton/CUDA stack for the Triton CCE path; little benefit when logits materialization is not a memory/time bottleneck; example_code + Nautilus run pending before verified=true"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:cut_cross_entropy"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "cut_cross_entropy",
+    "source_hash": "ae300cc93f1f20aa498e72f848c69891c6608985149c2d0db5fefbaf8c567cf0"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:dataset_decomposition:566e13217db7bdd7",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "data_pipeline",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "Length bucketing and a short-to-long sequence curriculum change data order and attention boundaries; validate task compatibility before reuse.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "data-ordering technique for text sequence training; no hardware-specific acceleration and no direct inference benefit; example_code + Nautilus run pending before verified=true"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:dataset_decomposition"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "dataset_decomposition",
+    "source_hash": "3c28f56c892c867937831fe9500cae382e60dd2bfee347b051627761a6ad4e00"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:muon_optimizer:457f16914088a711",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "optimizer",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "Muon applies a Newton-Schulz update to eligible matrix weights and uses a separate optimizer for other parameters; verify task quality and runtime before adoption.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no Muon on embedding/bias/norm/head/non-2D params and no comparison against undertuned AdamW",
+      "no blind AdamW replacement in small CNN, tabular, inference, or memory-bound runs",
+      "software training optimizer; requires a PyTorch build that exposes torch.optim.Muon; no hardware-specific acceleration is required; use only on selected 2D hidden weights and keep AdamW for embeddings/bias/norm/head/non-2D params; benchmark against tuned AdamW; not an inference feature"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:muon_optimizer"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "muon_optimizer",
+    "source_hash": "8ff4a3081b6ade2f7fc2758f43a6cd7eb9caac793a933049f70860a940db0145"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:nvimagecodec_gpu_decode:549e55cdc72625ac",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "data_pipeline",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "For an image-decode bottleneck, compatible nvImageCodec GPU decoding and DLPack transfer may overlap data loading with compute; check codec/hardware support. This does not apply to text workloads.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "GPU image-codec data pipeline; recommended=true only for CV/imaging pipelines where CPU image decode is a measured bottleneck, not for text/LLM-only workloads or storage/augmentation-bound pipelines; NVIDIA nvJPEG hardware-acceleration docs only list Ampere A100/A30 within Ampere, so dedicated hardware JPEG decode is not assumed for this card; uses hybrid/software/GPU codec paths where available; codec/plugin support is format-dependent; example_code + Nautilus run pending before verified=true"
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:nvimagecodec_gpu_decode"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "nvimagecodec_gpu_decode",
+    "source_hash": "0d394e2be7a6d9e5998cba4e29d579191f5c781ff084b3b4e928fbaf233d748c"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:soap_optimizer:fda87c91b9ef21b6",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "optimizer",
+    "topics": [
+      "evaluation",
+      "runtime",
+      "training"
+    ],
+    "summary": "SOAP applies Adam in the preconditioner eigenbasis with amortized eigendecomposition; verify memory, runtime and task quality before adoption.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [
+      "no SOAP as a universal default for small, latency-bound, or memory-constrained runs",
+      "no adoption without verifying the third-party SOAP package/API in the runtime",
+      "NVIDIA A10-specific benefit is not widely confirmed; treat SOAP as a software optimizer experiment only after a tuned AdamW baseline, with optimizer-step time, peak memory, and validation loss measured before adoption."
+    ],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:soap_optimizer"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "soap_optimizer",
+    "source_hash": "a76dbe11591eb15dd319d07a70f27dbbbf5fffd9d0ea648d5816c1e70d3806fd"
+  },
+  {
+    "schema_version": "design-knowledge-v2",
+    "record_id": "hardware:tensor_cores:879e05dbc3db3281",
+    "revision": 1,
+    "domain": "hardware",
+    "category": "tensor_core",
+    "topics": [
+      "architecture"
+    ],
+    "summary": "For repeated convolution shapes, cuDNN benchmark mode can reuse a selected algorithm; deterministic execution is a separate setting and must follow the task reproducibility requirements.",
+    "applicability": {},
+    "applies_when": [],
+    "restrictions": [],
+    "fallbacks": [],
+    "evidence_refs": [
+      "hardware:tensor_cores"
+    ],
+    "confidence": 0.0,
+    "verification_status": "advisory",
+    "strength": "informational",
+    "source_id": "tensor_cores",
+    "source_hash": "f77e5797d1aa6736ff09993d5d9a7cdecd70bf5e9705aca2b18bb73ab9e8ba7b"
+  }
+]

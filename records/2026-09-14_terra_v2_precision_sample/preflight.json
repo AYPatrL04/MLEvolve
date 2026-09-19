@@ -1,0 +1,85 @@
+{
+  "status": "FAIL",
+  "mode": "full_cpu",
+  "code_hash": "sha256:29b9b70310a4379d195df185734b02fa63ff0013f9fa7b35a11a1cabe6cafff2",
+  "admitted": false,
+  "gpu_check_required": true,
+  "diagnostic_codes": [
+    "GPU003",
+    "MLE_CONTRACT001"
+  ],
+  "report_path": "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/workspace/working/preflight/51fddd17ffcf4a7a9c2fc7c8123fb907/report_attempt_0.json",
+  "summary_path": "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/workspace/working/preflight/51fddd17ffcf4a7a9c2fc7c8123fb907/admission_summary.json",
+  "profile": "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/v100_32gb.yaml",
+  "warning": null,
+  "internal_error": null,
+  "issues": [
+    {
+      "source": "model_preflight",
+      "severity": "critical",
+      "category": "preflight_sklearn_rmse_api",
+      "owner": "training_evaluation",
+      "evidence": "This worker's scikit-learn rejects the `squared=False` keyword on mean_squared_error at line(s) 309, 324.",
+      "repair_instruction": "Compute RMSE with `np.sqrt(mean_squared_error(y_true, y_pred))` instead of passing `squared=False`, while preserving the existing validation split and lower-is-better metric direction."
+    }
+  ],
+  "advisories": [
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 43
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/workspace/working/preflight/51fddd17ffcf4a7a9c2fc7c8123fb907/report_attempt_0.json#/diagnostics/0"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 190
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/workspace/working/preflight/51fddd17ffcf4a7a9c2fc7c8123fb907/report_attempt_0.json#/diagnostics/1"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    },
+    {
+      "code": "GPU003",
+      "classification": "inconclusive",
+      "message": "model behavior depends on torch.cuda.is_available(); verify the CUDA branch",
+      "affected_stages": [
+        "static_source"
+      ],
+      "location": {
+        "file": "candidate.py",
+        "line": 266
+      },
+      "exception_type": null,
+      "affected_scenarios": [],
+      "facts": {},
+      "evidence_refs": [
+        "/home/justin/MLEvolve/records/2026-09-14_terra_v2_precision_sample/workspace/working/preflight/51fddd17ffcf4a7a9c2fc7c8123fb907/report_attempt_0.json#/diagnostics/2"
+      ],
+      "interpretation": "Advisory or unverified check result; this alone does not establish a candidate defect or a GPU outcome."
+    }
+  ]
+}

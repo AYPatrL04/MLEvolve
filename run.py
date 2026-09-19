@@ -406,7 +406,9 @@ def run():
         if scheduler_cfg is not None and bool(getattr(scheduler_cfg, "enabled", False)):
             scheduler_settings = _scheduler_settings_from_cfg(cfg, scheduler_cfg)
             scheduler_client = SchedulerClient(scheduler_settings)
-            if bool(getattr(scheduler_cfg, "start_service", True)):
+            if os.environ.get("MLEVOLVE_EXECUTION_QUEUE"):
+                logger.info("CPU coordinator: scheduler execution is delegated to on-demand GPU workers.")
+            elif bool(getattr(scheduler_cfg, "start_service", True)):
                 scheduler_service = scheduler_client.create_service().start(background=True)
                 logger.info(f"🧭 localml_scheduler service started at {scheduler_settings.runtime_root}")
             else:

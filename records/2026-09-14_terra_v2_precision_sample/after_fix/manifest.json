@@ -1,0 +1,32 @@
+{
+  "base_commit": "59c1df2c42267e815f76a6f97f47e09e359c19eb",
+  "source_hashes": {
+    "agents/draft_agent.py": "6cb43ba98a4be3f27dbcaab08018e8fb7f47d6a4f5fac1d9a670a39c14c133c0",
+    "agents/hardware_context.py": "8ad59e7df4514b4c502d577b4a599faaeb5f6bbf0fba0221fdfaa15558db5ffb",
+    "agents/precision_validation.py": "b97ef014cbfa3002b51192bdd598b288fcd91230238ca0924a45c1b6db51eea4",
+    "agents/prompts/impl_guideline.py": "7b70194f9eb2b0d3f936fa84386080e7926e06c39faf36bf7617ab45bdb798b6",
+    "agents/training_contract_validation.py": "9bf4617e8b7aed5bf3c5b30a079a1a653f0da31045155f1319ff61126bce8e51",
+    "docs/single_call_design_knowledge.md": "a16b0c959349888dc7537d6535464034f5d30f9c19d9ff77d409fada451b6fb2",
+    "hardware_knowledge_graph/client.py": "ad6b60928683ba308f0e8f06e9638bdc497c893c16bf326b9c0365925ccf4e7e",
+    "localml_scheduler/hardware_knowledge/store.py": "35ed06bfa734b5e906cbb134978568ab01fdb0fbfe2a41e06351ccfbacc82c17",
+    "schema/hardware_knowledge_graph.cypher": "c6ded7e2533a8aa480f5d8f71a92b4df1de55b71c68d1a0d7d54e99be41d5a5b",
+    "schema/hardware_knowledge_graph.json": "b19a7903d02ceb4250da820f699c7b08b9f8d5704eb0fec20ddb6a8a39d1d5d8",
+    "tests/test_design_knowledge.py": "2fca368f4592b3c001134334badd7a4701c400a895a8fe3fc74a11650a4b1813",
+    "tests/test_impl_guideline.py": "6a9a3a4b26a8675aa1b3a5e73e610b561a01fbaee1a10fb17178628bc9fd850f",
+    "tests/test_precision_policy.py": "197c367bc78de94a95c86d5c1faa2db156244deb2ed67629d37e19c61ffe0d0a",
+    "tests/test_training_contract_validation.py": "1f59c8a7b094aedb159e45cd1d5998228640b466f6cca288f49bc1a29dd0f199",
+    "utils/precision_policy.py": "55b350c816a245f87259b4359acc6e724910824f1f1f59abb0ad8b55c83267a4",
+    "utils/training_diagnostics.py": "8040ff2cca4b0c6b51af5c15db7a2e027dcfb53e25e6603c55b9f6074c44f327",
+    "utils/precision_quality.py": "dcaa68bae13ac1ac5868766b4162b475bdd3384416909677def86f16afb30a21",
+    "tests/test_precision_quality.py": "b0dd1faaddeb6072b459ad4506226e65a4af2fee503307e963078033e51559ab"
+  },
+  "original_terra_response_unchanged": true,
+  "original_runs_inspected": false,
+  "live_database_modified": false,
+  "gpu_jobs_started": false,
+  "sizing": {
+    "sizing": "unavailable",
+    "knowledge_version": "v2",
+    "dropped_record_ids": []
+  }
+}

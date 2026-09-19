@@ -49,7 +49,7 @@ def precision_mode_instruction(mode: str) -> str:
     if mode == PRECISION_MODE_CONSERVATIVE:
         return CONSERVATIVE_PRECISION_INSTRUCTION
     if mode == PRECISION_MODE_NORMAL:
-        return NORMAL_PRECISION_INSTRUCTION
+        return NORMAL_PRECISION_INSTRUCTION + " " + MIXED_PRECISION_INSTRUCTION
     return "Select only hardware/mode-allowed precision policies and preserve an FP32 fallback."
 
 
@@ -76,6 +76,26 @@ def precision_advice_allowed(text: str, policy: PrecisionPolicy) -> bool:
         return False
     return all(not re.search(pattern, text) or policy.allows(required) for pattern, required in requirements.items())
 
+
+
+MIXED_PRECISION_INSTRUCTION = (
+    "Hardware precision recommendations are conditional execution choices; task quality takes priority over epoch speed. "
+    "Follow the configured mode and GPU allowlist. For mode-allowed AMP, keep model parameters and optimizer state "
+    "in FP32; do not use model.half(), model.bfloat16(), lower-precision model loading, or whole-model dtype casts. "
+    "Use autocast for eligible forward/loss operations, GradScaler for FP16, and FP32 for sensitive reductions "
+    "and exported predictions/metrics. Preserve model family, loss, features, input resolution, effective batch, "
+    "and training/evaluation budget when optimizing hardware alone. Keep an explicit FP32 execution path. "
+    "On non-finite loss/gradients, restore the last finite checkpoint including optimizer, scaler, RNG and data "
+    "position before an FP32 retry; never step on invalid gradients or reset the consumed training budget. "
+    "A faster epoch or finite smoke test does not establish accuracy preservation. Compare against a matching "
+    "FP32 reference with the same architecture, data split, initialization, preprocessing and training budget; "
+    "use only an explicitly supplied quality tolerance, and report missing evidence as unverified. "
+    "Before enabling lower precision, call utils.precision_quality.select_validated_precision(requested, "
+    "protocol=actual_protocol, comparison=supplied_comparison). Without supplied matching measurements, "
+    "call it with no comparison and use the returned FP32 choice; do not invent measurements or launch extra "
+    "comparison training outside the task budget. Derive autocast/scaler enablement from the returned 'precision', "
+    "and store the returned decision as settings['precision_quality'] in TrainingDiagnostics."
+)
 _BASE_POLICIES = ("fp32", "disabled")
 _POLICY_TO_FEATURES: dict[str, tuple[str, ...]] = {
     "fp16_amp": ("amp", "fp16"),

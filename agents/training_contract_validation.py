@@ -41,6 +41,31 @@ def validate_training_contract(code: str, *, require_scheduler_hooks: bool = Fal
                 evidence="Static inspection cannot verify direct runtime-diagnostics calls: " + ", ".join(sorted({"TrainingDiagnostics", "after_update", "report"} - calls)),
                 instruction=TRAINING_DIAGNOSTICS_INSTRUCTION,
             ))
+        if metadata.get("uses_amp") and ("select_validated_precision" not in calls or not any(
+            isinstance(item, ast.Constant) and item.value == "precision_quality" for item in ast.walk(tree)
+        )):
+            from utils.precision_policy import MIXED_PRECISION_INSTRUCTION
+
+            issues.append(_issue(
+                category="precision_quality_gate",
+                evidence="Mixed-precision training has no recorded quality-gated precision selection.",
+                instruction=MIXED_PRECISION_INSTRUCTION,
+            ))
+        finite_checks = [item for item in ast.walk(tree) if isinstance(item, ast.Call)
+                         and ((isinstance(item.func, ast.Attribute) and item.func.attr == "isfinite")
+                              or isinstance(item.func, ast.Name) and item.func.id == "isfinite")]
+        finite_names = [{part.id.lower() if isinstance(part, ast.Name) else part.attr.lower()
+                         for argument in item.args for part in ast.walk(argument)
+                         if isinstance(part, (ast.Name, ast.Attribute))} for item in finite_checks]
+        if metadata.get("uses_amp") and not (
+            any(any("loss" in name for name in names) for names in finite_names)
+            and any(any("grad" in name for name in names) for names in finite_names)
+        ):
+            issues.append(_issue(
+                category="precision_numerical_fallback",
+                evidence="Mixed-precision training lacks recognizable finite-loss and unscaled-gradient checks.",
+                instruction="Check torch.isfinite on the loss and unscaled gradients before the optimizer update. On AMP instability restore finite state and retry in FP32 within the existing budget; fail clearly if the FP32 retry is non-finite.",
+            ))
     missing_scheduler = (
         cooperative_trial_missing_contracts(code)
         if has_neural_training and "torch" in lowered

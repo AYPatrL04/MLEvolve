@@ -32,6 +32,34 @@ def test_complete_conditions_deduplicated_across_topics_without_cap():
     assert len(prompt) > 3500
 
 
+def test_scheduler_projection_preserves_canonical_record():
+    from localml_scheduler.client import _sanitize_agent_response
+    from knowledge.records import validate_record
+
+    original = record(evidence_refs=["https://example.org/evidence"])
+    projected = _sanitize_agent_response({"records": [original]})["records"][0]
+    assert validate_record(projected) == original
+    assert projected is not original
+
+
+def test_cuda_5090_name_matches_catalog_without_confusing_a10_a100():
+    from localml_scheduler.hardware_knowledge.feature_filter import query_hardware_node
+
+    full = query_hardware_node("NVIDIA GeForce RTX 5090", "model_design")
+    catalog = query_hardware_node("GeForce RTX 5090", "model_design")
+    assert full["found"] and full == catalog
+    assert query_hardware_node("NVIDIA A10")["gpu_name"] != query_hardware_node("NVIDIA A100 SXM4 80GB")["gpu_name"]
+
+
+def test_hard_external_recommendation_cannot_bypass_precision_policy():
+    from agents.design_knowledge import hardware_records
+
+    advice = record("Enable BF16 for every operation.", strength="hard", topics=["precision"])
+    context = SimpleNamespace(candidate={}, raw_context={"design_records_v2": [advice]},
+                              compact_context={"precision_policy": {"mode": "conservative", "allowed_policies": ["fp32", "disabled"]}})
+    assert all("Enable BF16" not in item["summary"] for item in hardware_records(context))
+
+
 @pytest.mark.parametrize("field,expected,actual", [
     ("hardware_keys", ["v100"], "a100"), ("framework_versions", ["2.8"], "2.7"),
     ("backend_modes", ["mps_process"], "cuda_process"), ("min_compute_capability", "8.0", "7.0"),
@@ -265,3 +293,24 @@ def test_graph_ingestion_persists_conditions_and_original_evidence(monkeypatch, 
     assert "Do not use dynamic shapes." in records[0]["restrictions"]
     assert "Keep an eager fallback." in records[0]["restrictions"]
     assert any(params and params.get("props", {}).get("sample_code") == "original code" for _, params in writes)
+
+    from hardware_knowledge_graph.client import HardwareKnowledgeClient, _sanitize_agent_response
+    from knowledge.records import validate_record
+
+    # Exercise the exact graph projection that previously erased required empty fields.
+    records[0]["evidence_refs"].append("https://example.org/precision#conditions")
+    props["design_records_v2_json"] = json.dumps(records)
+    monkeypatch.setattr(store, "_query_neighborhood_rows", lambda **kwargs: [
+        {"hardware": hardware, "feature": feature, "relationship": props},
+    ])
+    public = _sanitize_agent_response(store.get_feature_neighborhood(hardware_terms=["V100"]))
+    projected = public["features"][0]["design_records_v2"][0]
+    assert validate_record(projected) == records[0]
+    assert projected["applies_when"] == [] and projected["fallbacks"] == []
+    client = HardwareKnowledgeClient(store.settings, include_profile_evidence=False)
+    client._hardware_knowledge_store = store
+    monkeypatch.setattr(client, "hardware_profile", lambda: SimpleNamespace(gpu_name="V100", hardware_key="v100"))
+    found = client.get_design_knowledge(candidate={}, context={"hardware_key": "v100"})
+    assert len(found) == 1
+    assert found[0]["applicability"] == {"hardware_keys": ["v100"]}
+    assert found[0]["evidence_refs"] == records[0]["evidence_refs"]

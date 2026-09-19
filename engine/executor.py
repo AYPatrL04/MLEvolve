@@ -723,6 +723,10 @@ class Interpreter:
         reason = _scheduler_preflight_rejection(code, node_context, self.cfg)
         if reason is not None:
             return _preflight_rejected_result(reason)
+        if os.environ.get("MLEVOLVE_EXECUTION_QUEUE"):
+            from deployments.queued_execution import enqueue
+
+            return enqueue(self, code, id, working_dir, node_context)
         if self.scheduler_client is not None:
             return self._run_scheduler_job(code=code, id=id, working_dir=working_dir, node_context=node_context)
         return self._run_subprocess(code=code, id=id, working_dir=working_dir)
@@ -753,7 +757,7 @@ class Interpreter:
                 code, node_id = item
                 normalized_items.append({"code": code, "node_id": node_id})
 
-        if self.scheduler_client is None:
+        if self.scheduler_client is None or os.environ.get("MLEVOLVE_EXECUTION_QUEUE"):
             return {
                 str(item["node_id"]): self.run(
                     code=item["code"],

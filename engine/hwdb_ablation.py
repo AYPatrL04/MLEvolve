@@ -77,7 +77,8 @@ def run_ablation_rounds(*, agent, interpreter, cfg, journal, logger, save_callba
     rows = []
     started = time.time()
     operational_errors = 0
-    while len(rows) < primary or not any(r.get("verified_valid") for r in rows):
+    exact_budget = os.environ.get("MLEVOLVE_ABLATION_EXACT_BUDGET") == "1"
+    while len(rows) < primary or (not exact_budget and not any(r.get("verified_valid") for r in rows)):
         if not ensure_capacity(agent=agent, cfg=cfg, total_steps=int(cfg.agent.search.num_drafts) + 1, logger=logger):
             raise RuntimeError("Ablation search has no selectable work")
         row = {"attempt": len(rows) + 1, "phase": "primary" if len(rows) < primary else "extension",

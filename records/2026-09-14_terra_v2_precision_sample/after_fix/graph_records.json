@@ -1,0 +1,149 @@
+[
+  {
+    "applicability": {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec"
+    },
+    "applies_when": [],
+    "category": "tensor_core",
+    "confidence": 1.0,
+    "domain": "hardware",
+    "evidence_refs": [
+      "hardware_knowledge:HAS_FEATURE:nvidia.volta.tesla_v100_32gb.spec:tensor_cores"
+    ],
+    "fallbacks": [],
+    "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:tensor_cores:879e05dbc3db3281",
+    "restrictions": [],
+    "revision": 1,
+    "schema_version": "design-knowledge-v2",
+    "source_hash": "2db40fd85d8042b91a74ed6df09ea9d81723a60aad8afb237f55371849635a31",
+    "source_id": "nvidia.volta.tesla_v100_32gb.spec:tensor_cores",
+    "strength": "informational",
+    "summary": "For repeated convolution shapes, cuDNN benchmark mode can reuse a selected algorithm; deterministic execution is a separate setting and must follow the task reproducibility requirements.",
+    "topics": [
+      "runtime",
+      "training"
+    ],
+    "verification_status": "verified"
+  },
+  {
+    "applicability": {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec"
+    },
+    "applies_when": [],
+    "category": "compute_capability",
+    "confidence": 1.0,
+    "domain": "hardware",
+    "evidence_refs": [
+      "hardware_knowledge:HAS_FEATURE:nvidia.volta.tesla_v100_32gb.spec:sm_70"
+    ],
+    "fallbacks": [],
+    "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:sm_70:dbfd5502b1f6f903",
+    "restrictions": [],
+    "revision": 1,
+    "schema_version": "design-knowledge-v2",
+    "source_hash": "6b5dfd511a65a0d9ee20317af6e36d0e05a57fffe59d52588eb85667c7edc41f",
+    "source_id": "nvidia.volta.tesla_v100_32gb.spec:sm_70",
+    "strength": "informational",
+    "summary": "SM 7.0 is a CUDA kernel target and device capability marker.",
+    "topics": [
+      "runtime",
+      "training"
+    ],
+    "verification_status": "verified"
+  },
+  {
+    "applicability": {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "min_compute_capability": "7.0",
+      "optimization_modes": [
+        "normal",
+        "aggressive"
+      ]
+    },
+    "applies_when": [],
+    "category": "precision",
+    "confidence": 1.0,
+    "domain": "hardware",
+    "evidence_refs": [
+      "hardware_knowledge:HAS_FEATURE:nvidia.volta.tesla_v100_32gb.spec:fp16"
+    ],
+    "fallbacks": [],
+    "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:fp16:041031009dc72ee8",
+    "restrictions": [
+      "Do not run optimizer updates only on FP16 weights when FP32 master weights or optimizer state are needed for accuracy.",
+      "Do not skip loss scaling for FP16 networks that show underflow, NaNs, divergence, or accuracy loss.",
+      "Tensor Core-friendly matrix dimensions are required for best speed; retain FP32 islands for fragile operations."
+    ],
+    "revision": 1,
+    "schema_version": "design-knowledge-v2",
+    "source_hash": "6287b8a2e74b8786bcf26733d2a06dcbbe97682324ab9f301417e3274569a825",
+    "source_id": "nvidia.volta.tesla_v100_32gb.spec:fp16",
+    "strength": "informational",
+    "summary": "Use FP16 autocast for eligible operations with GradScaler, FP32 model parameters and optimizer state, and FP32 sensitive reductions and metrics. Preserve the model design and retain an FP32 fallback; accept a speed optimization only after a matching task-quality comparison.",
+    "topics": [
+      "precision"
+    ],
+    "verification_status": "verified"
+  },
+  {
+    "applicability": {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec",
+      "min_compute_capability": "7.0",
+      "optimization_modes": [
+        "normal",
+        "aggressive"
+      ]
+    },
+    "applies_when": [],
+    "category": "precision",
+    "confidence": 1.0,
+    "domain": "hardware",
+    "evidence_refs": [
+      "hardware_knowledge:HAS_FEATURE:nvidia.volta.tesla_v100_32gb.spec:amp"
+    ],
+    "fallbacks": [],
+    "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:amp:ec0eda6d4071a5e7",
+    "restrictions": [
+      "Do not treat FP8, FP4, INT8, or FP64 as the default AMP training-speed path.",
+      "Do not call.cpu().numpy() directly on low-precision prediction tensors; cast prediction/logit/probability tensors to float32 first.",
+      "The autocast dtype must itself be allowed for the target architecture."
+    ],
+    "revision": 1,
+    "schema_version": "design-knowledge-v2",
+    "source_hash": "895c51bfa10ae432102cc4c84e1b975e3c42dfc448a2c5e54f974e61d8e67952",
+    "source_id": "nvidia.volta.tesla_v100_32gb.spec:amp",
+    "strength": "informational",
+    "summary": "Use supported FP16/BF16 autocast for training, GradScaler for FP16, and FP32 for sensitive reductions, metrics and exports.",
+    "topics": [
+      "precision"
+    ],
+    "verification_status": "verified"
+  },
+  {
+    "applicability": {
+      "hardware_id": "nvidia.volta.tesla_v100_32gb.spec"
+    },
+    "applies_when": [],
+    "category": "precision",
+    "confidence": 1.0,
+    "domain": "hardware",
+    "evidence_refs": [
+      "hardware_knowledge:HAS_FEATURE:nvidia.volta.tesla_v100_32gb.spec:fp64"
+    ],
+    "fallbacks": [],
+    "record_id": "hardware:nvidia.volta.tesla_v100_32gb.spec:fp64:21dbaa73d1ab3845",
+    "restrictions": [
+      "Use only when the workload requires double-precision numerical behavior."
+    ],
+    "revision": 1,
+    "schema_version": "design-knowledge-v2",
+    "source_hash": "686acce035bb0953f17073c74da30003fdfe62c5abc4e6674799b4822c8b0426",
+    "source_id": "nvidia.volta.tesla_v100_32gb.spec:fp64",
+    "strength": "informational",
+    "summary": "FP64 remains available for scientific/reference workloads but is excluded from datatype training-speed recommendations.",
+    "topics": [
+      "precision"
+    ],
+    "verification_status": "verified"
+  }
+]

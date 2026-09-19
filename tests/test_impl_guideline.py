@@ -84,3 +84,20 @@ def test_milestone_prompt_has_no_expired_total_budget(monkeypatch):
     assert "Max execution time per run = an hour" in text
     assert "9 hours" not in text
     assert "torch.long" in text
+
+
+def test_precision_quality_and_rmse_rules_do_not_depend_on_coldstart_or_hwdb():
+    agent = _agent(exec_timeout=5)
+    agent.use_coldstart = False
+    agent.hardware_knowledge_client = None
+    agent.acfg.hardware_context_enabled = False
+    guideline = impl_guideline.get_impl_guideline_from_agent(agent)
+    safety = " ".join(guideline["Precision policy"])
+    assert "model.half()" in safety and "model parameters and optimizer state in FP32" in safety
+    assert "select_validated_precision" in safety and "do not invent measurements" in safety
+    implementation = " ".join(guideline["Implementation guideline"])
+    assert "np.sqrt(mean_squared_error(y_true, y_pred))" in implementation
+    assert "restore it before final validation" in implementation
+    agent.acfg.precision_optimization_mode = "conservative"
+    guideline = impl_guideline.get_impl_guideline_from_agent(agent)
+    assert "Disable TF32" in " ".join(guideline["Precision policy"])
