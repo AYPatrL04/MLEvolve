@@ -20,6 +20,7 @@ TUNING_ENV = (
     "MLEVOLVE_ABLATION_PRIMARY_ATTEMPTS",
     "MLEVOLVE_ABLATION_MODES",
     "MLEVOLVE_ABLATION_ARMS",
+    "MLEVOLVE_GPU_LEASE_SECONDS",
 )
 
 
@@ -29,9 +30,9 @@ def manifest(phase, commit, request=None):
     name = PREFIX + "-" + (Path(request).name[:12] if request else phase)
     job["metadata"]["name"] = name
     # A worker Job's deadline covers time spent Pending, so it must stay longer
-    # than a plausible A10 scheduling wait while the in-container lease guard
-    # keeps the actual GPU hold bounded (70 minutes, and 40% mean utilization).
-    job["spec"].update(activeDeadlineSeconds=7200 if gpu else 259200, backoffLimit=0)
+    # than a plausible A10 scheduling wait. The in-container lease guard owns
+    # the real bound on GPU hold time (MLEVOLVE_GPU_LEASE_SECONDS, default 3h).
+    job["spec"].update(activeDeadlineSeconds=28800 if gpu else 259200, backoffLimit=0)
     pod = job["spec"]["template"]["spec"]
     job["spec"]["template"]["metadata"]["labels"] = {"app": PREFIX, "phase": phase}
     container = pod["containers"][0]

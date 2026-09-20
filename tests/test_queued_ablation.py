@@ -6,7 +6,6 @@ from types import SimpleNamespace
 from omegaconf import OmegaConf
 import pytest
 
-from deployments.gpu_lease_guard import low_utilization
 from deployments.launch_queued_ablation import manifest, ROOT
 from deployments.queued_ablation_coordinator import capacity_wait_failure, run_worker
 
@@ -20,18 +19,22 @@ def test_only_workers_reserve_gpu_and_workers_have_no_credentials():
         assert pod["automountServiceAccountToken"] is False
         assert not any("heldout" in mount["mountPath"] for mount in container["volumeMounts"])
         if phase == "worker":
-            assert job["spec"]["activeDeadlineSeconds"] < 3 * 3600
+            # The Kubernetes deadline must outlast a scheduling wait plus the
+            # in-container lease; the lease, not this value, bounds GPU hold.
+            assert job["spec"]["activeDeadlineSeconds"] > 3 * 3600
             assert not any("valueFrom" in value for value in container["env"])
             assert container["command"][-1] == ROOT + "/queue/abcd"
             assert "gpu_lease_guard.py" in container["command"][1]
         assert job["spec"]["backoffLimit"] == 0
 
 
-def test_guard_trips_on_sustained_low_utilization_not_one_idle_sample():
-    assert not low_utilization([(0, 0), (10, 0)], 10)
-    assert low_utilization([(i, 1) for i in range(0, 601, 10)], 600)
-    assert not low_utilization([(i, 75) for i in range(0, 601, 10)], 600)
-    assert not low_utilization([(i, 40) for i in range(0, 601, 10)], 600)
+def test_guard_bounds_gpu_hold_by_lease_not_by_utilization():
+    """Idle utilization no longer stops a worker; only the lease does."""
+    from deployments import gpu_lease_guard as guard
+
+    assert not hasattr(guard, "low_utilization")
+    assert guard.LEASE_SECONDS == 10800
+    assert guard.TELEMETRY_FAILURE_LIMIT == 3
 
 
 @pytest.mark.parametrize("success", [True, False])
