@@ -10,7 +10,7 @@ from deployments.launch_deepseek_precision import kubectl
 
 PREFIX = "hwkg-merge-s42-20260919"
 ROOT = "/experiment/" + PREFIX
-CONFIG = PREFIX + "-launcher-v2"
+CONFIG = PREFIX + "-launcher-v3"
 
 
 def manifest(phase, commit, request=None):

@@ -89,8 +89,9 @@ def test_summary_does_not_call_rejections_bugs_or_count_extensions_as_primary():
     assert summary["validator_false_positive_rate"] is None
 
 
-@pytest.mark.parametrize("outcomes,expected", [([False, False, True], 3), ([True, False], 2)])
-def test_serial_rounds_count_rejections_and_continue_to_one_valid(tmp_path, monkeypatch, outcomes, expected):
+@pytest.mark.parametrize("outcomes,expected,exact", [([False, False, True], 3, False), ([True, False], 2, False), ([False, False], 2, True)])
+def test_serial_rounds_count_rejections_and_continue_to_one_valid(tmp_path, monkeypatch, outcomes, expected, exact):
+    monkeypatch.setenv("MLEVOLVE_ABLATION_EXACT_BUDGET", "1" if exact else "0")
     cfg = SimpleNamespace(log_dir=tmp_path, agent=SimpleNamespace(ablation_primary_attempts=2, search=SimpleNamespace(num_drafts=1)))
     journal = SimpleNamespace(nodes=[])
     calls = []
@@ -113,7 +114,7 @@ def test_serial_rounds_count_rejections_and_continue_to_one_valid(tmp_path, monk
     assert rows[0]["phase"] == "primary"
     if expected == 3:
         assert rows[-1]["phase"] == "extension"
-    assert json.loads((tmp_path / "ablation/summary.json").read_text())["all_verified_valid_nodes"] == 1
+    assert json.loads((tmp_path / "ablation/summary.json").read_text())["all_verified_valid_nodes"] == sum(outcomes[:expected])
 
 
 def test_missing_or_wrong_graph_audit_cannot_verify_guidance(monkeypatch):

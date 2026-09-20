@@ -23,7 +23,13 @@ if [[ "$phase" == prepare ]]; then
   git_retry fetch --no-recurse-submodules https://github.com/JustinLinKK/MLEvolve.git hardware-awared
   test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
   git submodule status > "$root/submodules.txt"
-  python -m pytest -q tests/test_queued_ablation.py tests/test_hwdb_ablation.py tests/test_design_knowledge.py tests/test_precision_policy.py tests/test_precision_quality.py tests/test_hwdb_prompt_safety.py tests/test_hardware_feature_filter.py tests/test_training_contract_validation.py tests/test_impl_guideline.py tests/test_model_preflight_integration.py > "$root/regression-tests.log" 2>&1
+  if [[ -f "$root/regression-tests.log" ]]; then
+    cp "$root/regression-tests.log" "$root/regression-tests.previous.log"
+  fi
+  if ! python -m pytest -q tests/test_queued_ablation.py tests/test_hwdb_ablation.py tests/test_design_knowledge.py tests/test_precision_policy.py tests/test_precision_quality.py tests/test_hwdb_prompt_safety.py tests/test_hardware_feature_filter.py tests/test_training_contract_validation.py tests/test_impl_guideline.py tests/test_model_preflight_integration.py > "$root/regression-tests.log" 2>&1; then
+    tail -n 100 "$root/regression-tests.log"
+    exit 1
+  fi
   python -m deployments.run_hwdb_ablation --root "$root" --prepare-only
   python -m deployments.smoke_agent --agent-profile deepseek-flash > "$root/agent-smoke.log" 2>&1
   python -c 'from deployments.prepare_kaggle_data import stage_public; stage_public({"nlp-getting-started"})'
