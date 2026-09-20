@@ -11,7 +11,7 @@ from engine.milestone import verify_node
 from utils.node_diagnostics import build_node_diagnostics
 
 
-def summarize_attempts(rows, primary_attempts, verified_valid_target=0):
+def summarize_attempts(rows, primary_attempts, verified_valid_target=0, stop_reason="attempt_budget"):
     primary = rows[:primary_attempts]
     terminal = [r for r in primary if r["status"] != "running"]
     submitted = [r for r in terminal if r.get("gpu_job_submitted")]
@@ -31,6 +31,7 @@ def summarize_attempts(rows, primary_attempts, verified_valid_target=0):
         "all_verified_valid_nodes": sum(r.get("verified_valid") is True for r in rows),
         "verified_valid_target": int(verified_valid_target or 0),
         "attempt_budget": primary_attempts,
+        "stop_reason": stop_reason,
         "first_valid_seconds": next((r["elapsed_seconds"] for r in rows if r.get("verified_valid")), None),
         "first_valid_finished_at": next((r.get("ended_at") for r in rows if r.get("verified_valid")), None),
         "time_origin": "serial generation loop; cell process startup is recorded separately in the matrix",
@@ -82,12 +83,15 @@ def run_ablation_rounds(*, agent, interpreter, cfg, journal, logger, save_callba
     started = time.time()
     operational_errors = 0
     exact_budget = os.environ.get("MLEVOLVE_ABLATION_EXACT_BUDGET") == "1"
+    stop_reason = "attempt_budget"
     while len(rows) < primary or (not exact_budget and not any(r.get("verified_valid") for r in rows)):
         if target_valid and sum(1 for row in rows if row.get("verified_valid")) >= target_valid:
             print(f"MLEVOLVE_ABLATION_STOP reached target of {target_valid} verified-valid nodes", flush=True)
+            stop_reason = "target_reached"
             break
         if max_seconds is not None and time.time() - started >= max_seconds:
             print(f"MLEVOLVE_ABLATION_STOP wall-clock cap of {int(max_seconds)} seconds reached", flush=True)
+            stop_reason = "wall_clock_cap"
             break
         if not ensure_capacity(agent=agent, cfg=cfg, total_steps=int(cfg.agent.search.num_drafts) + 1, logger=logger):
             raise RuntimeError("Ablation search has no selectable work")
@@ -132,10 +136,11 @@ def run_ablation_rounds(*, agent, interpreter, cfg, journal, logger, save_callba
         finally:
             row.update(ended_at=time.time(), elapsed_seconds=time.time() - started)
             save(folder / "attempts.json", rows)
-            save(folder / "summary.json", summarize_attempts(rows, primary, target_valid))
+            save(folder / "summary.json", summarize_attempts(rows, primary, target_valid, stop_reason))
             save_callback(cfg, journal)
             print("MLEVOLVE_ABLATION_ATTEMPT " + json.dumps({k: v for k, v in row.items() if k not in {"verification", "job_packet"}}), flush=True)
             operational_errors = operational_errors + 1 if row["status"] in {"generation_error", "execution_or_integration_error", "no_candidate"} else 0
             if operational_errors >= 3:
                 raise RuntimeError("Three consecutive operational failures; inspect evidence before spending more resources")
+    save(folder / "summary.json", summarize_attempts(rows, primary, target_valid, stop_reason))
     return len(journal.nodes)

@@ -18,8 +18,14 @@ BASELINE = os.environ.get("MLEVOLVE_ABLATION_BASELINE", "93371dd64b8e2b888c1bde7
 DEFAULT_SEEDS = (42, 43)
 MODES = ("conservative", "normal")
 ARMS = ("original", "revised")
-PRIMARY_ATTEMPTS = int(os.environ.get("MLEVOLVE_ABLATION_PRIMARY_ATTEMPTS") or 10)
-TARGET_VALID_NODES = int(os.environ.get("MLEVOLVE_ABLATION_TARGET_VALID") or 0)
+def primary_attempts() -> int:
+    """Attempt budget per cell, read at call time so launches can tune it."""
+    return int(os.environ.get("MLEVOLVE_ABLATION_PRIMARY_ATTEMPTS") or 10)
+
+
+def target_valid_nodes() -> int:
+    """Verified-valid stop target per cell; 0 keeps the fixed attempt budget."""
+    return int(os.environ.get("MLEVOLVE_ABLATION_TARGET_VALID") or 0)
 PUBLIC = Path("/datasets/nlp-getting-started/prepared/public")
 
 
@@ -56,13 +62,15 @@ def matrix_rows(seeds: tuple[int, ...] | None = None):
 
 
 def config_for_cell(repo, folder, seed, mode):
-    cfg = make_config(repo, folder, PUBLIC, "nlp-getting-started", mode, 3600, PRIMARY_ATTEMPTS,
+    attempts = primary_attempts()
+    cfg = make_config(repo, folder, PUBLIC, "nlp-getting-started", mode, 3600, attempts,
                       "deepseek-flash", milestone=True)
     # The ablation loop owns the stop condition: a fixed attempt budget, an
     # optional verified-valid target, and a wall-clock cap in the engine.
-    cfg["agent"].update(seed=seed, ablation_primary_attempts=PRIMARY_ATTEMPTS)
-    if TARGET_VALID_NODES > 0:
-        cfg["agent"]["stop_after_valid_nodes"] = TARGET_VALID_NODES
+    cfg["agent"].update(seed=seed, ablation_primary_attempts=attempts)
+    target = target_valid_nodes()
+    if target > 0:
+        cfg["agent"]["stop_after_valid_nodes"] = target
     cfg["cpu_number"] = 8
     return cfg
 
@@ -133,7 +141,8 @@ def main():
     identity = {"scope": "HWDB content only; current filtering, strict precision rules, validators and agent prompts held fixed",
                 "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip(),
                 "baseline_hwdb_commit": BASELINE, "gpu": gpu, "agent": "deepseek-flash",
-                "primary_attempts_per_cell": PRIMARY_ATTEMPTS, "search_seeds": list(selected_seeds()),
+                "primary_attempts_per_cell": primary_attempts(), "search_seeds": list(selected_seeds()),
+                "target_valid_nodes": target_valid_nodes(),
                 "llm_seed_note": "Search seeds are paired; hosted model responses are not guaranteed deterministic.",
                 "public_hashes": public_hashes, "graphs": graphs}
     save(results / "experiment.json", identity)
@@ -164,8 +173,13 @@ def main():
                 stop_group(proc, descendants)
         summaries = list((cell / "runs").glob("*/logs/ablation/summary.json"))
         summary = json.loads(summaries[0].read_text()) if len(summaries) == 1 else None
-        met = bool(summary and summary["primary_attempts_finished"] == PRIMARY_ATTEMPTS and
-                   (os.environ.get("MLEVOLVE_ABLATION_EXACT_BUDGET") == "1" or summary["all_verified_valid_nodes"] >= 1))
+        # A cell is complete when it exhausted its attempt budget or stopped on
+        # its own declared stop reason (verified-valid target, wall-clock cap).
+        # A zero-yield cell that exhausted the budget stays a valid outcome.
+        met = bool(summary and summary["primary_attempts_finished"] > 0 and (
+            summary["primary_attempts_finished"] == primary_attempts()
+            or summary.get("stop_reason") in {"target_reached", "wall_clock_cap"}
+        ))
         row.update(status="complete" if code == 0 and met else "failed", exit_code=code, ended_at=time.time(), summary=summary)
         save(results / "matrix.json", rows)
         print("MLEVOLVE_ABLATION_CELL " + json.dumps(row), flush=True)

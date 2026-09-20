@@ -13,6 +13,14 @@ from engine import hwdb_ablation as ablation
 from localml_scheduler.hardware_knowledge import feature_filter
 
 
+@pytest.fixture(autouse=True)
+def default_ablation_tuning(monkeypatch):
+    """Keep launch-time tuning out of tests that assert the shipped defaults."""
+    for key in ("MLEVOLVE_ABLATION_PRIMARY_ATTEMPTS", "MLEVOLVE_ABLATION_TARGET_VALID",
+                "MLEVOLVE_ABLATION_MODES", "MLEVOLVE_ABLATION_ARMS"):
+        monkeypatch.delenv(key, raising=False)
+
+
 def test_eight_cells_are_balanced_and_counterordered():
     rows = matrix_rows(seeds=(42, 43))
     assert len(rows) == 8
@@ -48,6 +56,19 @@ def test_cell_configs_share_settings_and_allow_normal_fp32(tmp_path):
     other = config_for_cell(repo, tmp_path, 43, "normal")
     other["agent"]["seed"] = 42
     assert other == cfg
+
+
+def test_launch_tuning_selects_cells_and_a_verified_valid_target(tmp_path, monkeypatch):
+    monkeypatch.setenv("MLEVOLVE_ABLATION_SEEDS", "42")
+    monkeypatch.setenv("MLEVOLVE_ABLATION_MODES", "normal")
+    monkeypatch.setenv("MLEVOLVE_ABLATION_ARMS", "revised")
+    monkeypatch.setenv("MLEVOLVE_ABLATION_PRIMARY_ATTEMPTS", "24")
+    monkeypatch.setenv("MLEVOLVE_ABLATION_TARGET_VALID", "8")
+    rows = matrix_rows()
+    assert [(row["mode"], row["arm"]) for row in rows] == [("normal", "revised")]
+    cfg = config_for_cell(Path(__file__).parents[1], tmp_path, 42, "normal")
+    assert cfg["agent"]["ablation_primary_attempts"] == 24
+    assert cfg["agent"]["stop_after_valid_nodes"] == 8
 
 
 def test_graph_override_is_checksum_guarded_and_explicit_path_wins(tmp_path, monkeypatch):
