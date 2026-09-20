@@ -81,17 +81,27 @@ def main():
                 return
             for remote in state["requests"]:
                 folder = args.records / "workers" / Path(remote).name
-                try:
-                    run_worker(cluster, folder, args.source_commit, remote)
-                    archive(pod, remote, folder)
-                    released = json.loads((folder / "released.json").read_text())
-                    remote_json(pod, remote + "/released.json", released)
-                except BaseException as exc:
+                attempts = 0
+                while True:
                     try:
-                        archive(pod, ROOT, args.records / "remote")
-                    finally:
-                        remote_json(pod, ROOT + "/STOP.json", {"reason": "GPU dispatch failed", "error_type": type(exc).__name__, "time": time.time()})
-                    raise
+                        dispatched = run_worker(cluster, folder, args.source_commit, remote)
+                    except BaseException as exc:
+                        try:
+                            archive(pod, ROOT, args.records / "remote")
+                        finally:
+                            remote_json(pod, ROOT + "/STOP.json", {"reason": "GPU dispatch failed", "error_type": type(exc).__name__, "time": time.time()})
+                        raise
+                    if dispatched:
+                        break
+                    # Pending-only expiry: no GPU was held, so wait for capacity.
+                    attempts += 1
+                    save(folder / "capacity-retry.json", {"attempts": attempts, "time": time.time(), "request": remote})
+                    if attempts >= 32:
+                        raise RuntimeError("A10 capacity unavailable after 32 worker attempts; see " + str(folder))
+                    time.sleep(min(600, 60 * attempts))
+                archive(pod, remote, folder)
+                released = json.loads((folder / "released.json").read_text())
+                remote_json(pod, remote + "/released.json", released)
             failures = 0
             save(args.records / "dispatcher-heartbeat.json", {"time": time.time(), "pod": pod})
         except subprocess.CalledProcessError:

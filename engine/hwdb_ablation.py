@@ -11,7 +11,7 @@ from engine.milestone import verify_node
 from utils.node_diagnostics import build_node_diagnostics
 
 
-def summarize_attempts(rows, primary_attempts):
+def summarize_attempts(rows, primary_attempts, verified_valid_target=0):
     primary = rows[:primary_attempts]
     terminal = [r for r in primary if r["status"] != "running"]
     submitted = [r for r in terminal if r.get("gpu_job_submitted")]
@@ -29,6 +29,8 @@ def summarize_attempts(rows, primary_attempts):
         "primary_valid_yield_per_attempt": sum(r.get("verified_valid") is True for r in terminal) / len(terminal) if terminal else None,
         "extension_attempts": max(0, len(rows) - primary_attempts),
         "all_verified_valid_nodes": sum(r.get("verified_valid") is True for r in rows),
+        "verified_valid_target": int(verified_valid_target or 0),
+        "attempt_budget": primary_attempts,
         "first_valid_seconds": next((r["elapsed_seconds"] for r in rows if r.get("verified_valid")), None),
         "first_valid_finished_at": next((r.get("ended_at") for r in rows if r.get("verified_valid")), None),
         "time_origin": "serial generation loop; cell process startup is recorded separately in the matrix",
@@ -70,6 +72,8 @@ def run_ablation_rounds(*, agent, interpreter, cfg, journal, logger, save_callba
     primary = int(cfg.agent.ablation_primary_attempts)
     if primary <= 0:
         raise ValueError("A positive primary generation-attempt budget is required")
+    target_valid = int(getattr(cfg.agent, "stop_after_valid_nodes", 0) or 0)
+    max_seconds = float(os.environ.get("MLEVOLVE_ABLATION_MAX_SECONDS") or 0) or None
     folder = Path(cfg.log_dir) / "ablation"
     folder.mkdir(parents=True, exist_ok=True)
     if (folder / "attempts.json").exists():
@@ -79,6 +83,12 @@ def run_ablation_rounds(*, agent, interpreter, cfg, journal, logger, save_callba
     operational_errors = 0
     exact_budget = os.environ.get("MLEVOLVE_ABLATION_EXACT_BUDGET") == "1"
     while len(rows) < primary or (not exact_budget and not any(r.get("verified_valid") for r in rows)):
+        if target_valid and sum(1 for row in rows if row.get("verified_valid")) >= target_valid:
+            print(f"MLEVOLVE_ABLATION_STOP reached target of {target_valid} verified-valid nodes", flush=True)
+            break
+        if max_seconds is not None and time.time() - started >= max_seconds:
+            print(f"MLEVOLVE_ABLATION_STOP wall-clock cap of {int(max_seconds)} seconds reached", flush=True)
+            break
         if not ensure_capacity(agent=agent, cfg=cfg, total_steps=int(cfg.agent.search.num_drafts) + 1, logger=logger):
             raise RuntimeError("Ablation search has no selectable work")
         row = {"attempt": len(rows) + 1, "phase": "primary" if len(rows) < primary else "extension",
@@ -122,7 +132,7 @@ def run_ablation_rounds(*, agent, interpreter, cfg, journal, logger, save_callba
         finally:
             row.update(ended_at=time.time(), elapsed_seconds=time.time() - started)
             save(folder / "attempts.json", rows)
-            save(folder / "summary.json", summarize_attempts(rows, primary))
+            save(folder / "summary.json", summarize_attempts(rows, primary, target_valid))
             save_callback(cfg, journal)
             print("MLEVOLVE_ABLATION_ATTEMPT " + json.dumps({k: v for k, v in row.items() if k not in {"verification", "job_packet"}}), flush=True)
             operational_errors = operational_errors + 1 if row["status"] in {"generation_error", "execution_or_integration_error", "no_candidate"} else 0

@@ -475,8 +475,11 @@ def _design_prompt_view(agent: Any, context: HardwarePromptContext, stage: str) 
         except Exception as exc:
             logger.debug("Concise hardware lookup failed: %s", exc)
     records = hardware_records(context, role=stage)
-    context.prompt_section = render_records(records)
+    max_chars = _safe_int(getattr(agent.acfg, "hardware_context_max_prompt_chars", 3500), default=3500)
+    dropped: list[str] = []
+    context.prompt_section = render_records(records, max_chars=max_chars, dropped=dropped)
     context.filtered_context["design_records_v2"] = records
+    context.filtered_context["design_records_dropped"] = dropped
     context.filtered_context["evidence_refs"] = sorted(set(context.filtered_context.get("evidence_refs") or []).union(
         ref for record in records for ref in record["evidence_refs"]
     ))

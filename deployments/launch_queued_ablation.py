@@ -2,15 +2,25 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 
 from deployments.launch_hwdb_ablation import manifest as base_manifest
 from deployments.launch_deepseek_precision import kubectl
 
-PREFIX = "hwkg-merge-s42-20260919"
+PREFIX = os.environ.get("MLEVOLVE_ABLATION_PREFIX", "hwkg-merge-s42-20260919")
 ROOT = "/experiment/" + PREFIX
 CONFIG = PREFIX + "-launcher-v3"
+
+# Launch-time tuning for the CPU-side search; the coordinator pod inherits these.
+TUNING_ENV = (
+    "MLEVOLVE_ABLATION_TARGET_VALID",
+    "MLEVOLVE_ABLATION_MAX_SECONDS",
+    "MLEVOLVE_ABLATION_PRIMARY_ATTEMPTS",
+    "MLEVOLVE_ABLATION_MODES",
+    "MLEVOLVE_ABLATION_ARMS",
+)
 
 
 def manifest(phase, commit, request=None):
@@ -18,7 +28,10 @@ def manifest(phase, commit, request=None):
     job = base_manifest("run" if gpu else "prepare", commit)
     name = PREFIX + "-" + (Path(request).name[:12] if request else phase)
     job["metadata"]["name"] = name
-    job["spec"].update(activeDeadlineSeconds=4500 if gpu else 259200, backoffLimit=0)
+    # A worker Job's deadline covers time spent Pending, so it must stay longer
+    # than a plausible A10 scheduling wait while the in-container lease guard
+    # keeps the actual GPU hold bounded (70 minutes, and 40% mean utilization).
+    job["spec"].update(activeDeadlineSeconds=7200 if gpu else 259200, backoffLimit=0)
     pod = job["spec"]["template"]["spec"]
     job["spec"]["template"]["metadata"]["labels"] = {"app": PREFIX, "phase": phase}
     container = pod["containers"][0]
@@ -29,7 +42,7 @@ def manifest(phase, commit, request=None):
         {"name": "MLEVOLVE_ABLATION_SEEDS", "value": "42"},
         {"name": "MLEVOLVE_ABLATION_EXACT_BUDGET", "value": "1"},
         {"name": "MLEVOLVE_ABLATION_BASELINE", "value": "1bf8d2f27bce5b289cb29caec736722b2efd3d8a"},
-    ]
+    ] + [{"name": key, "value": os.environ[key]} for key in TUNING_ENV if os.environ.get(key)]
     if gpu:
         container["env"] = [item for item in container["env"] if "valueFrom" not in item]
         pod["affinity"]["nodeAffinity"]["requiredDuringSchedulingIgnoredDuringExecution"]["nodeSelectorTerms"][0]["matchExpressions"][0]["values"] = ["NVIDIA-A10"]

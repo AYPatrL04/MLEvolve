@@ -18,7 +18,8 @@ BASELINE = os.environ.get("MLEVOLVE_ABLATION_BASELINE", "93371dd64b8e2b888c1bde7
 DEFAULT_SEEDS = (42, 43)
 MODES = ("conservative", "normal")
 ARMS = ("original", "revised")
-PRIMARY_ATTEMPTS = 10
+PRIMARY_ATTEMPTS = int(os.environ.get("MLEVOLVE_ABLATION_PRIMARY_ATTEMPTS") or 10)
+TARGET_VALID_NODES = int(os.environ.get("MLEVOLVE_ABLATION_TARGET_VALID") or 0)
 PUBLIC = Path("/datasets/nlp-getting-started/prepared/public")
 
 
@@ -41,10 +42,15 @@ def selected_seeds() -> tuple[int, ...]:
 
 
 def matrix_rows(seeds: tuple[int, ...] | None = None):
+    modes = tuple(item.strip() for item in (os.environ.get("MLEVOLVE_ABLATION_MODES") or "").split(",") if item.strip()) or MODES
+    arms = tuple(item.strip() for item in (os.environ.get("MLEVOLVE_ABLATION_ARMS") or "").split(",") if item.strip()) or ARMS
+    unknown = set(modes) - set(MODES) | set(arms) - set(ARMS)
+    if unknown:
+        raise ValueError(f"Unsupported ablation cell filter: {sorted(unknown)}")
     rows = []
     for i, seed in enumerate(seeds or selected_seeds()):
-        for j, mode in enumerate(MODES if i == 0 else tuple(reversed(MODES))):
-            for arm in (ARMS if (i + j) % 2 == 0 else tuple(reversed(ARMS))):
+        for j, mode in enumerate(modes if i == 0 else tuple(reversed(modes))):
+            for arm in (arms if (i + j) % 2 == 0 else tuple(reversed(arms))):
                 rows.append({"seed": seed, "mode": mode, "arm": arm, "status": "queued"})
     return rows
 
@@ -52,7 +58,11 @@ def matrix_rows(seeds: tuple[int, ...] | None = None):
 def config_for_cell(repo, folder, seed, mode):
     cfg = make_config(repo, folder, PUBLIC, "nlp-getting-started", mode, 3600, PRIMARY_ATTEMPTS,
                       "deepseek-flash", milestone=True)
+    # The ablation loop owns the stop condition: a fixed attempt budget, an
+    # optional verified-valid target, and a wall-clock cap in the engine.
     cfg["agent"].update(seed=seed, ablation_primary_attempts=PRIMARY_ATTEMPTS)
+    if TARGET_VALID_NODES > 0:
+        cfg["agent"]["stop_after_valid_nodes"] = TARGET_VALID_NODES
     cfg["cpu_number"] = 8
     return cfg
 

@@ -249,9 +249,18 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode | None:
         user_prompt = f"\n# Task description\n{prompt['Task description']}\n{knowledge_section}\n{instructions}"
         return build_chat_prompt_for_model(agent.acfg.code.model, introduction, user_prompt, assistant_prefix)
 
-    prompt_complete, knowledge_records, knowledge_diagnostics = fit_prompt(agent, build_prompt, knowledge_records)
+    max_chars = getattr(agent.acfg, "hardware_context_max_prompt_chars", 3500)
+    try:
+        max_chars = int(max_chars)
+    except (TypeError, ValueError):
+        max_chars = 3500
+    prompt_complete, knowledge_records, knowledge_diagnostics = fit_prompt(
+        agent, build_prompt, knowledge_records, max_chars=max_chars)
     if knowledge_diagnostics["sizing"] == "unavailable":
-        logger.info("Draft context sizing unavailable; injecting complete concise records without a fixed cap.")
+        logger.info(
+            "Draft token sizing unavailable; design knowledge capped at %s characters with whole-record omission.",
+            max_chars,
+        )
     if not agent.virtual_root.add_expected_child_count(agent.scfg):
         logger.info("Draft limit reached before draft generation could reserve a child slot.")
         return None

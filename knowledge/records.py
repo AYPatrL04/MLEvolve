@@ -205,19 +205,48 @@ def select_records(records: list[dict[str, Any]], context: Mapping[str, Any], *,
     return sorted(merged.values(), key=lambda r: (r["strength"] != "hard", not bool(r["restrictions"]), r["verification_status"] != "verified", -r["confidence"], r["record_id"]))
 
 
-def render_records(records: list[Mapping[str, Any]]) -> str:
+def render_record_line(record: Mapping[str, Any]) -> str:
+    scope = dict(record.get("applicability") or {})
+    bits = [str(record["summary"])]
+    if scope:
+        bits.append("Applies to " + "; ".join(f"{k}={','.join(strings(v))}" for k, v in sorted(scope.items())) + ".")
+    for key, prefix in (("applies_when", "Only when: "), ("restrictions", "Restrictions: "), ("fallbacks", "Fallback: ")):
+        values = record.get(key) or []
+        if values:
+            bits.append(prefix + " ".join(values))
+    bits.append(f"[{record['record_id']}; {record['verification_status']}]")
+    return "- " + " ".join(bits)
+
+
+def render_records(records: list[Mapping[str, Any]], *, max_chars: int | None = None,
+                   dropped: list[str] | None = None) -> str:
+    """Render the design knowledge prompt section.
+
+    Claims stay complete. When ``max_chars`` is given, whole records are omitted
+    instead of cutting a claim mid-sentence, and budget is reserved up front for
+    mandatory (``hard``) records so a long optional tail can never evict a
+    precision or scheduler constraint. Omitted record ids are appended to
+    ``dropped`` when a list is supplied.
+    """
     if not records:
         return ""
-    lines = ["# Design knowledge", "Source-backed reference. Current task constraints and fresh measurements take precedence."]
-    for record in records:
-        scope = dict(record.get("applicability") or {})
-        bits = [str(record["summary"])]
-        if scope:
-            bits.append("Applies to " + "; ".join(f"{k}={','.join(strings(v))}" for k, v in sorted(scope.items())) + ".")
-        for key, prefix in (("applies_when", "Only when: "), ("restrictions", "Restrictions: "), ("fallbacks", "Fallback: ")):
-            values = record.get(key) or []
-            if values:
-                bits.append(prefix + " ".join(values))
-        bits.append(f"[{record['record_id']}; {record['verification_status']}]")
-        lines.append("- " + " ".join(bits))
-    return "\n".join(lines)
+    header = ["# Design knowledge", "Source-backed reference. Current task constraints and fresh measurements take precedence."]
+    rendered = [(record, render_record_line(record)) for record in records]
+    if max_chars is None:
+        kept = [line for _, line in rendered]
+    else:
+        mandatory = sum(1 + len(line) for record, line in rendered if str(record.get("strength")) == "hard")
+        used = len("\n".join(header)) + mandatory
+        kept = []
+        for record, line in rendered:
+            if str(record.get("strength")) == "hard":
+                kept.append(line)
+                continue
+            cost = 1 + len(line)
+            if used + cost > max_chars:
+                if dropped is not None:
+                    dropped.append(record["record_id"])
+                continue
+            used += cost
+            kept.append(line)
+    return "\n".join(header + kept)

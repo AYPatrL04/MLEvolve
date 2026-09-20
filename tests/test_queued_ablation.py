@@ -8,7 +8,7 @@ import pytest
 
 from deployments.gpu_lease_guard import low_utilization
 from deployments.launch_queued_ablation import manifest, ROOT
-from deployments.queued_ablation_coordinator import run_worker
+from deployments.queued_ablation_coordinator import capacity_wait_failure, run_worker
 
 
 def test_only_workers_reserve_gpu_and_workers_have_no_credentials():
@@ -93,3 +93,15 @@ def test_queued_run_many_retains_preflight_gate(tmp_path, monkeypatch):
     assert results["bad"].exc_type == "PreflightRejected"
     assert results["ok"] == "queued"
     assert len(calls) == 1
+
+
+def test_pending_only_deadline_is_a_retryable_capacity_wait():
+    deadline = {"type": "Failed", "status": "True", "reason": "DeadlineExceeded"}
+    pending = [{"metadata": {"name": "probe"}, "status": {"phase": "Pending"}}]
+    assert capacity_wait_failure({"status": {"conditions": [deadline]}}, pending) is True
+    # A pod that actually started is a real failure, never a capacity wait.
+    started = [{"metadata": {"name": "probe"}, "status": {"phase": "Failed", "containerStatuses": [{"name": "matrix"}]}}]
+    assert capacity_wait_failure({"status": {"conditions": [deadline]}}, started) is False
+    # Any other failure reason stays fatal.
+    other = [{"type": "Failed", "status": "True", "reason": "BackoffLimitExceeded"}]
+    assert capacity_wait_failure({"status": {"conditions": other}}, pending) is False

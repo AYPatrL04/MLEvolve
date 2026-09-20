@@ -128,6 +128,19 @@ def test_hardware_retrieval_does_not_prove_prompt_injection(tmp_path):
     assert build_node_diagnostics(cfg, node)["hardware_knowledge"]["injection_status"] == "absent"
 
 
+def test_design_knowledge_v2_heading_counts_as_injection(tmp_path):
+    cfg = SimpleNamespace(experiment=SimpleNamespace(mode="hardware_aware"), log_dir=tmp_path)
+    node = SearchNode(code="", stage="draft")
+    node.prompt_input = "# Design knowledge\nSource-backed reference. Current task constraints and fresh measurements take precedence.\n- Hardware: gpu_name=NVIDIA A10."
+    report = build_node_diagnostics(cfg, node)["hardware_knowledge"]
+    assert report["injection_status"] == "present"
+    assert report["prompt_sections"] == ["# Design knowledge"]
+    assert "hardware_prompt_injection_unconfirmed" not in build_node_diagnostics(cfg, node)["diagnostic_flags"]
+
+    node.prompt_input = "# Task description\nNo hardware section here."
+    assert build_node_diagnostics(cfg, node)["hardware_knowledge"]["injection_status"] == "absent"
+
+
 @pytest.mark.parametrize("scheduled", [False, True])
 def test_generated_script_reports_through_both_execution_paths(tmp_path, scheduled, monkeypatch):
     from engine.executor import Interpreter, ExecutionResult

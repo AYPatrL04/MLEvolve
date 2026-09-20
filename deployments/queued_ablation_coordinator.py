@@ -13,6 +13,23 @@ from deployments.launch_queued_ablation import PREFIX, manifest
 from deployments.run_hwdb_precision_matrix import save, stop_group
 
 
+def capacity_wait_failure(job, pods):
+    """True when a Job expired before any container started, i.e. it only waited.
+
+    ``activeDeadlineSeconds`` counts time spent Pending, so an A10 capacity
+    shortage fails the Job with ``DeadlineExceeded`` even though no GPU was ever
+    held. Only that combination is retryable; anything else stays fatal.
+    """
+    conditions = (job.get("status") or {}).get("conditions") or []
+    if not any(str(condition.get("reason")) == "DeadlineExceeded" for condition in conditions):
+        return False
+    for pod in pods:
+        status = pod.get("status") or {}
+        if status.get("containerStatuses") or status.get("phase") in {"Running", "Succeeded"}:
+            return False
+    return True
+
+
 def run_worker(cluster, folder, commit, request_path=None):
     folder.mkdir(parents=True, exist_ok=True)
     job = manifest("worker", commit, request_path or str(folder))
@@ -55,9 +72,17 @@ def run_worker(cluster, folder, commit, request_path=None):
             if time.monotonic() > deadline:
                 raise RuntimeError("GPU pod deletion not confirmed; stopping coordinator")
             time.sleep(3)
+    if not ok and capacity_wait_failure(current, pods):
+        # The job expired while still Pending: no GPU was ever held, so this is
+        # a capacity wait rather than a GPU failure. Leave released.json absent
+        # so the CPU search keeps waiting and retry on the next dispatch.
+        save(folder / "capacity-timeout.json", {"time": time.time(), "job": name,
+                                                "reason": "worker never started; A10 capacity unavailable"})
+        return False
     save(folder / "released.json", {"ok": ok, "time": time.time(), "job": name})
     if not ok:
         raise RuntimeError("GPU worker failed; see " + str(folder))
+    return True
 
 
 def main():

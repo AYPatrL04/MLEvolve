@@ -225,6 +225,9 @@ def query_hardware_features(
                 edge_props.get("recommendation_scope")
                 or feat_props.get("default_recommendation_scope")
             ),
+            # Curated records may declare how strongly they must be honored;
+            # "hard" records survive prompt budgeting and token fitting.
+            "strength": feat_props.get("strength") or edge_props.get("strength"),
             "limitations": edge_props.get("limitations") or feat_props.get("model_shape_limitations") or feat_props.get("limitations"),
             "notes": _merge_text_values(feat_props.get("notes"), edge_props.get("notes")),
         }))

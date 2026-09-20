@@ -32,11 +32,16 @@ def pin_version(workspace: Path, requested: str, *, resuming: bool) -> str:
     return version
 
 
-def fit_prompt(agent: Any, build_prompt: Callable[[str], Any], records: list[dict[str, Any]]) -> tuple[Any, list[dict[str, Any]], dict[str, Any]]:
+def fit_prompt(agent: Any, build_prompt: Callable[[str], Any], records: list[dict[str, Any]],
+               *, max_chars: int | None = None) -> tuple[Any, list[dict[str, Any]], dict[str, Any]]:
     """Fit only to known deployment capacity; never invent a token estimate.
 
     A caller may supply a tokenizer adapter for a hosted model. Otherwise a
     configured local tokenizer is loaded without network access and cached.
+
+    ``max_chars`` applies the configured character budget before token fitting:
+    whole low-priority records are omitted, mandatory records are retained, and
+    the survivors are what token sizing and ``record_ids`` describe.
     """
     config = agent.acfg.code
     window = getattr(config, "context_window_tokens", None)
@@ -63,6 +68,14 @@ def fit_prompt(agent: Any, build_prompt: Callable[[str], Any], records: list[dic
         except (OSError, ValueError, ImportError) as exc:
             diagnostic["reason"] = type(exc).__name__
     selected = list(records)
+    budget_dropped: list[str] = []
+    if max_chars is not None:
+        render_records(selected, max_chars=max_chars, dropped=budget_dropped)
+        if budget_dropped:
+            dropped_ids = set(budget_dropped)
+            selected = [record for record in selected if record["record_id"] not in dropped_ids]
+            diagnostic["dropped_record_ids"].extend(budget_dropped)
+        diagnostic.update(max_chars=int(max_chars), budget_dropped_record_ids=list(budget_dropped))
     while True:
         prompt = build_prompt(render_records(selected))
         if not window or not completion or counter is None:

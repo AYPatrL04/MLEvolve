@@ -32,6 +32,31 @@ def test_complete_conditions_deduplicated_across_topics_without_cap():
     assert len(prompt) > 3500
 
 
+def test_character_budget_omits_whole_optional_records_and_keeps_mandatory_ones():
+    mandatory = record("Conservative precision is mandatory: keep float32 parameters and optimizer state.",
+                       strength="hard", topics=["precision"], evidence_refs=["runtime:precision_policy"])
+    optional = [record(f"Optional tuning reference {index} explains one soft detail.", topics=["training"])
+                for index in range(60)]
+    records = select_records([mandatory] + optional, {}, already_filtered=True)
+    dropped: list[str] = []
+    bounded = render_records(records, max_chars=3500, dropped=dropped)
+    assert len(bounded) <= 3500
+    assert mandatory["summary"] in bounded
+    assert dropped, "the budget must actually omit optional records"
+    assert set(dropped) <= {item["record_id"] for item in records}
+    assert mandatory["record_id"] not in dropped
+    # Omitting a record never leaves a half-written claim behind.
+    assert all(line.endswith("]") for line in bounded.splitlines() if line.startswith("- "))
+    assert len(render_records(records)) > len(bounded)
+
+
+def test_render_without_budget_is_unchanged_by_the_budget_feature():
+    records = [record("Unconditional reference.")]
+    dropped: list[str] = []
+    assert render_records(records, dropped=dropped) == render_records(records)
+    assert dropped == []
+
+
 def test_scheduler_projection_preserves_canonical_record():
     from localml_scheduler.client import _sanitize_agent_response
     from knowledge.records import validate_record
@@ -180,6 +205,23 @@ def test_context_fit_reserves_completion_and_does_not_truncate_task():
     config.context_window_tokens = None
     prompt, records, diagnostic = fit_prompt(agent, lambda knowledge: "Task" + knowledge, [optional])
     assert records == [optional] and diagnostic["sizing"] == "unavailable"
+
+
+def test_fit_prompt_applies_character_budget_even_when_token_sizing_is_unavailable():
+    agent = SimpleNamespace(acfg=SimpleNamespace(code=SimpleNamespace(context_window_tokens=None, completion_tokens=None)))
+    mandatory = record("Mandatory: keep float32 parameters.", strength="hard", topics=["precision"])
+    optional = [record(f"Optional reference {index}.", topics=["training"]) for index in range(60)]
+    supplied = [mandatory] + optional
+    prompt, selected, diagnostic = fit_prompt(
+        agent, lambda knowledge: "Task" + knowledge, supplied, max_chars=1200)
+    assert diagnostic["sizing"] == "unavailable"
+    assert diagnostic["max_chars"] == 1200
+    assert mandatory["summary"] in prompt
+    assert set(diagnostic["dropped_record_ids"]) == set(diagnostic["budget_dropped_record_ids"])
+    assert diagnostic["budget_dropped_record_ids"], "the budget must omit the optional tail"
+    # The selected records and the evidence list describe the rendered section.
+    assert {item["record_id"] for item in selected} == {
+        item["record_id"] for item in supplied if item["record_id"] not in set(diagnostic["dropped_record_ids"])}
 
 
 def test_draft_is_one_complete_call_with_all_subjects(monkeypatch, tmp_path):

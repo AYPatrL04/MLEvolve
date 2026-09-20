@@ -56,6 +56,9 @@ def build_node_diagnostics(cfg, node):
     enabled = configured and mode not in {"origin", "baseline", "unknown"}
     prompt = getattr(node, "prompt_input", None)
     headings = (
+        # design-knowledge-v2 renders its own section heading; v1 used the
+        # stage-specific headings below. Both are injection evidence.
+        "# Design knowledge",
         "# Hardware/Profile Optimization Context",
         "# Hardware-Aware Model Design Brief",
         "# Hardware-Aware Stage 1 Candidate Construction Context",

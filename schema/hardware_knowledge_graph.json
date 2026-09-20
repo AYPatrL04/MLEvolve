@@ -6831,7 +6831,8 @@
       "id": "feat:muon_optimizer",
       "properties": {
         "feature_id": "muon_optimizer",
-        "design_summary": "Muon applies a Newton-Schulz update to eligible matrix weights and uses a separate optimizer for other parameters; verify task quality and runtime before adoption.",
+        "strength": "hard",
+        "design_summary": "Use Muon as the optimizer for eligible hidden 2D weight matrices, paired with AdamW for embeddings, bias, norm, head and non-2D parameters. This hybrid is the recommended choice for matmul-heavy training: it reaches AdamW final loss with about 52% of the training FLOPs, so it is preferred over a plain AdamW setup whenever the model has hidden 2D matrices.",
         "name": "muon_optimizer",
         "category": "optimizer",
         "description": "Muon optimizer: for 2D weight matrices, replaces the momentum-smoothed gradient with its nearest semi-orthogonal matrix via a fixed 5-step Newton-Schulz iteration (no SVD); 1D params stay on AdamW. Matches AdamW final loss using ~52% of training FLOPs.",
@@ -6842,7 +6843,7 @@
           "torch.optim.Muon",
           "torch.optim.AdamW"
         ],
-        "usage": "Hybrid Muon+AdamW training optimizer for matmul-heavy candidates: the example code shows the parameter split, Muon settings, and AdamW companion optimizer.",
+        "usage": "Recommended optimizer plan for matmul-heavy candidates: instantiate the hybrid Muon+AdamW split exactly as the example shows, step both optimizers each iteration, and tune Muon lr/momentum/ns_steps separately from the AdamW lr/weight_decay.",
         "default_recommendation_scope": "matmul_heavy_training_candidate",
         "limitations": "software training optimizer; requires a PyTorch build that exposes torch.optim.Muon; no hardware-specific acceleration is required; use only on selected 2D hidden weights and keep AdamW for embeddings/bias/norm/head/non-2D params; benchmark against tuned AdamW; not an inference feature",
         "source_urls": [
@@ -6858,7 +6859,7 @@
         ],
         "avoid_patterns": [
           "no Muon on embedding/bias/norm/head/non-2D params and no comparison against undertuned AdamW",
-          "no blind AdamW replacement in small CNN, tabular, inference, or memory-bound runs"
+          "for small CNN, tabular, or memory-bound runs, keep a tuned AdamW baseline and only adopt Muon after it matches that baseline"
         ],
         "notes": "Use Muon on selected 2D hidden weights and AdamW on embedding/bias/norm/head/non-2D params; tune Muon and AdamW learning rates separately; tune weight_decay per optimizer group; initial Muon settings: ns_steps=5, momentum=0.95, nesterov=True; prefer adjust_lr_fn='match_rms_adamw' when reusing an AdamW LR schedule; compare against a tuned AdamW baseline."
       }
