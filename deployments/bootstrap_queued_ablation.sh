@@ -17,10 +17,10 @@ if [[ "$phase" == prepare ]]; then
   export PATH=/runtime/venv/bin:$PATH
   cd /runtime/repo
   source /launcher/git_retry.sh
-  git_retry fetch https://github.com/AYPatrL04/MLEvolve.git "$SOURCE_COMMIT"
+  git_retry fetch --no-recurse-submodules https://github.com/AYPatrL04/MLEvolve.git "$SOURCE_COMMIT"
   git checkout --detach FETCH_HEAD
   git submodule update --init --recursive
-  git_retry fetch https://github.com/JustinLinKK/MLEvolve.git hardware-awared
+  git_retry fetch --no-recurse-submodules https://github.com/JustinLinKK/MLEvolve.git hardware-awared
   test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
   git submodule status > "$root/submodules.txt"
   python -m pytest -q tests/test_queued_ablation.py tests/test_hwdb_ablation.py tests/test_design_knowledge.py tests/test_precision_policy.py tests/test_precision_quality.py tests/test_hwdb_prompt_safety.py tests/test_hardware_feature_filter.py tests/test_training_contract_validation.py tests/test_impl_guideline.py tests/test_model_preflight_integration.py > "$root/regression-tests.log" 2>&1
