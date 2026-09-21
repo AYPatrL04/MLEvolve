@@ -91,6 +91,22 @@ def _issue(owner: str, category: str | None = None) -> ReviewIssue:
     )
 
 
+def test_repair_retry_receives_failure_and_unchanged_source():
+    agent = _agent()
+    agent.acfg.review.repair_retries = 2
+    prompts = []
+    def generate(agent, prompt):
+        prompts.append(prompt)
+        if len(prompts) == 1:
+            return 'not a patch'
+        return '<<<<<<< SEARCH\nmodel = 0\n=======\nmodel = 1\n>>>>>>> REPLACE'
+    result = generate_stage_patch(agent, _node(), _node().code, 'model_design',
+                                  [_issue('model_design')], generator=generate)
+    assert not result.failure_reason
+    assert 'malformed SEARCH/REPLACE' in prompts[1]
+    assert 'unchanged original code' in prompts[1]
+
+
 def _stage_from_prompt(prompt: str) -> str:
     for stage in ("model_design", "datatype_precision", "training_evaluation", "integration"):
         if f'"role": "{stage} repair specialist"' in prompt:

@@ -6832,18 +6832,18 @@
       "properties": {
         "feature_id": "muon_optimizer",
         "strength": "hard",
-        "design_summary": "Use Muon as the optimizer for eligible hidden 2D weight matrices, paired with AdamW for embeddings, bias, norm, head and non-2D parameters. This hybrid is the recommended choice for matmul-heavy training: it reaches AdamW final loss with about 52% of the training FLOPs, so it is preferred over a plain AdamW setup whenever the model has hidden 2D matrices.",
+        "design_summary": "Prefer a measured Muon+AdamW trial for hidden 2D weights. Use utils.muon_optimizer.MuonAdamW(model, hidden_names=[explicit hidden weight names], lr=1e-3, weight_decay=1e-4): FP32 orthogonalization, momentum=0.95, Nesterov=True, ns_steps=5, eps=1e-7, match_rms_adamw LR scaling. These are starting settings, not task-optimal guarantees; tune Muon/AdamW LR and decay against a matched baseline. Return one optimizer in both adapter and training; embeddings/head/bias/norm stay on AdamW, every trainable parameter exactly once. If disabled, AdamW must include ALL parameters. Source: https://docs.pytorch.org/docs/2.12/generated/torch.optim.Muon.html . Native Muon internally uses reduced precision; use the FP32 helper under conservative/normal policies. No universal FLOP or speedup guarantee.",
         "name": "muon_optimizer",
         "category": "optimizer",
-        "description": "Muon optimizer: for 2D weight matrices, replaces the momentum-smoothed gradient with its nearest semi-orthogonal matrix via a fixed 5-step Newton-Schulz iteration (no SVD); 1D params stay on AdamW. Matches AdamW final loss using ~52% of training FLOPs.",
+        "description": "Muon orthogonalizes momentum-smoothed hidden-matrix updates using Newton-Schulz iterations. Pair with AdamW for other parameters. Published LLM efficiency results are not guarantees for small models or FP32 runs.",
         "tensor_core_generation": "not_required; NS/GEMM-heavy optimizer step can benefit from fast matmul",
-        "example_code": "import torch\n\nmuon_params = []\nadamw_params = []\nfor name, p in model.named_parameters():\n    if not p.requires_grad:\n        continue\n    is_hidden_2d = p.ndim == 2 and 'embed' not in name and 'lm_head' not in name\n    if is_hidden_2d:\n        muon_params.append(p)\n    else:\n        adamw_params.append(p)\n\noptim_muon = torch.optim.Muon(muon_params, lr=0.02, weight_decay=0.1, momentum=0.95, nesterov=True, ns_steps=5, adjust_lr_fn='match_rms_adamw')\noptim_adamw = torch.optim.AdamW(adamw_params, lr=3e-4, weight_decay=0.01)\n\noptim_muon.zero_grad()\noptim_adamw.zero_grad()\nloss.backward()\noptim_muon.step()\noptim_adamw.step()",
+        "example_code": "from utils.muon_optimizer import MuonAdamW\n# Explicitly identify hidden matrices in this model; exclude embeddings/output heads.\noptimizer = MuonAdamW(model, hidden_names=hidden_weight_names, lr=1e-3, weight_decay=1e-4, momentum=0.95, ns_steps=5)\noptimizer.zero_grad(set_to_none=True)\nloss.backward()\noptimizer.step()\n# Return the same single optimizer from CandidateAdapter.build_optimizer.\n# A disabled-Muon baseline must use AdamW(model.parameters()), not only the remainder group.",
         "example_code_source": "pytorch.2_12.optim_muon.hybrid_adamw.001",
         "api_symbols": [
           "torch.optim.Muon",
           "torch.optim.AdamW"
         ],
-        "usage": "Recommended optimizer plan for matmul-heavy candidates: instantiate the hybrid Muon+AdamW split exactly as the example shows, step both optimizers each iteration, and tune Muon lr/momentum/ns_steps separately from the AdamW lr/weight_decay.",
+        "usage": "Use the tested single-Optimizer FP32 helper consistently in preflight and training. Preserve scheduler safe points, full checkpoint state and early stopping. Log actual optimizer choice and validate complete parameter coverage; do not silently disable Muon after requesting it.",
         "default_recommendation_scope": "matmul_heavy_training_candidate",
         "limitations": "software training optimizer; requires a PyTorch build that exposes torch.optim.Muon; no hardware-specific acceleration is required; use only on selected 2D hidden weights and keep AdamW for embeddings/bias/norm/head/non-2D params; benchmark against tuned AdamW; not an inference feature",
         "source_urls": [
@@ -6855,7 +6855,8 @@
         "recommended_patterns": [
           "hybrid Muon+AdamW for matmul-heavy training with a tuned AdamW baseline",
           "split params by dimensionality/name: Muon for hidden 2D matrices, AdamW for embeddings, heads, bias, norm, and non-2D params",
-          "tune Muon lr/momentum/ns_steps separately from AdamW lr/weight_decay"
+          "starting lr=1e-3 weight_decay=1e-4 with match_rms_adamw scaling; momentum=0.95 nesterov=True ns_steps=5 eps=1e-7; tune per task",
+          "single MuonAdamW optimizer shared by adapter and training; FP32 orthogonalization; exactly-once trainable parameter coverage"
         ],
         "avoid_patterns": [
           "no Muon on embedding/bias/norm/head/non-2D params and no comparison against undertuned AdamW",

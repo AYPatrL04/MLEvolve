@@ -217,9 +217,16 @@ def generate_stage_patch(
         issues,
         cuda_docs_evidence=cuda_docs_evidence,
     )
-    for _ in range(retries):
+    for attempt in range(retries):
         try:
-            patch = _normalize_patch_response(generator(agent, prompt))
+            retry_prompt = prompt
+            if attempt:
+                retry_prompt += (
+                    "\nPrevious repair was NOT applied: " + last_error[:2000]
+                    + "\nUse the unchanged original code above. Return only complete SEARCH/REPLACE "
+                    "blocks, without commentary; ensure the resulting full file parses as Python."
+                )
+            patch = _normalize_patch_response(generator(agent, retry_prompt))
             blocks = list(_PATCH_PATTERN.finditer(patch))
             if not blocks:
                 last_error = "malformed SEARCH/REPLACE response"

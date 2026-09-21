@@ -17,6 +17,11 @@ TRAINING_DIAGNOSTICS_INSTRUCTION = (
     "Call diagnostics.after_update() once after each optimizer update ATTEMPT, after scaler.step "
     "and scaler.update (or optimizer.step); never after accumulation microbatches. "
     "The helper observes real optimizer steps, including skips, and actual autocast dtype. "
+    "Every trainable parameter must belong to the optimizer exactly once. For Muon use "
+    "utils.muon_optimizer.MuonAdamW(model, hidden_names=[explicit hidden weight names]); "
+    "return this SAME single optimizer type in the adapter and actual training, not a list. "
+    "Keep embeddings/output heads/bias/norm on AdamW. If Muon is disabled, construct AdamW "
+    "over ALL trainable parameters, including the hidden matrices. "
     "Call diagnostics.report(epoch=one_based_epoch) once per epoch; keep the normal epoch metric line. "
     "Save diagnostics.state_dict() with the training checkpoint and restore it using "
     "diagnostics.load_state_dict(...). Preserve these calls during merges/repairs. "
@@ -35,6 +40,9 @@ class TrainingDiagnostics:
 
     def __init__(self, model, optimizer, *, scaler=None, settings=None):
         import torch
+        from utils.muon_optimizer import validate_optimizer_coverage
+
+        validate_optimizer_coverage(model, optimizer)
 
         self.model = model
         self.optimizer = optimizer
