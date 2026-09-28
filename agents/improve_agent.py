@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from llm import compile_prompt_to_md
+from hwkg.injection import hardware_guidance
 from engine.search_node import SearchNode
 from utils.response import wrap_code
 from agents.triggers import get_patience_counter, register_node
@@ -218,6 +219,9 @@ def run(agent, parent_node: SearchNode) -> SearchNode:
     internet_clarification = get_internet_clarification(getattr(agent.cfg, "pretrain_model_dir", ""))
     prompt["Instructions"]["Implementation guideline"].extend(internet_clarification)
     prompt["Instructions"] |= ROBUSTNESS_GENERALIZATION_STRATEGY
+    guidance = hardware_guidance("improve")
+    if guidance:
+        prompt["Instructions"]["Hardware knowledge (advisory)"] = [guidance]
 
     output = wrap_code(parent_node.term_out, lang="")
 
