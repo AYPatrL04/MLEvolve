@@ -219,7 +219,9 @@ def run(agent, parent_node: SearchNode) -> SearchNode:
     internet_clarification = get_internet_clarification(getattr(agent.cfg, "pretrain_model_dir", ""))
     prompt["Instructions"]["Implementation guideline"].extend(internet_clarification)
     prompt["Instructions"] |= ROBUSTNESS_GENERALIZATION_STRATEGY
-    guidance = hardware_guidance("improve")
+    guidance = hardware_guidance(
+        "improve", task_description=agent.task_desc, candidate_code=parent_node.code
+    )
     if guidance:
         prompt["Instructions"]["Hardware knowledge (advisory)"] = [guidance]
 

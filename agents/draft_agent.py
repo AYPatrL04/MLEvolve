@@ -154,7 +154,7 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode:
     prompt["Instructions"]["Implementation guideline"].extend(coldstart_guideline)
     prompt["Instructions"] |= get_prompt_environment()
     prompt["Instructions"] |= ROBUSTNESS_GENERALIZATION_STRATEGY
-    guidance = hardware_guidance("draft")
+    guidance = hardware_guidance("draft", task_description=agent.task_desc)
     if guidance:
         prompt["Instructions"]["Hardware knowledge (advisory)"] = [guidance]
 
