@@ -1,5 +1,6 @@
 """Scoped syntax observations, never a claim that a path actually executed."""
 import ast
+from .source_bindings import declarative_bindings
 
 
 def call_name(node):
@@ -36,14 +37,53 @@ def precision_scope(code):
     parsed = scopes(code)
     if parsed is None:
         return {'training': None, 'evaluation': None, 'training_scaler': None, 'syntax_only': True}
-    _, _, direct, _, train, evaluation = parsed
+    tree, _, direct, _, train, evaluation = parsed
+    bindings = declarative_bindings(tree)
+    torch_names = {'torch'}
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            torch_names.update(item.asname or 'torch' for item in n.names if item.name == 'torch')
+    # A local/module shadow may refer to a different object. Stay unknown.
+    shadowed = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and isinstance(n.ctx, (ast.Store, ast.Del))}
+    shadowed.update(n.arg for n in ast.walk(tree) if isinstance(n, ast.arg))
+    shadowed.update(n.name for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)))
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Import):
+            shadowed.update(item.asname or item.name.split('.')[0] for item in n.names if item.name != 'torch')
+        elif isinstance(n, ast.ImportFrom):
+            shadowed.update(item.asname or item.name for item in n.names)
+    torch_names -= shadowed
+    def dtype_value(node):
+        seen = set()
+        while isinstance(node, ast.Name) and node.id in bindings:
+            if node.id in seen: return None
+            seen.add(node.id); node = bindings[node.id]
+        if (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)
+                and node.value.id in torch_names and node.attr in ('float16', 'bfloat16', 'float32')):
+            return node.attr
+        return None
     def signature(keys):
         rows = []
         for key in sorted(keys):
             for n in direct[key]:
                 if isinstance(n, ast.Call) and call_name(n) in ('autocast', 'half', 'bfloat16', 'GradScaler', 'set_autocast_dtype'):
                     # GradScaler is a training update mechanism, not eval precision.
-                    if call_name(n) != 'GradScaler': rows.append(ast.dump(n, include_attributes=False))
+                    if call_name(n) != 'GradScaler':
+                        rows.append(ast.dump(n, include_attributes=False))
+                        # The call AST can stay identical while a shared module
+                        # dtype/enabled alias changes both train and evaluation.
+                        values = [k.value for k in n.keywords if k.arg in ('dtype', 'enabled')]
+                        if call_name(n) == 'set_autocast_dtype': values.extend(n.args)
+                        pending = {x.id for value in values for x in ast.walk(value) if isinstance(x, ast.Name)}
+                        seen = set()
+                        while pending:
+                            name = pending.pop()
+                            if name in seen: continue
+                            seen.add(name)
+                            if name in bindings:
+                                value = bindings[name]
+                                rows.append('precision_binding:' + name + ':' + ast.dump(value, include_attributes=False))
+                                pending.update(x.id for x in ast.walk(value) if isinstance(x, ast.Name))
         return sorted(rows)
     # Scalers are normally constructed outside train_epoch; observe construction
     # and usage separately. Disabled/unused constructors are not active evidence.
@@ -63,7 +103,9 @@ def precision_scope(code):
         for n in direct[k]:
             if isinstance(n, ast.Call) and call_name(n) == 'autocast':
                 for kw in n.keywords:
-                    if kw.arg == 'dtype' and isinstance(kw.value, ast.Attribute): dtype.add(kw.value.attr)
+                    if kw.arg == 'dtype':
+                        value = dtype_value(kw.value)
+                        if value: dtype.add(value)
     return {'training': signature(train), 'evaluation': signature(evaluation),
             'training_dtypes': sorted(dtype), 'training_scaler': sorted(active),
             'bf16_with_active_scaler': dtype == {'bfloat16'} and bool(active), 'syntax_only': True}

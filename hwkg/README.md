@@ -419,3 +419,16 @@ reason and suppress that projection. Recognized syntax is still uncertified;
 no window resets, successful kernels or runtime dataflow are proven. This does
 not change upstream candidates, scoring, execution, parsing or API requests.
 No new calibration or task-quality/performance gain is established by this fix.
+
+## v8.11 scoped precision alias audit
+
+Actual v8.8 native source uses AMP_DTYPE for both train and evaluation. Changing
+its module assignment previously left both call ASTs unchanged and escaped the
+precision audit. Unambiguous declarative dtype/enabled bindings now join each
+reachable scope's signature. Torch dtype aliases resolve only under the narrow
+source syntax screen; dynamic/rebound/shadowed values remain unknown. Common
+bindings moved into a pure component helper, without changing integer semantics.
+Evaluation precision drift excludes time/quality comparison eligibility and
+marks feedback confounded for any hardware intervention. No native node/reward,
+score/search/execute/API or generated source is changed. This is not a semantic
+or runtime equivalence proof, and does not claim generation/performance gains.

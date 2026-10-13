@@ -55,11 +55,12 @@ def observe(task, code):
             if hashlib.sha256(node.code.encode()).hexdigest() != row['code_sha256']: continue
             changes = recipe_changes(row['before'], node.code)
             reasons = []
-            if 'precision' in row['ids'] and changes['evaluation_precision_changed']: reasons.append('evaluation precision changed outside hardware trial')
+            if changes['evaluation_precision_changed']: reasons.append('evaluation precision changed outside hardware trial')
             if 'precision' in row['ids'] and changes['bf16_with_active_scaler']: reasons.append('BF16 trial retained active GradScaler')
             if getattr(node, 'is_buggy', None) is True: reasons.append('native candidate failed; attribution unknown')
-            same_recipe = changes['recipe_syntax_changed'] is False
-            confounded = changes['recipe_syntax_changed'] is not False
+            same_recipe = (changes['recipe_syntax_changed'] is False
+                           and changes['evaluation_precision_changed'] is False)
+            confounded = not same_recipe
             before_time, after_time = row['before_time'], getattr(node, 'exec_time', None)
             if same_recipe and number(before_time, True) and number(after_time, True) and after_time > 1.05 * before_time:
                 reasons.append('native candidate wall regressed over 5%; confounded observation')

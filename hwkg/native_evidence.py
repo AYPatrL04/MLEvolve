@@ -9,6 +9,7 @@ import json
 import math
 import re
 from .source_analysis import precision_scope, training_scope_uncertain
+from .source_bindings import declarative_constants
 
 
 def number(value, positive=False):
@@ -16,60 +17,6 @@ def number(value, positive=False):
         return (type(value) in (int, float) and math.isfinite(value)
                 and (value > 0 if positive else value >= 0))
     except OverflowError: return False
-
-
-def declarative_constants(tree):
-    """Read unambiguous module literals/aliases, never evaluate candidate code.
-
-    Tuple bindings matter for native batch-counter checks. Rebinding, local
-    shadowing, conditional assignments and executable values remain unknown.
-    This is a syntax screen, not proof of runtime values or control flow.
-    """
-    writes = {}
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
-            writes[node.id] = writes.get(node.id, 0) + 1
-        elif isinstance(node, ast.arg):
-            writes[node.arg] = writes.get(node.arg, 0) + 1
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            writes[node.name] = writes.get(node.name, 0) + 1
-        elif isinstance(node, (ast.Import, ast.ImportFrom)):
-            for item in node.names:
-                name = item.asname or item.name.split('.')[0]
-                writes[name] = writes.get(name, 0) + 1
-        elif isinstance(node, (ast.ExceptHandler, ast.MatchAs, ast.MatchStar)) and node.name:
-            writes[node.name] = writes.get(node.name, 0) + 1
-        elif isinstance(node, ast.MatchMapping) and node.rest:
-            writes[node.rest] = writes.get(node.rest, 0) + 1
-    bindings = {}
-    def bind(target, value):
-        if isinstance(target, ast.Name):
-            if writes.get(target.id) == 1: bindings[target.id] = value
-        elif (isinstance(target, (ast.Tuple, ast.List))
-              and isinstance(value, (ast.Tuple, ast.List))
-              and len(target.elts) == len(value.elts)):
-            for left, right in zip(target.elts, value.elts): bind(left, right)
-    for node in tree.body:
-        if isinstance(node, ast.Assign):
-            for target in node.targets: bind(target, node.value)
-        elif isinstance(node, ast.AnnAssign) and node.value is not None:
-            bind(node.target, node.value)
-    values = {}
-    def literal(node, pending):
-        if isinstance(node, ast.Name):
-            if node.id in values: return values[node.id]
-            if node.id not in bindings or node.id in pending: raise ValueError('unresolved alias')
-            return literal(bindings[node.id], pending | {node.id})
-        if isinstance(node, ast.Tuple):
-            items = [literal(item, pending) for item in node.elts]
-            return tuple(items)
-        value = ast.literal_eval(node)
-        if value is None or type(value) in (bool, int, float, str): return value
-        raise ValueError('not a scalar setting')
-    for name, node in bindings.items():
-        try: values[name] = literal(node, {name})
-        except (ValueError, TypeError, RecursionError): pass
-    return values
 
 
 def source_spec(code):
