@@ -9,6 +9,7 @@ import os
 import threading
 from .native_evidence import number, recipe_changes, source_spec
 from .source_analysis import precision_scope
+from .window_scope import training_window_scope
 
 _lock = threading.Lock()
 _pending = {}
@@ -60,12 +61,21 @@ def observe(task, code):
             if getattr(node, 'is_buggy', None) is True: reasons.append('native candidate failed; attribution unknown')
             same_recipe = (changes['recipe_syntax_changed'] is False
                            and changes['evaluation_precision_changed'] is False)
-            confounded = not same_recipe
+            window_scopes = {'before': training_window_scope(row['before']),
+                             'after': training_window_scope(node.code)}
+            work_exclusions = [f'{side}: standalone gradient timing window before epoch iterator reset'
+                               for side, scope in window_scopes.items() if scope['status'] ==
+                               'standalone_gradient_window_before_epoch_iterator_reset_source_screen']
+            # A selected recipe signature does not cover standalone gradient
+            # passes. Exclude their time/quality comparison without blaming a
+            # hardware profile. Failure/precision warnings remain independent.
+            comparable = same_recipe and not work_exclusions
+            confounded = not comparable
             before_time, after_time = row['before_time'], getattr(node, 'exec_time', None)
-            if same_recipe and number(before_time, True) and number(after_time, True) and after_time > 1.05 * before_time:
+            if comparable and number(before_time, True) and number(after_time, True) and after_time > 1.05 * before_time:
                 reasons.append('native candidate wall regressed over 5%; confounded observation')
             before_metric, direction = row['before_metric']; after_metric, after_direction = metric(node)
-            if same_recipe and number(before_metric) and number(after_metric) and direction is after_direction and type(direction) is bool:
+            if comparable and number(before_metric) and number(after_metric) and direction is after_direction and type(direction) is bool:
                 if (after_metric < before_metric if direction else after_metric > before_metric):
                     reasons.append('native public metric regressed; confounded observation')
             target = row['target']
@@ -79,7 +89,8 @@ def observe(task, code):
             events.append({'event':'hardware_trial_observed','candidate_id':getattr(node,'id',None),
                 'code_sha256':row['code_sha256'],'target_profile':target,'suppression_reasons':reasons,
                 'recipe_scope':changes,'native_before_seconds':before_time,'native_after_seconds':after_time,
-                'recipe_confounded':confounded,'time_or_quality_comparison_eligible_source_screen':same_recipe,
+                'training_window_scope_source_screen':window_scopes,'work_scope_comparison_exclusions':work_exclusions,
+                'recipe_confounded':confounded,'time_or_quality_comparison_eligible_source_screen':comparable,
                 'causal_gain_verified':False,'node_modified':False})
         blocked = sorted(_blocked.get((run, recipe_key(code)), set()))
     return blocked, events

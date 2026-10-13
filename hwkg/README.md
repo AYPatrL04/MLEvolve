@@ -445,3 +445,13 @@ projection. Unknown forms stay unknown; embedded syntax never certifies useful
 throughput, full dataset coverage, actual epoch count, or the task budget.
 Native source/outputs/scoring/search/API/executor remain untouched. This only
 protects component evidence; no generation, score or speedup gain is established.
+
+## v8.13 feedback work-scope eligibility
+
+A selected recipe signature can miss changes to a separate gradient timing
+loop. Trial-memory now audits before/after window scopes, excluding affirmative
+standalone-gradient/epoch-reset syntax from time/quality comparison. This scope
+exclusion alone never blocks a hardware profile: extra or unmatched work cannot
+be blamed on a dtype/layout intervention. Independent candidate failures and
+precision warnings still apply. No native fields/rewards/scoring are changed.
+Unknown/embedded scope remains syntax only, with no complete work or budget proof.
