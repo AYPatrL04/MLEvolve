@@ -10,7 +10,7 @@ from hwkg.injection import hardware_guidance
 
 
 GRAPH = Path(__file__).resolve().parents[1] / "hwkg" / "graph.json"
-SHA256 = "0d422cfe81e2531980204e71b49fa9e5ffed9c2606a9a5569e7a43ebfc0078b4"
+SHA256 = "3842eff0a7742c42b3777a01a6f58cfbec42b37c442d9bb9f5b080321ff7ed62"
 A10 = SimpleNamespace(name="NVIDIA A10", major=8, minor=6, total_memory=23 * 1024**3)
 
 

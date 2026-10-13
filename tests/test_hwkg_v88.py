@@ -46,7 +46,7 @@ def test_parentless_cache_distinguishes_different_provider_identity_context(enab
         provider(full,CFG)
         provider('Original output format',CFG)
     draft(NS(task_desc=TASK))
-    assert 'HWKG v8.13' in sent[0] and sent[1]==full and sent[2]==sent[0]
+    assert 'HWKG v8.14' in sent[0] and sent[1]==full and sent[2]==sent[0]
     rows=[json.loads(l) for l in (enabled/'prompt-audit.jsonl').read_text().splitlines()]
     assert len(rows)==2 and [r['chars']>0 for r in rows]==[True,False]
 
@@ -73,4 +73,4 @@ def test_own_card_not_treated_as_native_identity_on_reused_prompt(enabled):
     @hardware_context('draft')
     def draft(agent):provider('Task and original format',CFG);provider(sent[0],CFG)
     draft(NS(task_desc=TASK))
-    assert sent[0]==sent[1] and sent[1].count('HWKG v8.13')==1
+    assert sent[0]==sent[1] and sent[1].count('HWKG v8.14')==1

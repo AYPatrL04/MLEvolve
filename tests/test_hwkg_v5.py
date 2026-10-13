@@ -19,7 +19,7 @@ CFG=NS(agent=NS(code=NS(model='deepseek-flash')))
 @pytest.fixture
 def enabled(tmp_path,monkeypatch):
     monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_PATH',str(ROOT/'hwkg/graph.json'))
-    monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_SHA256','0d422cfe81e2531980204e71b49fa9e5ffed9c2606a9a5569e7a43ebfc0078b4')
+    monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_SHA256','3842eff0a7742c42b3777a01a6f58cfbec42b37c442d9bb9f5b080321ff7ed62')
     monkeypatch.setenv('MLEVOLVE_HWKG_HARDWARE_ID','nvidia.blackwell.geforce_rtx_5080.spec')
     monkeypatch.setenv('MLEVOLVE_HWKG_EVIDENCE_POLICY','v5')
     monkeypatch.setenv('MLEVOLVE_HWKG_AUDIT_DIR',str(tmp_path))

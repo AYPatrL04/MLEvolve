@@ -106,7 +106,7 @@ def test_invalid_counters_or_multiple_optimizers_leave_throughput_unknown():
 
 def test_default_v7_draft_retains_verified_host_precision_provenance(tmp_path, monkeypatch):
     monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_PATH', str(__import__('pathlib').Path(__file__).resolve().parents[1] / 'hwkg/graph.json'))
-    monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_SHA256', '0d422cfe81e2531980204e71b49fa9e5ffed9c2606a9a5569e7a43ebfc0078b4')
+    monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_SHA256', '3842eff0a7742c42b3777a01a6f58cfbec42b37c442d9bb9f5b080321ff7ed62')
     monkeypatch.setenv('MLEVOLVE_HWKG_HARDWARE_ID', IDS['5080'].removeprefix('hw:'))
     monkeypatch.setenv('MLEVOLVE_HWKG_EVIDENCE_POLICY', 'v7')
     monkeypatch.setenv('MLEVOLVE_HWKG_AUDIT_DIR', str(tmp_path))

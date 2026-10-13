@@ -36,7 +36,7 @@ def build(host='5080',stage='improve',task='tweet text classification',code='imp
 @pytest.fixture
 def enabled(tmp_path,monkeypatch):
     monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_PATH',str(ROOT/'hwkg/graph.json'))
-    monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_SHA256','0d422cfe81e2531980204e71b49fa9e5ffed9c2606a9a5569e7a43ebfc0078b4')
+    monkeypatch.setenv('MLEVOLVE_HWKG_GRAPH_SHA256','3842eff0a7742c42b3777a01a6f58cfbec42b37c442d9bb9f5b080321ff7ed62')
     monkeypatch.setenv('MLEVOLVE_HWKG_HARDWARE_ID',IDS['5080'].removeprefix('hw:'))
     monkeypatch.setenv('MLEVOLVE_HWKG_AUDIT_DIR',str(tmp_path))
     monkeypatch.setenv('MLEVOLVE_HWKG_EVIDENCE_POLICY','v6')

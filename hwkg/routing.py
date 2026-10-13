@@ -87,6 +87,11 @@ def hardware_context(stage):
                             intervention_observations={k:{'source_configured':bool(configured.get(
                                 'channels_last' if k=='vision_layout' else 'bf16')),
                                 'runtime_verified':False} for k in context.intervention_ids if k in ('precision','vision_layout')})
+                        if 'optimizer_fused_adamw' in context.intervention_ids:
+                            from .native_evidence import source_spec
+                            observations['optimizer_implementation_observation'] = {
+                                'fused_source_option':(source_spec(result.code).get('optimizer_options') or {}).get('fused'),
+                                'runtime_verified':False, 'gain_verified':False}
                         from .trial_memory import remember
                         remember(context.task, parent, result, context.intervention_ids, context.target_profile)
                     _audit({"event": "candidate_return", "trace_id": context.trace_id,
@@ -217,6 +222,8 @@ def with_hardware_prompt(func):
         if _feedback_policy():
             import re
             context.intervention_ids.update(re.findall(r'^\[([^]]+)\]',context.advice,re.M))
+            if '[optimizer_fused_adamw]' in context.advice:
+                context.target_profile = 'optimizer_fused_adamw'
             if '[precision]' in context.advice:
                 dtype='fp16' if re.search(r'\bFP16\b|torch\.float16',context.advice) else 'bf16'
                 context.target_profile=dtype+'_'+('channels_last' if 'channels_last' in context.parent_code else 'contiguous')

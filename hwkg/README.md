@@ -455,3 +455,15 @@ exclusion alone never blocks a hardware profile: extra or unmatched work cannot
 be blamed on a dtype/layout intervention. Independent candidate failures and
 precision warnings still apply. No native fields/rewards/scoring are changed.
 Unknown/embedded scope remains syntax only, with no complete work or budget proof.
+
+## v8.14 source-scoped fused AdamW trial
+
+The RTX5080 graph contains a new measured optimizer implementation entry, bound
+by checksum to R50V2/BF16/b64/128px/AdamW.0003wd.05/CE.1 and exact runtime flags.
+A successful matched parent can receive one compact fused=True suggestion when
+its conditional six-epoch cost passes the declared reserve/repeat-spread screen.
+FP16 and unmatched/unknown workloads are excluded. Do not infer a generic fused
+speedup or task-quality gain. Primary long-window signal is thin,earlier short
+range conflicted,and LLM/full-pipeline costs are unknown; source-only syntax and
+normal microtimings cannot certify actual candidate adoption or useful learning.
+All original request/output/search/score/execution behavior stays unchanged.

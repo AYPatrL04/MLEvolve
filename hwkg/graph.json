@@ -7324,6 +7324,22 @@
         "name": "fp64",
         "category": "precision"
       }
+    },
+    {
+      "label": "Feature",
+      "id": "feat:optimizer_fused_adamw",
+      "properties": {
+        "feature_id": "optimizer_fused_adamw",
+        "name": "scoped fused AdamW trial",
+        "category": "optimizer_implementation",
+        "description": "Measured RTX5080 Torch2.14.1/cu130 R50V2 BF16/b64/128px/AdamW.0003wd.05/CE.1 primitive. Long-window steps ~11%faster; earlier short spread conflicted. Quality/fullpipeline unknown. FP16 scale skip observed; never generalize to FP16 or unmatched recipes.",
+        "api_symbols": [
+          "torch.optim.AdamW"
+        ],
+        "calibration_file": "rtx5080-v814-r50-fused.json",
+        "calibration_sha256": "cf1d3ef1ab1b973036ae2ad304d965f4e84cba20a64ab088f9d9557e6e5ad875",
+        "prompt_visibility": "recommendation"
+      }
     }
   ],
   "edges": [
@@ -25752,6 +25768,22 @@
         "training_backend": "framework_fp64",
         "optimization_modes": [],
         "limitations": "Use only when the workload requires double-precision numerical behavior."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5080.spec",
+      "to": "feat:optimizer_fused_adamw",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "recommendation_scope": "exact measured BF16 R50 optimizer primitive only; runtime microtest not task quality",
+        "prompt_visibility": "recommendation",
+        "optimization_modes": [
+          "normal",
+          "aggressive"
+        ],
+        "limitations": "Only matching host/runtime/recipe and positive conditional cost. FP16 excluded, no generic fused speedup. Source syntax does not establish dataflow/runtime gain."
       }
     }
   ]

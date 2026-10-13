@@ -61,6 +61,11 @@ def observe(task, code):
             if getattr(node, 'is_buggy', None) is True: reasons.append('native candidate failed; attribution unknown')
             same_recipe = (changes['recipe_syntax_changed'] is False
                            and changes['evaluation_precision_changed'] is False)
+            optimizer_flag_only = None
+            if row['ids'] == {'optimizer_fused_adamw'} and changes['evaluation_precision_changed'] is False:
+                from .optimizer_policy import only_fused_flag_changed
+                optimizer_flag_only = only_fused_flag_changed(row['before'], node.code)
+                same_recipe = same_recipe or optimizer_flag_only
             window_scopes = {'before': training_window_scope(row['before']),
                              'after': training_window_scope(node.code)}
             work_exclusions = [f'{side}: standalone gradient timing window before epoch iterator reset'
@@ -90,6 +95,7 @@ def observe(task, code):
                 'code_sha256':row['code_sha256'],'target_profile':target,'suppression_reasons':reasons,
                 'recipe_scope':changes,'native_before_seconds':before_time,'native_after_seconds':after_time,
                 'training_window_scope_source_screen':window_scopes,'work_scope_comparison_exclusions':work_exclusions,
+                'optimizer_flag_only_change_source_screen':optimizer_flag_only,
                 'recipe_confounded':confounded,'time_or_quality_comparison_eligible_source_screen':comparable,
                 'causal_gain_verified':False,'node_modified':False})
         blocked = sorted(_blocked.get((run, recipe_key(code)), set()))
