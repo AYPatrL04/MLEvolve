@@ -3,6 +3,7 @@ from . import gemini as _gemini
 from . import openai as _openai
 from .gemini import FunctionSpec, OutputType, PromptType, compile_prompt_to_md
 from config import Config
+from hwkg.routing import with_hardware_prompt
 logger = logging.getLogger("MLEvolve")
 
 
@@ -81,6 +82,7 @@ def query(
     return output
 
 
+@with_hardware_prompt
 def generate(
     prompt,
     cfg,

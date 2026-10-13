@@ -10,6 +10,8 @@ Main entry: run_planner()
 
 from __future__ import annotations
 
+from hwkg.routing import hardware_phase
+
 import re
 import json
 import logging
@@ -268,6 +270,7 @@ def build_planner_suffix(
 
 # ============ Generic planner entry ============
 
+@hardware_phase("planner")
 def run_planner(
     agent_instance,
     prompt_base: Dict[str, Any],

@@ -11,6 +11,8 @@ Main entry: stepwise_plan_and_code_query()
 
 from __future__ import annotations
 
+from hwkg.routing import hardware_phase
+
 import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Any
@@ -42,6 +44,7 @@ class StepAgent:
     description: str
     guidelines: List[str]
 
+    @hardware_phase("coder")
     def generate(
         self,
         task_desc: str,
@@ -262,6 +265,7 @@ class StepAgent:
 
 @dataclass
 class MetaAgent:
+    @hardware_phase("merge")
     def merge(
         self,
         task_desc: str,

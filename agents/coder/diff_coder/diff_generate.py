@@ -13,6 +13,8 @@ Each agent provides only:
 
 from __future__ import annotations
 
+from hwkg.routing import hardware_phase
+
 import logging
 from typing import Dict, Any, Tuple, Union
 
@@ -25,6 +27,7 @@ logger = logging.getLogger("MLEvolve")
 
 # ============ Public API ============
 
+@hardware_phase("coder")
 def diff_generate_and_apply(
     agent_instance,
     planning_result: Dict[str, Any],

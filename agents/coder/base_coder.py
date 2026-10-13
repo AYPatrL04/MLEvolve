@@ -7,6 +7,8 @@ when diff or stepwise generation is not enabled or fails.
 
 from __future__ import annotations
 
+from hwkg.routing import hardware_phase
+
 import logging
 from typing import Tuple
 
@@ -27,6 +29,7 @@ RESPONSE_FORMAT = {
 }
 
 
+@hardware_phase("plan_and_code")
 def plan_and_code_query(
     agent_instance,
     prompt,

@@ -20,6 +20,8 @@ from agents.coder import plan_and_code_query
 from agents.coder.diff_coder import diff_generate_and_apply
 from agents.triggers import register_node
 
+from hwkg.routing import hardware_context
+
 logger = logging.getLogger("MLEvolve")
 
 
@@ -40,6 +42,7 @@ def _get_branch_trajectory_for_evolution(parent_node: SearchNode) -> str:
     return f"Your Past Evolution trajectory:\n{trajectory}"
 
 
+@hardware_context("evolution")
 def run(agent, parent_node: SearchNode) -> SearchNode:
     branch_trajectory = _get_branch_trajectory_for_evolution(parent_node)
 

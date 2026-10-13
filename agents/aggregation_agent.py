@@ -9,6 +9,7 @@ from agents.coder import plan_and_code_query
 
 from engine.conditions import should_trigger_branch_fusion  # noqa: F401
 from agents.triggers import register_node
+from hwkg.routing import hardware_context
 
 logger = logging.getLogger("MLEvolve")
 
@@ -50,6 +51,7 @@ def _collect_branch_representatives(agent) -> List[SearchNode]:
     return representatives
 
 
+@hardware_context("aggregation")
 def run(
     agent,
     mode: str = "node",

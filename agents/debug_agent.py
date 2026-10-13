@@ -15,6 +15,8 @@ from agents.coder.diff_coder import SearchReplacePatcher, DIFF_SYS_FORMAT
 from agents.planner import build_chat_prompt_for_model
 from agents.triggers import register_node
 
+from hwkg.routing import hardware_context
+
 logger = logging.getLogger("MLEvolve")
 
 
@@ -56,6 +58,7 @@ def _format_debug_memory_guidance(agent, similar_fixes: List[Tuple]) -> str:
     return "\n".join(guidance_parts)
 
 
+@hardware_context("debug")
 def run(agent, parent_node: SearchNode) -> SearchNode:
     debugging_standards = (
         "🔧 Debug SYSTEMATICALLY: Read error → Identify root cause → Apply minimal, targeted fix.\n\n"

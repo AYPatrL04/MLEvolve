@@ -5,7 +5,6 @@ import time
 from typing import Any
 
 from llm import compile_prompt_to_md
-from hwkg.injection import hardware_guidance
 from engine.search_node import SearchNode
 from utils.response import wrap_code
 from agents.triggers import get_patience_counter, register_node
@@ -20,9 +19,12 @@ from agents.planner import run_planner, generate_initial_plan, refine_plan_to_js
 from agents.coder import plan_and_code_query
 from agents.coder.diff_coder import diff_generate_and_apply
 
+from hwkg.routing import hardware_context
+
 logger = logging.getLogger("MLEvolve")
 
 
+@hardware_context("improve")
 def run(agent, parent_node: SearchNode) -> SearchNode:
     improvement_standards = (
         "🎯 As a Grandmaster, make MEANINGFUL improvements that boost leaderboard performance.\n\n"
@@ -219,12 +221,6 @@ def run(agent, parent_node: SearchNode) -> SearchNode:
     internet_clarification = get_internet_clarification(getattr(agent.cfg, "pretrain_model_dir", ""))
     prompt["Instructions"]["Implementation guideline"].extend(internet_clarification)
     prompt["Instructions"] |= ROBUSTNESS_GENERALIZATION_STRATEGY
-    guidance = hardware_guidance(
-        "improve", task_description=agent.task_desc, candidate_code=parent_node.code
-    )
-    if guidance:
-        prompt["Instructions"]["Hardware knowledge (advisory)"] = [guidance]
-
     output = wrap_code(parent_node.term_out, lang="")
 
     if not agent.acfg.use_diff_mode:

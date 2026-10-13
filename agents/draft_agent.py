@@ -17,11 +17,13 @@ from agents.prompts import (
     get_impl_guideline_from_agent,
 )
 from agents.planner import build_chat_prompt_for_model
-from hwkg.injection import hardware_guidance
+
+from hwkg.routing import hardware_context
 
 logger = logging.getLogger("MLEvolve")
 
 
+@hardware_context("draft")
 def run(agent, init_solution_path: Optional[str] = None) -> SearchNode:
     """Generate initial draft. If init_solution_path is provided and readable, use file content directly."""
     if init_solution_path:
@@ -154,10 +156,6 @@ def run(agent, init_solution_path: Optional[str] = None) -> SearchNode:
     prompt["Instructions"]["Implementation guideline"].extend(coldstart_guideline)
     prompt["Instructions"] |= get_prompt_environment()
     prompt["Instructions"] |= ROBUSTNESS_GENERALIZATION_STRATEGY
-    guidance = hardware_guidance("draft", task_description=agent.task_desc)
-    if guidance:
-        prompt["Instructions"]["Hardware knowledge (advisory)"] = [guidance]
-
     instructions = f"\n# Instructions\n\n"
     instructions += compile_prompt_to_md(prompt["Instructions"], 2)
 

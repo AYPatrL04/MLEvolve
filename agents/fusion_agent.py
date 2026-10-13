@@ -14,6 +14,8 @@ from agents.coder.diff_coder import diff_generate_and_apply
 from engine import solution_manager
 from agents.triggers import register_node
 
+from hwkg.routing import hardware_context
+
 logger = logging.getLogger("MLEvolve")
 
 
@@ -308,6 +310,7 @@ def _fuse_with_multiple_references(
     return fused_node
 
 
+@hardware_context("fusion")
 def run(agent, parent_node: SearchNode) -> SearchNode:
     candidates = _get_fusion_candidates(agent, parent_node)
 

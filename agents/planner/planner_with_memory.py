@@ -10,6 +10,8 @@ Used by improve_agent when global memory is available.
 
 from __future__ import annotations
 
+from hwkg.routing import hardware_phase
+
 import logging
 from typing import Dict, Any
 
@@ -30,6 +32,7 @@ logger = logging.getLogger("MLEvolve")
 
 # ============ Stage 1: Generate initial text plan ============
 
+@hardware_phase("planner")
 def generate_initial_plan(
     agent_instance,
     prompt_base: Dict[str, Any],
@@ -107,6 +110,7 @@ def generate_initial_plan(
 
 # ============ Stage 2: Refine plan to JSON with memory ============
 
+@hardware_phase("planner")
 def refine_plan_to_json(
     agent_instance,
     initial_plan_text: str,
