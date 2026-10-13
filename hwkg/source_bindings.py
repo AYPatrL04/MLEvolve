@@ -55,4 +55,3 @@ def declarative_constants(tree):
         try: values[name] = literal(node, {name})
         except (ValueError, TypeError, RecursionError): pass
     return values
-
