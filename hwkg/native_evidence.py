@@ -10,6 +10,7 @@ import math
 import re
 from .source_analysis import precision_scope, training_scope_uncertain
 from .source_bindings import declarative_constants
+from .window_scope import training_window_scope
 
 
 def number(value, positive=False):
@@ -296,6 +297,10 @@ def native_feedback(code, text, device, *, parent_id=None, execution_succeeded=N
     if row.get('training_scope') not in (None, 'full_model'):
         result['reasons'].append('reported partial or mixed training')
     if skipped: result['reasons'].append('skipped updates reported')
+    timing_scope = training_window_scope(code)
+    result['window']['normal_training_source_screen'] = timing_scope
+    if timing_scope['status'] == 'standalone_gradient_window_before_epoch_iterator_reset_source_screen':
+        result['reasons'].append('native timing window is a standalone gradient pass before epoch iterator reset')
     if dtype in ('float16', 'torch.float16'):
         accounting = scaler_update_accounting(code)
         result['window']['successful_update_accounting'] = accounting

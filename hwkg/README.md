@@ -432,3 +432,16 @@ Evaluation precision drift excludes time/quality comparison eligibility and
 marks feedback confounded for any hardware intervention. No native node/reward,
 score/search/execute/API or generated source is changed. This is not a semantic
 or runtime equivalence proof, and does not claim generation/performance gains.
+
+## v8.12 normal-window source scope
+
+Native counter arithmetic alone can accept a separate timing gradient loop
+followed by epoch iterator reset. A narrow component AST screen now annotates
+embedded epoch windows, standalone gradient windows before epoch iterator reset,
+and unknown forms. It follows unique unshadowed direct backward helpers and
+source boundary/counter fields; no candidate execution or complete dataflow proof.
+The affirmative standalone pattern adds a reason blocking matched calibration
+projection. Unknown forms stay unknown; embedded syntax never certifies useful
+throughput, full dataset coverage, actual epoch count, or the task budget.
+Native source/outputs/scoring/search/API/executor remain untouched. This only
+protects component evidence; no generation, score or speedup gain is established.
