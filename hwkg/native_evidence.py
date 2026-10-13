@@ -18,6 +18,60 @@ def number(value, positive=False):
     except OverflowError: return False
 
 
+def declarative_constants(tree):
+    """Read unambiguous module literals/aliases, never evaluate candidate code.
+
+    Tuple bindings matter for native batch-counter checks. Rebinding, local
+    shadowing, conditional assignments and executable values remain unknown.
+    This is a syntax screen, not proof of runtime values or control flow.
+    """
+    writes = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
+            writes[node.id] = writes.get(node.id, 0) + 1
+        elif isinstance(node, ast.arg):
+            writes[node.arg] = writes.get(node.arg, 0) + 1
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            writes[node.name] = writes.get(node.name, 0) + 1
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            for item in node.names:
+                name = item.asname or item.name.split('.')[0]
+                writes[name] = writes.get(name, 0) + 1
+        elif isinstance(node, (ast.ExceptHandler, ast.MatchAs, ast.MatchStar)) and node.name:
+            writes[node.name] = writes.get(node.name, 0) + 1
+        elif isinstance(node, ast.MatchMapping) and node.rest:
+            writes[node.rest] = writes.get(node.rest, 0) + 1
+    bindings = {}
+    def bind(target, value):
+        if isinstance(target, ast.Name):
+            if writes.get(target.id) == 1: bindings[target.id] = value
+        elif (isinstance(target, (ast.Tuple, ast.List))
+              and isinstance(value, (ast.Tuple, ast.List))
+              and len(target.elts) == len(value.elts)):
+            for left, right in zip(target.elts, value.elts): bind(left, right)
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets: bind(target, node.value)
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            bind(node.target, node.value)
+    values = {}
+    def literal(node, pending):
+        if isinstance(node, ast.Name):
+            if node.id in values: return values[node.id]
+            if node.id not in bindings or node.id in pending: raise ValueError('unresolved alias')
+            return literal(bindings[node.id], pending | {node.id})
+        if isinstance(node, ast.Tuple):
+            items = [literal(item, pending) for item in node.elts]
+            return tuple(items)
+        value = ast.literal_eval(node)
+        if value is None or type(value) in (bool, int, float, str): return value
+        raise ValueError('not a scalar setting')
+    for name, node in bindings.items():
+        try: values[name] = literal(node, {name})
+        except (ValueError, TypeError, RecursionError): pass
+    return values
+
+
 def source_spec(code):
     result = {'model': None, 'optimizer': None, 'batch': None, 'input_shape': None,
               'epochs': None, 'forwards_per_update': None, 'training_scope': 'unknown',
@@ -27,13 +81,14 @@ def source_spec(code):
         tree = ast.parse(code)
     except SyntaxError:
         return result
-    constants = {}
-    for node in tree.body:
-        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant):
-            for target in node.targets:
-                if isinstance(target, ast.Name): constants[target.id] = node.value.value
+    constants = declarative_constants(tree)
+    bound = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)
+             and isinstance(n.ctx, (ast.Store, ast.Del))}
     def unique(names):
         values = {constants[n] for n in names if type(constants.get(n)) is int and constants[n] > 0}
+        # Two recognized settings with one unresolved value are ambiguous too.
+        if any(n in bound and (type(constants.get(n)) is not int or constants[n] <= 0) for n in names):
+            return None
         return next(iter(values)) if len(values) == 1 else None
     result['batch'] = unique(('BATCH', 'BATCH_SIZE', 'BS'))
     size = unique(('SIZE', 'IMAGE_SIZE', 'IMG_SIZE', 'RESOLUTION'))
@@ -174,6 +229,64 @@ def source_spec(code):
     return result
 
 
+def scaler_update_accounting(code):
+    """Conservatively screen explicit scale-delta counting, never certify work.
+
+    GradScaler.step can skip an optimizer update. A literal skipped_updates=0
+    is not a success counter. Even a recognized counter remains a self-report;
+    this function does not establish window resets or runtime execution.
+    """
+    try: parsed = ast.parse(code)
+    except SyntaxError: return 'unknown_source'
+    scope = precision_scope(code)
+    scalers = scope.get('training_scaler') or []
+    if not scalers:
+        aliases = {'GradScaler'}
+        for n in ast.walk(parsed):
+            if isinstance(n, ast.ImportFrom):
+                aliases.update(item.asname or item.name for item in n.names if item.name == 'GradScaler')
+        constructors = [n for n in ast.walk(parsed) if isinstance(n, ast.Call)
+                        and getattr(n.func, 'attr', getattr(n.func, 'id', '')) in aliases]
+        if any(not any(k.arg == 'enabled' and isinstance(k.value, ast.Constant)
+                       and k.value.value is False for k in n.keywords) for n in constructors):
+            return 'unknown_scaler_binding'
+        if not constructors and any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                                    and n.func.attr in ('get_scale', 'unscale_', 'scale') for n in ast.walk(parsed)):
+            return 'unknown_scaler_binding'
+        return 'no_active_scaler_source_screen'
+    # Only recognize the narrow, explicitly linked scale comparison + counter
+    # idiom. Aliased/dynamic mechanisms stay unknown instead of trusting zero.
+    reads = {}
+    for n in ast.walk(parsed):
+        if (isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name)
+                and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Attribute)
+                and isinstance(n.value.func.value, ast.Name) and n.value.func.value.id in scalers
+                and n.value.func.attr == 'get_scale' and not n.value.args and not n.value.keywords):
+            reads[n.targets[0].id] = n.value.func.value.id
+    skipped_fields = [v for n in ast.walk(parsed) if isinstance(n, ast.Dict)
+                      for k, v in zip(n.keys, n.values) if isinstance(k, ast.Constant) and k.value == 'skipped_updates']
+    successful_fields = [v for n in ast.walk(parsed) if isinstance(n, ast.Dict)
+                         for k, v in zip(n.keys, n.values) if isinstance(k, ast.Constant) and k.value == 'optimizer_steps']
+    if (len(scalers) != 1 or len(skipped_fields) != 1 or len(successful_fields) != 1
+            or not isinstance(skipped_fields[0], ast.Name) or not isinstance(successful_fields[0], ast.Name)):
+        return 'successful_updates_unestablished'
+    for n in ast.walk(parsed):
+        test = n.test if isinstance(n, ast.If) else None
+        if (isinstance(test, ast.Compare) and len(test.ops) == 1 and isinstance(test.ops[0], ast.Lt)
+                and isinstance(test.left, ast.Name) and len(test.comparators) == 1
+                and isinstance(test.comparators[0], ast.Name)
+                and test.left.id != test.comparators[0].id
+                and reads.get(test.left.id) == reads.get(test.comparators[0].id) == scalers[0]):
+            def increments(body, name):
+                return any(isinstance(x, ast.AugAssign) and isinstance(x.target, ast.Name)
+                           and x.target.id == name and isinstance(x.op, ast.Add)
+                           and isinstance(x.value, ast.Constant) and type(x.value.value) is int
+                           and x.value.value == 1 for x in body)
+            if increments(n.body, skipped_fields[0].id) and increments(n.orelse, successful_fields[0].id):
+                return 'scale_delta_counter_syntax_only'
+    return 'successful_updates_unestablished'
+
+
 def native_feedback(code, text, device, *, parent_id=None, execution_succeeded=None):
     result = {'trust': 'unknown', 'source_sha256': hashlib.sha256(code.encode()).hexdigest(),
               'candidate_id': parent_id, 'gpu': {'name': device.name, 'capability': [device.major, device.minor]},
@@ -236,6 +349,11 @@ def native_feedback(code, text, device, *, parent_id=None, execution_succeeded=N
     if row.get('training_scope') not in (None, 'full_model'):
         result['reasons'].append('reported partial or mixed training')
     if skipped: result['reasons'].append('skipped updates reported')
+    if dtype in ('float16', 'torch.float16'):
+        accounting = scaler_update_accounting(code)
+        result['window']['successful_update_accounting'] = accounting
+        if accounting not in ('no_active_scaler_source_screen', 'scale_delta_counter_syntax_only'):
+            result['reasons'].append('native FP16 GradScaler successful-work counters not established by source')
     return result
 
 

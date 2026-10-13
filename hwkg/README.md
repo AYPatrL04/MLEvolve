@@ -401,3 +401,21 @@ additional standalone20-step window and is excluded from protocol-valid gains.
 No API/executor/parser/SDK/search/shared adapter was changed. All GPU work is
 local; this revision adds no calibration trials. Real performance retesting
 requires the current device/driver access failure to be recovered first.
+
+## v8.10 native window counter safeguards
+
+Actual v8.8 source uses tuple-assigned BATCH, which source_spec previously left
+unknown despite recipe_changes recognizing it. Unambiguous module literals,
+tuple/list destructuring, annotated settings and aliases now bind batch/shape/
+epoch and direct optimizer/loss settings. Rebinding, shadowing, conditional or
+executable assignments remain unknown; no code execution or dynamic evaluation.
+Custom losses/models/groups retain their calibration mismatch safeguards.
+
+Actual v8.9 FP16 source logs skipped_updates=0 without scale-delta accounting.
+Native windows remain self-reports; potentially active GradScaler work now
+requires a narrow linked get_scale comparison/counter syntax screen to support
+a matched-work calibration projection. Literal-zero/unknown counters add a
+reason and suppress that projection. Recognized syntax is still uncertified;
+no window resets, successful kernels or runtime dataflow are proven. This does
+not change upstream candidates, scoring, execution, parsing or API requests.
+No new calibration or task-quality/performance gain is established by this fix.
