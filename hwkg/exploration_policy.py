@@ -40,17 +40,27 @@ def guidance(stage, code, device, edges, runtime, *, phase, parent_execution_suc
     fused=supported('feat:optimizer_fused_adamw') and runtime.get('adamw_fused_api') is True
     if not code:
         if stage!='draft' or not bf16: return None
-        header='HWKG v8.16 sm_120 options:' if identity_already_present else 'HWKG v8.16 RTX5080 sm_120 options:'
-        lines=[header,'[precision_choice] Consider TRAIN BF16 autocast; keep FP32 params/eval dtype. FP16 needs GradScaler.']
+        facts={'compute_capability':f'{device.major}.{device.minor}'}
+        if identity_already_present:
+            header='HWKG v8.17 sm_120 options:'
+        else:
+            facts.update(gpu_name=device.name,cuda_runtime_version=runtime.get('cuda'),
+                         torch_version=runtime.get('torch'),total_vram_mib=device.total_memory//1024**2)
+            header=(f'HWKG v8.17 {device.name} sm_120; CUDA{runtime.get("cuda","unknown")}; '
+                    f'Torch{runtime.get("torch","unknown")}; VRAMtotal{facts["total_vram_mib"]}MiB.')
+        lines=[header,'[precision_choice] Try TRAIN BF16 autocast, FP32 params; FP16 needs GradScaler. Keep eval dtype.']
         ids=['precision_choice'];features=['feat:amp','feat:bf16']
         if fused:
             lines.append('[optimizer_choice] CUDA AdamW may try fused=True with FP32 params/BF16.')
             ids.append('optimizer_choice');features.append('feat:optimizer_fused_adamw')
-        lines.append('Unmeasured speed/quality; preserve budget/outputs, no extra passes.')
+        lines.append('Unmeasured speed/quality; same budget/outputs; no extra passes.')
         text='\n'.join(lines)
         if len(text)>min(max_chars,340): return None
         return text, {'advice_ids':ids,'selected_feature_ids':features,
                       'draft_recipe_forced':False,'draft_identity_facts_deduplicated':identity_already_present,
+                      'hardware_fact_values':facts,'hardware_fact_source':'visible CUDA device and installed runtime; not task preset',
+                      'host_header_chars':len(header)+1,'advice_body_chars':len('\n'.join(lines[1:])),
+                      'host_facts_and_advice_counted_in_total':True,
                       'stage_role':phase,'context_budget':min(max_chars,340),
                       'proposal_kind':'capability_guided_unmeasured','calibration_trial':None,
                       'measurements_verified':False,'end_to_end_gain_verified':False,
@@ -77,7 +87,7 @@ def guidance(stage, code, device, edges, runtime, *, phase, parent_execution_suc
         ids=['precision'];features=['feat:amp','feat:bf16'];profile='bf16_'+('channels_last' if configured.get('channels_last') else 'contiguous')
         body='Trial TRAIN-only torch.bfloat16 autocast with FP32 parameters and ordinary backward/step; disable TRAIN GradScaler. Preserve shared eval precision and optimizer options. Check finite ordinary updates. Candidate speed/quality unverified.'
     if not body: return None
-    text=(f'HWKG v8.16 sm_120 {phase}: capability-guided hypothesis, no gain projection.\n'
+    text=(f'HWKG v8.17 sm_120 {phase}: capability-guided hypothesis, no gain projection.\n'
           'Preserve batch/data order/epochs/recipe/eval/checkpoint and original response format. '
           'Use ordinary budgeted training; no extra benchmark or BN pass.\n'
           f'[{ids[0]}] {body}')

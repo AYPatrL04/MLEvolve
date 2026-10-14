@@ -10,7 +10,7 @@ from tests.test_hwkg_v6 import CFG
 def test_parentless_draft_has_compact_capability_hypotheses():
     text,audit=build(stage='draft',code='',parent_execution_succeeded=None,failure_text='')
     assert text and len(text)<=340
-    assert 'sm_120' in text and 'RTX5080' in text
+    assert 'sm_120' in text and 'NVIDIA GeForce RTX 5080' in text
     assert 'BF16' in text and 'FP16 needs GradScaler' in text
     assert 'Unmeasured speed/quality' in text and 'torch.autocast' not in text
     assert audit['advice_ids']==['precision_choice'] and audit['draft_recipe_forced'] is False
@@ -30,7 +30,7 @@ def test_empty_response_withdraws_only_hardware_content_on_original_retry(enable
         second=provider(original,CFG,temperature=1.,max_tokens=16384)
         return first,second
     assert run(NS(task_desc=TASK))==tuple(responses)
-    assert len(sent)==2 and 'HWKG v8.16' in sent[0][0] and sent[1][0]==original
+    assert len(sent)==2 and 'HWKG v8.17' in sent[0][0] and sent[1][0]==original
     assert sent[0][1] is CFG and sent[1][1] is CFG and sent[0][2]==sent[1][2]
     assert sent[0][0].endswith('# Response format\nOriginal exact fences.')
     rows=[json.loads(s) for s in (enabled/'dispatch-audit.jsonl').read_text().splitlines()]
@@ -52,7 +52,7 @@ def test_withdrawal_is_candidate_local_and_removes_only_own_reused_block(enabled
     assert sent[1]==original and original['assistant']=='prefill'
     @hardware_context('draft')
     def next_candidate(agent):return provider(original,CFG)
-    next_candidate(NS(task_desc=TASK));assert 'HWKG v8.16' in sent[-1]['user']
+    next_candidate(NS(task_desc=TASK));assert 'HWKG v8.17' in sent[-1]['user']
     assert 'HWKG' not in original['user']
 
 

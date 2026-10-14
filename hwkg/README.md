@@ -482,3 +482,12 @@ or TRAIN precision hypothesis without requiring an exact profitable calibration.
 Measured projections remain strict; source/runtime/quality/benefit are separate.
 See [release notes](RELEASE_V8_16.md). Baseline stays immutable; followups reuse the
 prior baseline and run HWKD only. Native performance and one live GPU check pending.
+
+## v8.17 initial context provenance
+
+Initial missing-host identity is supplied by the component from the actual visible
+device/runtime, with header and suggestion characters counted together. Shared
+dataset goals need no hardware preset. See [release notes](RELEASE_V8_17.md).
+The user's later request authorizes one fresh baseline/HWKD Cassava comparison
+using shared public train/validation data; earlier CIFAR results remain historical.
+Native v8.17 task performance is pending.
