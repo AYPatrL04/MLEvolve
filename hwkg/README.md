@@ -6,8 +6,8 @@ its delivery/audit hooks and tests. Search, scheduling, scoring, model backends,
 budgets and code execution remain upstream. It does not implement an optimizer
 or force generated code to adopt advice.
 
-The graph SHA256 remains
-`0d422cfe81e2531980204e71b49fa9e5ffed9c2606a9a5569e7a43ebfc0078b4`.
+The current graph SHA256 is
+`ef5850d7ab5af271413141ade5777878fbf8dcee0750e7eba406c924e4c6bec1`.
 The historical `MLEvolve-hwkg-isolated` sibling and its recovered v2 overlay are
 unchanged. This branch's default evidence policy is now v8. Explicit `legacy`,
 `v2`, `v4`, `v5`, `v6` and `v7` retain their historical policies for reproducibility.
@@ -45,13 +45,45 @@ matched, eligible normal-training window. The archived 15+15 study used the earl
 v7 snapshot, not this post-study repair. This revision has targeted regression
 checks; no additional performance run or gain is claimed.
 
+## Current implementation: v8.19 across the hardware catalogue
+
+The current implementation branch is `hwkd-impl` in `AYPatrL04/MLEvolve`.
+The catalogue contains 75 profiles: 67 NVIDIA and 8 AMD. Initial context and
+parent precision/optimizer trials now use the actual host target, installed
+CUDA/ROCm backend, native dtype availability and fused-kernel registration.
+No RTX5080 model-name gate remains in capability exploration. NVIDIA Volta/Turing
+use FP16/GradScaler when eligible; native BF16 requires its graph edge and the
+runtime check without emulation. AMD uses `gcnArchName`/ROCm identity and runtime
+gates, never an NVIDIA `sm_*` or TF32 assumption. FP16 fused trials remain excluded.
+
+The two new runtime-conditional graph features have edges for all 75 profiles.
+Their verification refers to framework trial eligibility, not measured speed or
+per-device kernel execution. Unsupported runtime choices are omitted.
+[SUPPORTED_HARDWARE.md](SUPPORTED_HARDWARE.md) lists every profile.
+
+Owned calibration files can be supplied with `MLEVOLVE_HWKG_CALIBRATION_PATH`
+and `MLEVOLVE_HWKG_OPTIMIZER_CALIBRATION_PATH`. Numerical projections still require
+an exact GPU/architecture/backend/version/workload match. ROCm keys include HIP
+version and `gfx` target. Existing RTX5080 records and their hashes are unchanged.
+The standalone precision calibration runner can record other visible GPUs and
+omits BF16 profiles when native BF16 is unavailable; it never runs during advice.
+
+One GPU must be visible to this component. Multi-GPU platform profiles use the
+member's per-GPU memory and target; this does not launch distributed training or
+verify rack topology. Driver-identical memory variants use common features only;
+variant bandwidth and numerical calibration are withheld.
+
+The remainder of this document describes earlier policy revisions and their
+historical studies. Current validation and scope are in
+[RELEASE_V8_19.md](RELEASE_V8_19.md).
+
 ## Enable
 
 Use the same external configuration as your baseline; add only HWKG settings:
 
 ```bash
 export MLEVOLVE_HWKG_GRAPH_PATH="$PWD/hwkg/graph.json"
-export MLEVOLVE_HWKG_GRAPH_SHA256=0d422cfe81e2531980204e71b49fa9e5ffed9c2606a9a5569e7a43ebfc0078b4
+export MLEVOLVE_HWKG_GRAPH_SHA256=ef5850d7ab5af271413141ade5777878fbf8dcee0750e7eba406c924e4c6bec1
 export MLEVOLVE_HWKG_HARDWARE_ID=nvidia.blackwell.geforce_rtx_5080.spec
 export MLEVOLVE_HWKG_EVIDENCE_POLICY=v8
 export MLEVOLVE_HWKG_AUDIT_DIR=/absolute/path/to/this-run/hwkg-audit

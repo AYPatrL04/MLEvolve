@@ -7340,6 +7340,38 @@
         "calibration_sha256": "cf1d3ef1ab1b973036ae2ad304d965f4e84cba20a64ab088f9d9557e6e5ad875",
         "prompt_visibility": "recommendation"
       }
+    },
+    {
+      "label": "Feature",
+      "id": "feat:runtime_amp_trial",
+      "properties": {
+        "feature_id": "runtime_amp_trial",
+        "name": "runtime-gated training precision trial",
+        "category": "runtime_conditional_trial",
+        "description": "Capability-guided candidate on CUDA/ROCm. Requires this installed backend/API and native dtype checks; no inherited hardware timing or quality estimate.",
+        "api_symbols": [
+          "torch.autocast",
+          "torch.amp.GradScaler",
+          "torch.cuda.is_bf16_supported"
+        ],
+        "source_url": "https://docs.pytorch.org/docs/2.14/amp.html",
+        "prompt_visibility": "recommendation"
+      }
+    },
+    {
+      "label": "Feature",
+      "id": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "feature_id": "runtime_fused_adamw_trial",
+        "name": "runtime-gated fused AdamW implementation trial",
+        "category": "runtime_conditional_trial",
+        "description": "Capability-guided candidate on CUDA/ROCm. Requires this installed backend/API and native dtype checks; no inherited hardware timing or quality estimate.",
+        "api_symbols": [
+          "torch.optim.AdamW"
+        ],
+        "source_url": "https://docs.pytorch.org/docs/2.14/generated/torch.optim.AdamW.html",
+        "prompt_visibility": "recommendation"
+      }
     }
   ],
   "edges": [
@@ -25784,6 +25816,2106 @@
           "aggressive"
         ],
         "limitations": "Only matching host/runtime/recipe and positive conditional cost. FP16 excluded, no generic fused speedup. Source syntax does not establish dataflow/runtime gain."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4060.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4060_ti_16gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4060_ti_8gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_gddr6x.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_gddr6.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_super.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_ti.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_ti_super.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4080.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4080_super.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4090.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l20.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l4.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l40.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l40s.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_4000_ada_generation.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_4500_ada_generation.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_5000_ada_generation.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_5880_ada_generation.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_6000_ada_generation.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a10.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_pcie_40gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_pcie_80gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_sxm4_40gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_sxm4_80gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a16.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a2.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a30.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a40.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3050.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3060.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3060_ti.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3070.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3070_ti.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3080.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3080_12gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3080_ti.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3090.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3090_ti.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a2000.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a2000_12gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a4000.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a4500.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a5000.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a5500.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a6000.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.b100.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.b200.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl2.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl4.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl36.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl72.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5060.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5060_ti_16gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5060_ti_8gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5070.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5070_ti.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5080.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5090.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.rtx_pro_6000_blackwell.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.gh200_grace_hopper.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h100_nvl_94gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h100_pcie_80gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h100_sxm5_80gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h200_sxm_141gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7600.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7700.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7800_xt.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7900_gre.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7900_xt.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7900_xtx.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna4.radeon_rx_9070.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna4.radeon_rx_9070_xt.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.volta.tesla_v100_32gb.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.turing.tesla_t4.spec",
+      "to": "feat:runtime_amp_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4060.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4060_ti_16gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4060_ti_8gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_gddr6x.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_gddr6.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_super.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_ti.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_ti_super.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4080.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4080_super.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4090.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l20.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l4.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l40.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.l40s.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_4000_ada_generation.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_4500_ada_generation.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_5000_ada_generation.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_5880_ada_generation.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ada_lovelace.rtx_6000_ada_generation.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a10.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_pcie_40gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_pcie_80gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_sxm4_40gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a100_sxm4_80gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a16.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a2.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a30.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.a40.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3050.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3060.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3060_ti.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3070.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3070_ti.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3080.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3080_12gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3080_ti.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3090.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.geforce_rtx_3090_ti.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a2000.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a2000_12gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a4000.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a4500.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a5000.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a5500.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.ampere.rtx_a6000.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.b100.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.b200.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl2.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl4.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl36.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.gb200_nvl72.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5060.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5060_ti_16gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5060_ti_8gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5070.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5070_ti.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5080.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.geforce_rtx_5090.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.blackwell.rtx_pro_6000_blackwell.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.gh200_grace_hopper.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h100_nvl_94gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h100_pcie_80gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h100_sxm5_80gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.hopper.h200_sxm_141gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7600.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7700.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7800_xt.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7900_gre.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7900_xt.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna3.radeon_rx_7900_xtx.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna4.radeon_rx_9070.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:amd.rdna4.radeon_rx_9070_xt.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.volta.tesla_v100_32gb.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
+      }
+    },
+    {
+      "type": "HAS_FEATURE",
+      "from": "hw:nvidia.turing.tesla_t4.spec",
+      "to": "feat:runtime_fused_adamw_trial",
+      "properties": {
+        "support_level": "supported",
+        "verified": true,
+        "verification_basis": "documented framework trial eligibility, subject to actual backend/runtime gates; not a per-GPU benchmark",
+        "recommendation_scope": "capability_guided_unmeasured",
+        "prompt_visibility": "recommendation",
+        "runtime_gate_required": true,
+        "limitations": "No support or speed assertion from device name alone. No BF16 emulation, FP16 fused trial, or transfer of another GPU calibration."
       }
     }
   ]

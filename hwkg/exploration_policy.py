@@ -7,6 +7,7 @@ import ast
 import re
 from .adaptive_policy import source_configured
 from .source_analysis import precision_scope
+from .device_support import options, architecture, capability, runtime_label
 
 
 def optimizer_option(code):
@@ -31,35 +32,44 @@ def optimizer_option(code):
 
 def guidance(stage, code, device, edges, runtime, *, phase, parent_execution_succeeded,
              blocked_profiles=(), identity_already_present=False, max_chars=750, contract_note=''):
-    if (device.name!='NVIDIA GeForce RTX 5080' or (device.major,device.minor)!=(12,0)
-            or phase=='merge' or stage=='debug'): return None
-    def supported(fid):
-        p=edges.get(fid,{}).get('properties',{})
-        return p.get('verified') is True and p.get('support_level')=='supported'
-    bf16=supported('feat:amp') and supported('feat:bf16') and runtime.get('bf16_supported') is True
-    fused=supported('feat:optimizer_fused_adamw') and runtime.get('adamw_fused_api') is True
+    if phase=='merge' or stage=='debug': return None
+    host=options(device,edges,runtime)
+    if host['target']=='unknown' or host['backend'] not in ('cuda','rocm'): return None
+    bf16,fp16,fused=host['bf16'],host['fp16'],host['fused']
+    target=architecture(device)
     if not code:
-        if stage!='draft' or not bf16: return None
-        facts={'compute_capability':f'{device.major}.{device.minor}'}
+        if stage!='draft': return None
+        facts={'compute_capability':capability(device),'backend':host['backend']}
         if identity_already_present:
-            header='HWKG v8.18 sm_120 options:'
+            header=f'HWKG v8.19 {target} options:'
         else:
             facts.update(gpu_name=device.name,cuda_runtime_version=runtime.get('cuda'),
+                         hip_runtime_version=runtime.get('hip'),
                          torch_version=runtime.get('torch'),total_vram_mib=device.total_memory//1024**2)
-            header=(f'HWKG v8.18 {device.name} sm_120; CUDA{runtime.get("cuda","unknown")}; '
+            header=(f'HWKG v8.19 {device.name} {target}; {runtime_label(device,runtime)}; '
                     f'Torch{runtime.get("torch","unknown")}; VRAMtotal{facts["total_vram_mib"]}MiB.')
-        lines=[header,'[precision_choice] Try TRAIN BF16 autocast, FP32 params; FP16 needs GradScaler. Keep eval dtype.']
-        ids=['precision_choice'];features=['feat:amp','feat:bf16']
-        if fused:
-            lines.append('[optimizer_choice] CUDA AdamW may try fused=True with FP32 params/BF16.')
-            ids.append('optimizer_choice');features.append('feat:optimizer_fused_adamw')
+        if bf16:
+            precision='TRAIN BF16/FP32 params; FP16 needs GradScaler; keep eval dtype.'
+        elif fp16:
+            precision='TRAIN FP16 autocast/GradScaler, FP32 params; keep eval dtype.'
+        else:
+            precision='Use FP32; AMP eligibility not established; keep eval dtype.'
+        lines=[header,'[precision_choice] '+precision]
+        ids=['precision_choice'];features=[host['amp_feature']] if host['amp'] else []
+        if bf16 and host['backend']=='cuda': features.append('feat:bf16')
+        if fused and bf16:
+            lines.append('[optimizer_choice] GPU AdamW: try fused=True (FP32/BF16).')
+            ids.append('optimizer_choice');features.append(host['fused_feature'])
         lines.append('Unmeasured speed/quality; same budget/outputs; no extra passes.')
         if contract_note:
-            lines[1]='[precision_choice] TRAIN BF16/FP32 params; FP16 needs GradScaler; keep eval dtype.'
-            if fused:lines[2]='[optimizer_choice] CUDA AdamW: try fused=True (FP32/BF16).'
             lines[-1]='Unmeasured; same budget/outputs; no extra passes.'
             lines.append(contract_note)
         text='\n'.join(lines)
+        # Long catalogue names must not suppress all advice. Compact only the
+        # display name; retain the complete verified identity in the audit.
+        if len(text)>min(max_chars,340) and not identity_already_present:
+            lines[0]=f'HWKG v8.19 {target}; {runtime_label(device,runtime)}; VRAM{facts["total_vram_mib"]}MiB.'
+            header=lines[0];text='\n'.join(lines)
         if len(text)>min(max_chars,340): return None
         return text, {'advice_ids':ids,'selected_feature_ids':features,
                       'draft_recipe_forced':False,'draft_identity_facts_deduplicated':identity_already_present,
@@ -79,20 +89,28 @@ def guidance(stage, code, device, edges, runtime, *, phase, parent_execution_suc
     if (bf16 and fused and opt and opt['fused'] in (None,False) and types==['bfloat16']
             and not scope.get('training_scaler') and 'optimizer_fused_adamw' not in blocked_profiles
             and not re.search(r'\.half\s*\(|set_default_dtype',code)):
-        ids=['optimizer_fused_adamw'];features=['feat:optimizer_fused_adamw'];profile='optimizer_fused_adamw'
-        body='Try only fused=True on existing CUDA AdamW with FP32 parameters/BF16; retain groups/LR/WD. Check finite ordinary updates. Speed/quality unmeasured.'
-    elif (bf16 and types==['bfloat16'] and opt and opt['fused'] in (None,False)
-            and runtime.get('grad_scaler_api') is True
+        ids=['optimizer_fused_adamw'];features=[host['fused_feature']];profile='optimizer_fused_adamw'
+        body='Try only fused=True on existing GPU AdamW with FP32 parameters/BF16; retain groups/LR/WD. Check finite ordinary updates. Speed/quality unmeasured.'
+    elif (fp16 and types==['bfloat16'] and opt and opt['fused'] in (None,False)
             and 'fp16_'+('channels_last' if configured.get('channels_last') else 'contiguous') not in blocked_profiles):
-        ids=['precision'];features=['feat:amp'];profile='fp16_'+('channels_last' if configured.get('channels_last') else 'contiguous')
+        ids=['precision'];features=[host['amp_feature']];profile='fp16_'+('channels_last' if configured.get('channels_last') else 'contiguous')
         body='Trial TRAIN-only torch.float16 autocast with GradScaler on FP32 parameters; unscale before existing clipping. Keep eval dtype separate and AdamW unfused. Track successful finite updates; retain BF16 if unstable. Speed/quality unmeasured.'
     elif (bf16 and types==['float16'] and opt
             and 'bf16_'+('channels_last' if configured.get('channels_last') else 'contiguous') not in blocked_profiles
             and not re.search(r'\.half\s*\(|set_default_dtype',code)):
-        ids=['precision'];features=['feat:amp','feat:bf16'];profile='bf16_'+('channels_last' if configured.get('channels_last') else 'contiguous')
+        ids=['precision'];features=[host['amp_feature']]+(['feat:bf16'] if host['backend']=='cuda' else []);profile='bf16_'+('channels_last' if configured.get('channels_last') else 'contiguous')
         body='Trial TRAIN-only torch.bfloat16 autocast with FP32 parameters and ordinary backward/step; disable TRAIN GradScaler. Preserve shared eval precision and optimizer options. Check finite ordinary updates. Candidate speed/quality unverified.'
+    elif (host['amp'] and not types and not re.search(r'\b(autocast|half|bfloat16|set_default_dtype)\b',code)
+            and opt and opt['fused'] in (None,False)):
+        dtype='bf16' if bf16 else 'fp16' if fp16 else None
+        profile=(dtype+'_'+('channels_last' if configured.get('channels_last') else 'contiguous')) if dtype else None
+        if profile and profile not in blocked_profiles:
+            ids=['precision'];features=[host['amp_feature']]+(['feat:bf16'] if bf16 and host['backend']=='cuda' else [])
+            body=('Trial TRAIN-only torch.bfloat16 autocast, FP32 parameters and ordinary backward/step. '
+                  if bf16 else 'Trial TRAIN-only torch.float16 autocast with GradScaler and FP32 parameters. ')
+            body+='Keep eval precision, optimizer and finite ordinary updates unchanged. Speed/quality unmeasured.'
     if not body: return None
-    text=(f'HWKG v8.18 sm_120 {phase}: capability-guided hypothesis, no gain projection.\n'
+    text=(f'HWKG v8.19 {target} {phase}: capability-guided hypothesis, no gain projection.\n'
           'Preserve batch/data order/epochs/recipe/eval/checkpoint and original response format. '
           'Use ordinary budgeted training; no extra benchmark or BN pass.\n'
           + (contract_note+'\n' if contract_note else '')+

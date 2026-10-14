@@ -47,7 +47,6 @@ def test_failed_fused_profile_allows_supported_separate_FP16_hypothesis():
 
 
 @pytest.mark.parametrize('kw',[{'stage':'debug'},{'phase':'merge'},{'success':False},{'success':None},
-    {'device':NS(name='NVIDIA A10',major=8,minor=6,total_memory=24*1024**3)},
     {'max_chars':30},{'blocked_profiles':['optimizer_fused_adamw','fp16_channels_last']}])
 def test_no_forced_irrelevant_failed_or_overbudget_proposal(kw):
     assert advice(**kw) is None
@@ -70,6 +69,7 @@ def test_FP16_fused_domain_with_observed_scale_skip_is_not_offered():
 
 def test_required_host_edge_and_API_supported_are_distinct_from_speed():
     e=copy.deepcopy(EDGES);e['feat:optimizer_fused_adamw']['properties']['verified']=False
+    e['feat:runtime_fused_adamw_trial']['properties']['verified']=False
     assert advice(edges=e,runtime={**R,'grad_scaler_api':False}) is None
     assert advice(runtime={**R,'adamw_fused_api':False,'grad_scaler_api':False}) is None
     assert advice(runtime={**R,'bf16_supported':False,'adamw_fused_api':False,'grad_scaler_api':False}) is None

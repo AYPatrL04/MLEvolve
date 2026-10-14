@@ -135,7 +135,7 @@ def test_planner_and_coder_have_different_roles():
     for text,audit in [(planner,pa),(coder,ca)]:
         assert 'No extra training/benchmark/BN-stat passes' in text
         assert len(text)<=750
-        assert audit['policy_revision']=='v8.18'
+        assert audit['policy_revision']=='v8.19'
 
 def test_measured_profile_roi_and_native_scope_gate(tmp_path,monkeypatch):
     path,row=calibration(tmp_path);monkeypatch.setenv('MLEVOLVE_HWKG_CALIBRATION_PATH',str(path))
@@ -183,7 +183,7 @@ def test_precision_path_also_guards_layout_reporting(phase):
     assert text and audit['advice_ids']==['precision']
     assert 'is_contiguous(memory_format=torch.channels_last)' in text
     assert 'never a .memory_format attribute' in text
-    assert len(text)<=1100 and audit['policy_revision']=='v8.18'
+    assert len(text)<=1100 and audit['policy_revision']=='v8.19'
     assert audit['added_provider_calls']==0 and not audit['measurements_verified']
     assert 'TRAIN forward/loss only' in text and 'eval/test precision' in text
     assert 'RNG/sample order' in text and 'shared eval autocast helper unchanged' in text
@@ -207,7 +207,7 @@ def test_output_format_and_chat_prefill_preserved():
 @pytest.fixture
 def enabled(tmp_path,monkeypatch):
     root=Path(__file__).resolve().parents[1]
-    for key,val in {'GRAPH_PATH':str(root/'hwkg/graph.json'),'GRAPH_SHA256':'3842eff0a7742c42b3777a01a6f58cfbec42b37c442d9bb9f5b080321ff7ed62',
+    for key,val in {'GRAPH_PATH':str(root/'hwkg/graph.json'),'GRAPH_SHA256':'ef5850d7ab5af271413141ade5777878fbf8dcee0750e7eba406c924e4c6bec1',
                     'HARDWARE_ID':IDS['5080'].removeprefix('hw:'),'AUDIT_DIR':str(tmp_path)}.items():monkeypatch.setenv('MLEVOLVE_HWKG_'+key,val)
     monkeypatch.delenv('MLEVOLVE_HWKG_EVIDENCE_POLICY',raising=False)
     monkeypatch.delenv('MLEVOLVE_HWKG_CALIBRATION_PATH',raising=False)

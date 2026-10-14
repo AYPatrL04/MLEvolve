@@ -8,6 +8,7 @@ from .host_policy import guidance_v6
 from .native_evidence import native_feedback
 from .calibration import select_record, choose_trial, calibration_path
 from .contracts import scope_reminder
+from .device_support import architecture, capability as device_capability, runtime_label
 
 
 def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runtime, max_chars=1600,
@@ -20,7 +21,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
     base,eligible=guidance_v6(stage,task,code,device,hardware,feature_nodes,edges,runtime,10000,
         phase=phase,proposed_plan=proposed_plan,failure_text=failure_text,optimization_mode=optimization_mode)
     audit={**eligible}
-    audit.update(policy='hardware-v8',policy_revision='v8.18',native_parent_evidence=evidence,
+    audit.update(policy='hardware-v8',policy_revision='v8.19',native_parent_evidence=evidence,
         measurements_verified=False,end_to_end_gain_verified=False,calibration_basis=None,
         calibration_trial=None,added_provider_calls=0,blocked_profiles=list(blocked_profiles),
         shared_contract_reminder=contract_note,contract_runtime_enforced=False)
@@ -39,7 +40,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         features=info['selected_feature_ids']
         info.update(verified_hardware_feature_ids=features,
             decision_provenance=[{'id':key,'feature_ids':features,
-                'reason':'verified RTX5080 capability/API; candidate benefit unverified'} for key in info['advice_ids']],
+                'reason':'matched host graph and installed backend/API; candidate benefit unverified'} for key in info['advice_ids']],
             exploration_basis='hardware capability and optional software API, not calibrated candidate cost',
             precision_guard='precision' in info['advice_ids'],skip_reason=None)
         return text,{**audit,**info}
@@ -60,8 +61,9 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         # The upstream cleaner may remove host facts from agent.task_desc while
         # data preview puts them back into the actual provider prompt. Inspect
         # delivery, not that intermediate representation. Never log its text.
-        capability = f'{device.major}.{device.minor}'
-        cuda_build = 'cu'+str(runtime.get('cuda','')).replace('.', '')
+        capability = device_capability(device)
+        cuda_build = (('rocm'+str(runtime.get('hip','')).replace('.', '')) if runtime.get('hip')
+                      else 'cu'+str(runtime.get('cuda','')).replace('.', ''))
         if isinstance(provider_prompt, str):
             identity_text = provider_prompt
         elif isinstance(provider_prompt, dict):
@@ -88,7 +90,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
             modes.append('BF16');features.append('feat:bf16')
         if not modes:return skip('no verified host AMP facts for a parentless draft')
         layout=' CUDA CNNs can use model/input channels_last.' if 'vision_layout' in audit.get('advice_ids',[]) else ''
-        text=(f'HWKG v8.18: {device.name}, sm_{device.major}{device.minor}, CUDA {runtime.get("cuda","unknown")}.\n'
+        text=(f'HWKG v8.19: {device.name}, {architecture(device)}, {runtime_label(device,runtime)}.\n'
               f'[hardware_target] Native AMP supports {"/".join(modes)}.{layout} '
               'No dtype winner is established for this draft. Keep the task and original response format.')
         if len(text)>min(limit,340):return skip('compact draft context budget')
@@ -177,7 +179,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         if key in provenance:
             provenance[key]={**provenance[key], 'feature_ids':[f for f in provenance[key].get('feature_ids',[])
                 if f in (('feat:bf16','feat:amp') if target_dtype=='bf16' else ('feat:amp',))]}
-    lines=[f'HWKG v8.18 {phase}: {device.name}, sm_{device.major}{device.minor}.',
+    lines=[f'HWKG v8.19 {phase}: {device.name}, {architecture(device)}.',
         'Preserve recipe/RNG/sample order/epochs, eval/test precision and original response format. '
         'This hardware trial changes only the selected item; keep EMA/checkpoint selection unchanged. '
         'No extra training/benchmark/BN-stat passes.']

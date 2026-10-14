@@ -6,6 +6,7 @@ import importlib.util
 import re
 
 from .staged_policy import source_adoption
+from .device_support import architecture, backend as device_backend
 
 
 SOURCES = {
@@ -22,13 +23,22 @@ def runtime_facts():
     import inspect
     try: fused_api = 'fused' in inspect.signature(torch.optim.AdamW).parameters
     except (TypeError,ValueError): fused_api = False
+    try: fused_kernel = torch._C._dispatch_has_kernel_for_dispatch_key('aten::_fused_adamw_', 'CUDA')
+    except (AttributeError,RuntimeError): fused_kernel = False
+    try: amp_api = torch.amp.autocast_mode.is_autocast_available('cuda')
+    except AttributeError: amp_api = hasattr(torch, 'autocast')
+    try: bf16 = torch.cuda.is_bf16_supported(including_emulation=False)
+    except TypeError: bf16 = False
     free, total = torch.cuda.mem_get_info(0)
     return {
         'torch': str(torch.__version__), 'cuda': torch.version.cuda,
+        'hip': getattr(torch.version,'hip',None),
+        'backend': 'rocm' if getattr(torch.version,'hip',None) else 'cuda',
         'arch_list': torch.cuda.get_arch_list(),
         'float32_matmul_precision': torch.get_float32_matmul_precision(),
-        'bf16_supported': torch.cuda.is_bf16_supported(),
+        'bf16_supported': bf16, 'amp_api': amp_api,
         'adamw_fused_api': fused_api,
+        'adamw_fused_kernel': fused_kernel,
         'grad_scaler_api': hasattr(torch.amp, 'GradScaler'),
         'free_mib_snapshot': free // 1024**2, 'total_mib': total // 1024**2,
         'sdpa_api': hasattr(torch.nn.functional, 'scaled_dot_product_attention'),
@@ -69,7 +79,8 @@ def guidance_v6(stage, task, code, device, hardware, feature_nodes, edges, runti
     if optimization_mode not in {'normal', 'aggressive'}:
         raise ValueError('Unknown HWKG optimization mode')
     props = hardware['properties']; hid = hardware['id']
-    target = f'sm_{device.major}{device.minor}'
+    target = architecture(device)
+    rocm = device_backend(device,runtime)=='rocm'
     w = workload(task, code, proposed_plan)
     rejected = {}
     all_features = sorted(edges)
@@ -124,7 +135,7 @@ def guidance_v6(stage, task, code, device, hardware, feature_nodes, edges, runti
     if w['custom_kernel']:
         limits = (' 99 KiB/block shared-memory limit, 48 resident warps/SM; no sm_100a assumptions.'
                   if target == 'sm_120' and 'feat:sm_120' in edges else '')
-        cards.append(card('kernel_target', f'Custom CUDA: build for {target}; verify the package supports '
+        cards.append(card('kernel_target', f'Custom {"HIP/ROCm" if rocm else "CUDA"}: build for {target}; verify the package supports '
                           f'this target before using it.{limits}', features=['feat:'+target] if 'feat:'+target in edges else [],
                           fields=['compute_capabilities'], pattern_ids=pattern('custom CUDA'),
                           reason='candidate contains custom-kernel code on this architecture', priority=100))
@@ -136,7 +147,7 @@ def guidance_v6(stage, task, code, device, hardware, feature_nodes, edges, runti
         precision_features += ['feat:amp', 'feat:bf16']
     else:
         rejected['feat:bf16'] = 'verified host AMP/BF16 edge or runtime BF16 support absent'
-    if feature('feat:tf32'):
+    if not rocm and feature('feat:tf32'):
         choices.append("FP32 path: test torch.set_float32_matmul_precision('high') (TF32-capable math)")
         precision_features.append('feat:tf32')
     if choices:

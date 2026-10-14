@@ -12,6 +12,7 @@ import stat
 import time
 
 from .native_evidence import number
+from .device_support import architecture, backend
 
 SCHEMA = 'hwkg-calibration-v1'
 V87_BUNDLED_SHA256 = '2f5a8949da17c424a6e7a317e0c4c1711280347df74741acd183666797329176'
@@ -22,11 +23,22 @@ BUNDLED_SHA256 = '5912ee52bd8bd78f605432485284064c097320479feb677732f642641dfad7
 def calibration_path(device):
     if 'MLEVOLVE_HWKG_CALIBRATION_PATH' in os.environ:
         return os.environ['MLEVOLVE_HWKG_CALIBRATION_PATH']
-    if device.name == 'NVIDIA GeForce RTX 5080' and (device.major,device.minor) == (12,0):
-        path = Path(__file__).with_name('calibrations')/'rtx5080-v87-resnet50.json'
-        if not path.is_file(): path = Path(__file__).with_name('calibrations')/'rtx5080-v84-resnet50.json'
-        if not path.is_file(): path = Path(__file__).with_name('calibrations')/'rtx5080-resnet50-b64.json'
-        return path if path.is_file() else None
+    directory=Path(__file__).with_name('calibrations')
+    priority=('rtx5080-v87-resnet50.json','rtx5080-v84-resnet50.json','rtx5080-resnet50-b64.json')
+    paths=[directory/name for name in priority]
+    paths += [p for p in sorted(directory.glob('*.json')) if p.name not in priority]
+    for path in paths:
+        # Discovery is metadata-only. select_record separately enforces owned,
+        # non-symlink bounded input and exact GPU/runtime/workload matching.
+        if path.is_symlink() or not path.is_file() or path.stat().st_size>2*1024**2: continue
+        try: doc=json.loads(path.read_bytes())
+        except (OSError,ValueError,TypeError): continue
+        if not isinstance(doc,dict) or doc.get('schema')!=SCHEMA or not isinstance(doc.get('records'),list): continue
+        for row in doc['records']:
+            key=row.get('workload',{}) if isinstance(row,dict) else {}
+            if (key.get('gpu_name')==device.name and key.get('capability')==[device.major,device.minor]
+                    and (not architecture(device).startswith('gfx') or key.get('gpu_architecture')==architecture(device))):
+                return path
     return None
 
 
@@ -50,14 +62,19 @@ def workload_key(device, runtime, spec):
     if (runtime.get('torch') == '2.14.1+cu130'
             and type(overrides.get('matmul_allow_tf32')) is bool):
         flags['float32_matmul_precision'] = 'high' if overrides['matmul_allow_tf32'] else 'highest'
-    return {'gpu_name': device.name, 'capability': [device.major, device.minor],
+    key={'gpu_name': device.name, 'capability': [device.major, device.minor],
             'torch': runtime.get('torch'), 'cuda': runtime.get('cuda'),
             'runtime_flags': flags,
             **{k: spec.get(k) for k in ('model', 'optimizer', 'optimizer_options', 'weights',
                 'classifier_classes', 'loss', 'batch', 'input_shape', 'forwards_per_update')}}
+    if backend(device,runtime)=='rocm':
+        key.update(hip=runtime.get('hip'),gpu_architecture=architecture(device))
+    return key
 
 
 def select_record(path, device, runtime, spec):
+    if runtime.get('hardware_profile_identity_verified') is False:
+        return None, 'exact hardware profile not identified; no variant/platform timing transfer'
     if not path: return None, 'no calibration configured'
     try:
         fd = os.open(Path(path), os.O_RDONLY | os.O_NOFOLLOW)
@@ -85,7 +102,8 @@ def select_record(path, device, runtime, spec):
             and runtime.get('torch') != '2.14.1+cu130'):
         return None, 'literal TF32/precision coupling not verified for this runtime'
     key = workload_key(device, runtime, spec)
-    if any(v is None for v in key.values()): return None, 'parent workload dimensions incomplete'
+    if any(v is None for k,v in key.items() if not (k=='cuda' and backend(device,runtime)=='rocm')):
+        return None, 'parent workload dimensions incomplete'
     records = doc.get('records')
     if not isinstance(records, list): return None, 'invalid calibration records'
     matches = [r for r in records if isinstance(r, dict) and r.get('workload') == key]
@@ -155,8 +173,7 @@ def calibrate(images_path, csv_path, weights_path, output, batch=64, steps=25, w
         raise ValueError('Invalid exact calibration recipe')
     if torch.cuda.device_count() != 1: raise ValueError('Exactly one visible GPU required')
     device = torch.cuda.get_device_properties(0)
-    if device.name != 'NVIDIA GeForce RTX 5080' or (device.major, device.minor) != (12, 0):
-        raise ValueError('This calibration recipe is for the RTX5080 only')
+    if architecture(device)=='unknown': raise ValueError('Unrecognized GPU architecture')
     output = Path(output)
     if output.exists(): raise ValueError('Fresh calibration file required')
     if Path(csv_path).name != 'train.csv' or Path(images_path).name != 'train_images.npy':
@@ -186,7 +203,10 @@ def calibrate(images_path, csv_path, weights_path, output, batch=64, steps=25, w
     if matmul_tf32 is not None:
         torch.backends.cuda.matmul.allow_tf32 = matmul_tf32
     # Rotating order reduces a systematic first-profile warmup/thermal bias.
-    names = [d+'_'+l for d in ('fp32','fp16','bf16') for l in ('contiguous','channels_last')]
+    try: bf16=torch.cuda.is_bf16_supported(including_emulation=False)
+    except TypeError: bf16=False
+    dtypes=('fp32','fp16','bf16') if bf16 else ('fp32','fp16')
+    names = [d+'_'+l for d in dtypes for l in ('contiguous','channels_last')]
     for repeat in range(repeats):
         for name in names[repeat%len(names):]+names[:repeat%len(names)]:
             torch.manual_seed(42);torch.cuda.manual_seed_all(42)
@@ -237,6 +257,7 @@ def calibrate(images_path, csv_path, weights_path, output, batch=64, steps=25, w
           'optimizer_options':{'lr':lr,'betas':[.9,.999],'eps':1e-8,'weight_decay':weight_decay,
               'amsgrad':False,'maximize':False,'foreach':None,'capturable':False,'differentiable':False,'fused':None}}
     result={'schema':SCHEMA,'records':[{'workload':workload_key(device,{'torch':str(torch.__version__),'cuda':torch.version.cuda,
+                                                                       'hip':getattr(torch.version,'hip',None),
                                                                        'calibration_flags':calibration_flags()},spec),
         'profiles':profiles,'quality_verified':False,'scope':'real public train minibatches, full-model update/H2D; no augmentation or task-score evaluation',
         'weights_sha256':weight_sha}], 'raw_trials':raw,

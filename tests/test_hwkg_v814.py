@@ -14,7 +14,8 @@ from tests.test_hwkg_v6 import GRAPH,IDS,FEATURES
 CODE=BASE.replace('1e-3','0.0003').replace('1e-4','0.05').replace('logits,yb)','logits,yb,label_smoothing=0.1)').replace('model=model.cuda()', 'model=model.cuda().to(memory_format=torch.channels_last)')
 CODE=CODE.replace('import torch\n','import torch\ntorch.backends.cudnn.benchmark=True\ntorch.backends.cuda.matmul.allow_tf32=True\ntorch.backends.cudnn.allow_tf32=True\n')
 RECORD=load_record()
-RUNTIME={**RECORD['host'],'bf16_supported':True,'calibration_flags':RECORD['runtime_flags'],'free_mib_snapshot':12000}
+RUNTIME={**RECORD['host'],'bf16_supported':True,'calibration_flags':RECORD['runtime_flags'],'free_mib_snapshot':12000,
+         'adamw_fused_api':True,'adamw_fused_kernel':True,'grad_scaler_api':True,'amp_api':True}
 EDGES={e['to']:e for e in GRAPH['edges'] if e['from']==IDS['5080']}
 TASK='CNN classification; train.csv (40000 rows); six epochs'
 
@@ -29,7 +30,7 @@ def call(code=CODE, **kwargs):
 def test_measured_scope_proposal_is_compact_conditional_and_single_flag(phase):
     text,audit=call(phase=phase)
     assert len(text)<=750 and 'fused=True' in text and 'Preserve AMP, batch, LR/WD' in text
-    assert audit['policy_revision']=='v8.18' and audit['advice_ids']==['optimizer_fused_adamw']
+    assert audit['policy_revision']=='v8.19' and audit['advice_ids']==['optimizer_fused_adamw']
     assert audit['calibration_file_sha256']==BUNDLED_SHA256 and audit['projected_updates']==3750
     assert audit['calibration_trial']['repeat_spread_net_seconds']>0
     assert audit['earlier_short_repeat_spread_conflict_retained']
@@ -57,8 +58,9 @@ def test_runtime_memory_identity_required(field,value):
 def test_graph_edge_is_a_scoped_host_entry_and_is_required():
     assert EDGES[FEATURE]['properties']['verified']
     e=copy.deepcopy(EDGES);e[FEATURE]['properties']['verified']=False
+    e['feat:runtime_fused_adamw_trial']['properties']['verified']=False
     assert call(edges=e) is None
-    e=copy.deepcopy(EDGES);e.pop(FEATURE);assert call(edges=e) is None
+    e=copy.deepcopy(EDGES);e.pop(FEATURE);e.pop('feat:runtime_fused_adamw_trial');assert call(edges=e) is None
     assert call(task='train.csv (50000 rows)') is None
     assert call(task='train.csv (40000 rows) train.csv (1 rows)') is None
 

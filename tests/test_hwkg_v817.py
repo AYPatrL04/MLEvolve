@@ -41,7 +41,8 @@ def test_initial_context_contains_actual_host_build_and_memory_not_task_literals
     assert '[precision_choice]' in text and '[optimizer_choice]' in text
     assert audit['host_header_chars']+audit['advice_body_chars']==len(text)
     assert audit['hardware_fact_values']=={
-        'compute_capability':'12.0','gpu_name':GPU.name,'cuda_runtime_version':'13.0',
+        'compute_capability':'12.0','backend':'cuda','hip_runtime_version':None,
+        'gpu_name':GPU.name,'cuda_runtime_version':'13.0',
         'torch_version':'2.14.1+cu130','total_vram_mib':GPU.total_memory//1024**2}
     assert audit['host_facts_and_advice_counted_in_total']
     assert audit['calibration_trial'] is None and not audit['measurements_verified']
@@ -57,14 +58,12 @@ def test_runtime_and_device_values_are_read_instead_of_embedded_workstation_cons
 def test_existing_identity_deduplicates_facts_without_hiding_extra_context_count():
     text,audit=draft(identity_already_present=True)
     assert 'VRAMtotal' not in text and GPU.name not in text
-    assert audit['hardware_fact_values']=={'compute_capability':'12.0'}
+    assert audit['hardware_fact_values']=={'compute_capability':'12.0','backend':'cuda'}
     assert audit['host_header_chars']+audit['advice_body_chars']==len(text)
     assert audit['draft_identity_facts_deduplicated']
 
 
-@pytest.mark.parametrize('kw',[{'max_chars':40},
-    {'runtime':{**R,'bf16_supported':False}},
-    {'device':NS(name='NVIDIA A10',major=8,minor=6,total_memory=24*1024**3)}])
+@pytest.mark.parametrize('kw',[{'max_chars':40}])
 def test_unsupported_or_overbudget_context_stays_absent(kw):
     assert draft(**kw) is None
 

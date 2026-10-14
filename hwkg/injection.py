@@ -110,29 +110,54 @@ def _visible_cuda_device():
 
 
 def _normalized_gpu_name(name):
-    return re.sub(r"[^a-z0-9]", "", re.sub(r"^nvidia\s+", "", name.casefold()))
+    return re.sub(r"[^a-z0-9]", "", re.sub(r"^(?:nvidia|amd)\s+", "", name.casefold()))
 
 
 def _matches_visible_device(hardware, device):
-    if not hardware["id"].startswith("hw:nvidia."):
+    from .device_support import capability, architecture
+    if not hardware["id"].startswith(("hw:nvidia.", "hw:amd.")):
         return False
     props = hardware["properties"]
-    capability = f"{device.major}.{device.minor}"
+    visible_capability = capability(device)
+    if hardware['id'].startswith('hw:amd.') != architecture(device).startswith('gfx'):
+        return False
     memory_mib = device.total_memory / (1024 * 1024)
-    expected_memory = props["vram_MB"]
+    expected_memory = props.get('vram_per_gpu_MB',props["vram_MB"])
+    names = [props['name'],*props.get('aliases',[])]
+    normalized = _normalized_gpu_name(device.name)
+    matches_name = normalized in {_normalized_gpu_name(n) for n in names}
+    # Memory distinguishes catalogue capacity variants whose driver name omits
+    # the suffix. Bus variants stay unverified unless uniquely identifiable.
+    if not matches_name:
+        trim=lambda n:_normalized_gpu_name(re.sub(r'\s+\d+\s*GB$', '', n, flags=re.I))
+        matches_name=trim(device.name)==trim(props['name'])
+    if not matches_name and props.get('gpu_count',1)>1:
+        # GB200 platform profiles apply to one visible member, never aggregate
+        # HBM or an implicitly launched distributed job.
+        matches_name=('gb200' in normalized and 'gb200' in hardware['id'])
     return (
-        _normalized_gpu_name(device.name) == _normalized_gpu_name(props["name"])
-        and capability in props["compute_capabilities"]
+        matches_name
+        and visible_capability in props["compute_capabilities"]
         and 0.85 * expected_memory <= memory_mib <= 1.15 * expected_memory
     )
 
 
 def _verify_visible_hardware(graph, hardware):
+    from .device_support import capability as device_capability
     device = _visible_cuda_device()
-    capability = f"{device.major}.{device.minor}"
+    capability = device_capability(device)
     memory_mib = device.total_memory / (1024 * 1024)
-    matches = [node for node in graph["nodes"] if _matches_visible_device(node, device)]
-    if len(matches) != 1 or matches[0]["id"] != hardware["id"]:
+    if hardware['properties'].get('gpu_count',1)>1:
+        matches=[hardware] if _matches_visible_device(hardware,device) else []
+    else:
+        matches = [node for node in graph["nodes"] if node.get('properties',{}).get('gpu_count',1)==1
+                   and _matches_visible_device(node, device)]
+    family_only=(os.environ.get('MLEVOLVE_HWKG_EVIDENCE_POLICY',DEFAULT_POLICY)=='v8'
+                 and len(matches)>1 and any(n['id']==hardware['id'] for n in matches)
+                 and all(n['properties']['name']==hardware['properties']['name']
+                         and n['properties']['compute_capabilities']==hardware['properties']['compute_capabilities']
+                         and n['properties']['vram_MB']==hardware['properties']['vram_MB'] for n in matches))
+    if not family_only and (len(matches) != 1 or matches[0]["id"] != hardware["id"]):
         raise RuntimeError(
             f"HWKG visible GPU {device.name} ({capability}, {memory_mib:.0f} MiB) "
             f"does not uniquely match pinned graph node {hardware['id']}"
@@ -255,6 +280,21 @@ def hardware_guidance(stage, task_description="", candidate_code="", **stage_con
         edges = {e["to"]: e for e in graph["edges"] if e["from"] == node_id}
         features = {n["id"]: n for n in graph["nodes"] if n["id"].startswith("feat:")}
         runtime = runtime_facts()
+        siblings=[n for n in graph['nodes'] if n.get('properties',{}).get('gpu_count',1)==1
+                  and _matches_visible_device(n,device)]
+        runtime['hardware_profile_identity_verified']=len(siblings)==1 and hardware['properties'].get('gpu_count',1)==1
+        runtime['matching_graph_profile_ids']=[n['id'] for n in siblings]
+        if len(siblings)>1:
+            # Equal driver identities can represent GDDR6/GDDR6X variants. Use
+            # common feature eligibility, without borrowing variant bandwidth
+            # or a calibration that cannot identify the actual memory variant.
+            hardware={**hardware,'properties':{**hardware['properties'],
+                'memory_bandwidth_GBps':None,'vram_type':'unverified driver-identical variant'}}
+            sets=[{e['to'] for e in graph['edges'] if e['from']==n['id']
+                   and e.get('properties',{}).get('verified') is True
+                   and e.get('properties',{}).get('support_level')=='supported'} for n in siblings]
+            shared=set.intersection(*sets)
+            edges={k:v for k,v in edges.items() if k in shared}
         if policy == 'v8':
             from .calibration import calibration_flags
             runtime['calibration_flags'] = calibration_flags()
@@ -269,7 +309,9 @@ def hardware_guidance(stage, task_description="", candidate_code="", **stage_con
                       "visible_gpu_name":device.name, "visible_compute_capability":capability,
                       "visible_memory_mib":round(memory_mib), "chars":len(text or ''),
                       "context_sha256":hashlib.sha256((text or '').encode()).hexdigest(),
-                      "context_text":text, **evidence}
+                      "context_text":text, "graph_profile_gpu_count":hardware['properties'].get('gpu_count',1),
+                      "visible_device_scope":"one GPU; platform topology and aggregate memory not verified",
+                      **evidence}
             with (path/"prompt-audit.jsonl").open("a", encoding="utf-8") as stream:
                 stream.write(json.dumps(record, sort_keys=True)+"\n")
         return text
