@@ -365,6 +365,15 @@ def auxiliary_recipe_signature(code):
     return {'averaging': sorted(ema), 'checkpoint': sorted(checkpoint)}
 
 
+def evaluation_work_signature(code):
+    """Named inference helpers: conservative syntax coverage, not complete dataflow."""
+    try: tree=ast.parse(code)
+    except SyntaxError: return None
+    return sorted(ast.dump(n,include_attributes=False) for n in ast.walk(tree)
+        if isinstance(n,(ast.FunctionDef,ast.AsyncFunctionDef)) and re.search(
+            r'(?:^|_)(?:predict|inference|infer|evaluate|validate|validation|eval|tta)(?:_|$)',n.name,re.I))
+
+
 def recipe_changes(before, after):
     """Detect relevant syntax changes; do not rewrite or reject upstream candidates."""
     def signature(code):
@@ -432,10 +441,13 @@ def recipe_changes(before, after):
     aa, ab=auxiliary_recipe_signature(before),auxiliary_recipe_signature(after)
     ema_changed=None if not before or aa is None or ab is None else aa['averaging']!=ab['averaging']
     checkpoint_changed=None if not before or aa is None or ab is None else aa['checkpoint']!=ab['checkpoint']
+    ea,eb=evaluation_work_signature(before),evaluation_work_signature(after)
+    eval_work_changed=None if not before or ea is None or eb is None else ea!=eb
     pa, pb = precision_scope(before), precision_scope(after)
-    return {'recipe_syntax_changed': None if a is None or b is None or not before else a != b or bool(ema_changed) or bool(checkpoint_changed),
+    return {'recipe_syntax_changed': None if a is None or b is None or not before else a != b or bool(ema_changed) or bool(checkpoint_changed) or bool(eval_work_changed),
             'averaging_recipe_syntax_changed':ema_changed,'checkpoint_selection_syntax_changed':checkpoint_changed,
-            'recipe_audit_coverage':'selected model/optimizer/loss/augmentation/budget/scheduler, referenced module assignments/tuple settings, custom Module definitions and EMA/SWA/checkpoint syntax; not complete semantic/dataflow equivalence',
+            'evaluation_work_syntax_changed':eval_work_changed,
+            'recipe_audit_coverage':'selected model/optimizer/loss/augmentation/budget/scheduler, referenced module assignments/tuple settings, custom Module definitions, EMA/SWA/checkpoint and named inference helper syntax; not complete semantic/dataflow equivalence',
             'training_precision_changed': None if not before or pa['training'] is None or pb['training'] is None else pa['training'] != pb['training'],
             'evaluation_precision_changed': None if not before or pa['evaluation'] is None or pb['evaluation'] is None else pa['evaluation'] != pb['evaluation'],
             'bf16_with_active_scaler': pb.get('bf16_with_active_scaler', False),

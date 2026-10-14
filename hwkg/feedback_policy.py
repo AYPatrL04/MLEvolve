@@ -7,20 +7,23 @@ from .native_evidence import number
 from .host_policy import guidance_v6
 from .native_evidence import native_feedback
 from .calibration import select_record, choose_trial, calibration_path
+from .contracts import scope_reminder
 
 
 def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runtime, max_chars=1600,
                 *, phase='plan_and_code', proposed_plan='', failure_text='', optimization_mode='normal',
                 parent_id=None, parent_execution_succeeded=None, blocked_profiles=(), provider_prompt=None):
     limit=min(max_chars,750)
+    contract_note=scope_reminder(task,provider_prompt)
     evidence=native_feedback(code,failure_text,device,parent_id=parent_id,
                              execution_succeeded=parent_execution_succeeded)
     base,eligible=guidance_v6(stage,task,code,device,hardware,feature_nodes,edges,runtime,10000,
         phase=phase,proposed_plan=proposed_plan,failure_text=failure_text,optimization_mode=optimization_mode)
     audit={**eligible}
-    audit.update(policy='hardware-v8',policy_revision='v8.17',native_parent_evidence=evidence,
+    audit.update(policy='hardware-v8',policy_revision='v8.18',native_parent_evidence=evidence,
         measurements_verified=False,end_to_end_gain_verified=False,calibration_basis=None,
-        calibration_trial=None,added_provider_calls=0,blocked_profiles=list(blocked_profiles))
+        calibration_trial=None,added_provider_calls=0,blocked_profiles=list(blocked_profiles),
+        shared_contract_reminder=contract_note,contract_runtime_enforced=False)
     def skip(reason):
         audit.update(advice_ids=[],decision_provenance=[],selected_feature_ids=[],
                      verified_hardware_feature_ids=[],precision_guard=False,skip_reason=reason)
@@ -30,7 +33,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         proposal=guidance(stage,code,device,edges,runtime,phase=phase,
             parent_execution_succeeded=parent_execution_succeeded,
             blocked_profiles=blocked_profiles,identity_already_present=identity_already_present,
-            max_chars=limit)
+            max_chars=limit,contract_note=contract_note)
         if not proposal:return None
         text,info=proposal
         features=info['selected_feature_ids']
@@ -43,7 +46,8 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
     from .optimizer_policy import guidance as optimizer_guidance
     optimizer_trial = optimizer_guidance(stage, task, code, device, edges, runtime,
         phase=phase, parent_execution_succeeded=parent_execution_succeeded,
-        blocked_profiles=blocked_profiles, provider_prompt=provider_prompt, max_chars=limit)
+        blocked_profiles=blocked_profiles, provider_prompt=provider_prompt, max_chars=limit,
+        contract_note=contract_note)
     if optimizer_trial:
         text, measured = optimizer_trial
         return text,{**audit, **measured, 'native_parent_evidence':evidence}
@@ -84,7 +88,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
             modes.append('BF16');features.append('feat:bf16')
         if not modes:return skip('no verified host AMP facts for a parentless draft')
         layout=' CUDA CNNs can use model/input channels_last.' if 'vision_layout' in audit.get('advice_ids',[]) else ''
-        text=(f'HWKG v8.17: {device.name}, sm_{device.major}{device.minor}, CUDA {runtime.get("cuda","unknown")}.\n'
+        text=(f'HWKG v8.18: {device.name}, sm_{device.major}{device.minor}, CUDA {runtime.get("cuda","unknown")}.\n'
               f'[hardware_target] Native AMP supports {"/".join(modes)}.{layout} '
               'No dtype winner is established for this draft. Keep the task and original response format.')
         if len(text)>min(limit,340):return skip('compact draft context budget')
@@ -173,10 +177,11 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         if key in provenance:
             provenance[key]={**provenance[key], 'feature_ids':[f for f in provenance[key].get('feature_ids',[])
                 if f in (('feat:bf16','feat:amp') if target_dtype=='bf16' else ('feat:amp',))]}
-    lines=[f'HWKG v8.17 {phase}: {device.name}, sm_{device.major}{device.minor}.',
+    lines=[f'HWKG v8.18 {phase}: {device.name}, sm_{device.major}{device.minor}.',
         'Preserve recipe/RNG/sample order/epochs, eval/test precision and original response format. '
         'This hardware trial changes only the selected item; keep EMA/checkpoint selection unchanged. '
         'No extra training/benchmark/BN-stat passes.']
+    if contract_note:lines.append(contract_note)
     if trial:
         lines.append(f'Matched microcalibration: {trial["step_speedup"]:.2f}x steps; projected net '
             f'{trial["estimated_net_seconds"]:.1f}s after setup/{reserve:g}s reserve. Quality/full-pipeline gain unverified.')
