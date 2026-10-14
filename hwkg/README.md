@@ -467,3 +467,9 @@ speedup or task-quality gain. Primary long-window signal is thin,earlier short
 range conflicted,and LLM/full-pipeline costs are unknown; source-only syntax and
 normal microtimings cannot certify actual candidate adoption or useful learning.
 All original request/output/search/score/execution behavior stays unchanged.
+# v8.15 source-scope repair
+
+Known model forward/call mutation or execution-hook registration leaves ordinary
+model calibration scope unknown. Exact native NCHW spelling is accepted only as
+self-report; ambiguous layout remains unknown. See [release notes](RELEASE_V8_15.md).
+No native component gain is established by the zero-advice v8.14 5+5 comparison.

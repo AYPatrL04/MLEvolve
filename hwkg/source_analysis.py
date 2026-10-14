@@ -116,6 +116,21 @@ def training_scope_uncertain(code):
     if parsed is None: return True
     tree, owners, direct, roots, _, _ = parsed
     if not roots: return True
+    # A torchvision constructor alone does not establish the measured ordinary
+    # model path after instance/class forward replacement or execution hooks.
+    # This is a conservative source screen, not complete alias/dataflow proof.
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Attribute) and n.attr in {'forward', '__call__'}
+                and isinstance(n.ctx, (ast.Store, ast.Del))): return True
+        if isinstance(n, ast.Call):
+            name = call_name(n)
+            if name in {'register_forward_hook', 'register_forward_pre_hook',
+                        'register_backward_hook', 'register_full_backward_hook',
+                        'register_full_backward_pre_hook'}: return True
+            position = 1 if name in {'setattr', 'delattr'} else 0 if name in {'__setattr__', '__delattr__'} else None
+            if position is not None and len(n.args) > position:
+                attr = n.args[position]
+                if isinstance(attr, ast.Constant) and attr.value in {'forward', '__call__'}: return True
     # Freezing remains conservative. Logging detach and eval-only no_grad no
     # longer poison an otherwise direct full-model training recipe.
     if any(isinstance(n, ast.Call) and call_name(n) == 'requires_grad_' for n in ast.walk(tree)): return True

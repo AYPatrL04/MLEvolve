@@ -135,7 +135,7 @@ def test_planner_and_coder_have_different_roles():
     for text,audit in [(planner,pa),(coder,ca)]:
         assert 'No extra training/benchmark/BN-stat passes' in text
         assert len(text)<=750
-        assert audit['policy_revision']=='v8.14'
+        assert audit['policy_revision']=='v8.15'
 
 def test_measured_profile_roi_and_native_scope_gate(tmp_path,monkeypatch):
     path,row=calibration(tmp_path);monkeypatch.setenv('MLEVOLVE_HWKG_CALIBRATION_PATH',str(path))
@@ -183,7 +183,7 @@ def test_precision_path_also_guards_layout_reporting(phase):
     assert text and audit['advice_ids']==['precision']
     assert 'is_contiguous(memory_format=torch.channels_last)' in text
     assert 'never a .memory_format attribute' in text
-    assert len(text)<=1100 and audit['policy_revision']=='v8.14'
+    assert len(text)<=1100 and audit['policy_revision']=='v8.15'
     assert audit['added_provider_calls']==0 and not audit['measurements_verified']
     assert 'TRAIN forward/loss only' in text and 'eval/test precision' in text
     assert 'RNG/sample order' in text and 'shared eval autocast helper unchanged' in text

@@ -277,6 +277,9 @@ def native_feedback(code, text, device, *, parent_id=None, execution_succeeded=N
     layouts = {'channels_last': 'channels_last', 'torch.channels_last': 'channels_last',
                'contiguous_format': 'contiguous', 'torch.contiguous_format': 'contiguous', 'contiguous': 'contiguous',
                'channels_first (contiguous NCHW)': 'contiguous', 'channels_first (NCHW)': 'contiguous'}
+    # Exact native source spelling seen in the v8.14 ordinary NCHW parent.
+    # Do not infer channels_last from an ambiguous "non-contiguous" label.
+    layouts['channels_first(NCHW,contiguous)'] = 'contiguous'
     model_layout, input_layout = [layouts.get(row.get(k)) if isinstance(row.get(k),str) else None
                                  for k in ('model_memory_format', 'input_memory_format')]
     if not model_layout or not input_layout:
