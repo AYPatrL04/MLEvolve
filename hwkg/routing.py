@@ -87,11 +87,16 @@ def hardware_context(stage):
                             intervention_observations={k:{'source_configured':bool(configured.get(
                                 'channels_last' if k=='vision_layout' else 'bf16')),
                                 'runtime_verified':False} for k in context.intervention_ids if k in ('precision','vision_layout')})
-                        if 'optimizer_fused_adamw' in context.intervention_ids:
-                            from .native_evidence import source_spec
+                        if context.intervention_ids & {'optimizer_fused_adamw','optimizer_choice'}:
+                            from .exploration_policy import optimizer_option
                             observations['optimizer_implementation_observation'] = {
-                                'fused_source_option':(source_spec(result.code).get('optimizer_options') or {}).get('fused'),
+                                'fused_source_option':(optimizer_option(result.code) or {}).get('fused'),
                                 'runtime_verified':False, 'gain_verified':False}
+                        if 'precision_choice' in context.intervention_ids:
+                            from .source_analysis import precision_scope
+                            observations['precision_choice_observation'] = {
+                                'training_dtypes_source':precision_scope(result.code).get('training_dtypes',[]),
+                                'runtime_verified':False,'gain_verified':False}
                         from .trial_memory import remember
                         remember(context.task, parent, result, context.intervention_ids, context.target_profile)
                     _audit({"event": "candidate_return", "trace_id": context.trace_id,
@@ -216,7 +221,7 @@ def with_hardware_prompt(func):
             # The native request itself, response, retry and parser are retained.
             unchanged = identity_prompt if _feedback_policy() else prompt
             return func(unchanged, cfg, *args, **kwargs)
-        delivered = _append_feedback_advice(prompt,context.advice) if _feedback_policy() else _append_advice(prompt, context.advice)
+        delivered = _append_feedback_advice(identity_prompt,context.advice) if _feedback_policy() else _append_advice(prompt, context.advice)
         if delivered is None:
             _audit({'event':'unsupported_prompt_skipped','trace_id':context.trace_id});return func(prompt,cfg,*args,**kwargs)
         if _feedback_policy():
@@ -225,7 +230,8 @@ def with_hardware_prompt(func):
             if '[optimizer_fused_adamw]' in context.advice:
                 context.target_profile = 'optimizer_fused_adamw'
             if '[precision]' in context.advice:
-                dtype='fp16' if re.search(r'\bFP16\b|torch\.float16',context.advice) else 'bf16'
+                dtype=('bf16' if 'torch.bfloat16' in context.advice else
+                       'fp16' if re.search(r'\bFP16\b|torch\.float16',context.advice) else 'bf16')
                 context.target_profile=dtype+'_'+('channels_last' if 'channels_last' in context.parent_code else 'contiguous')
             elif '[vision_layout]' in context.advice:
                 from .source_analysis import precision_scope

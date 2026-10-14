@@ -473,3 +473,12 @@ Known model forward/call mutation or execution-hook registration leaves ordinary
 model calibration scope unknown. Exact native NCHW spelling is accepted only as
 self-report; ambiguous layout remains unknown. See [release notes](RELEASE_V8_15.md).
 No native component gain is established by the zero-advice v8.14 5+5 comparison.
+
+## v8.16 capability-guided hypotheses
+
+Initial RTX5080 drafts retain precision/optimizer options even when the task already
+provides host identity. Successful parents may receive one unmeasured implementation
+or TRAIN precision hypothesis without requiring an exact profitable calibration.
+Measured projections remain strict; source/runtime/quality/benefit are separate.
+See [release notes](RELEASE_V8_16.md). Baseline stays immutable; followups reuse the
+prior baseline and run HWKD only. Native performance and one live GPU check pending.

@@ -50,10 +50,13 @@ def test_fp16_and_layout_single_change_with_cost_reserve(tmp_path):
     assert choose_trial(row,'fp16_contiguous',1000,1,['fp16_channels_last']) is None
 
 
-def test_no_unmatched_fp16_to_bf16_fallback():
+def test_unmatched_precision_option_is_explicit_hypothesis_not_calibration_gain():
     text,audit=build(code=CODE.replace('bfloat16','float16')+'\nmodel.to(memory_format=torch.channels_last)',
         failure_text=log(actual_autocast_dtype='float16',model_memory_format='channels_last',input_memory_format='channels_last'))
-    assert text is None and audit['current_profile']=='fp16_channels_last'
+    assert text and audit['current_profile']=='fp16_channels_last'
+    assert audit['proposal_kind']=='capability_guided_unmeasured'
+    assert audit['calibration_trial'] is None and not audit['measurements_verified']
+    assert 'TRAIN-only torch.bfloat16' in text and 'Preserve shared eval precision' in text
     assert audit['added_provider_calls']==0
 
 

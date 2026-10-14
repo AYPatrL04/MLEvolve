@@ -58,16 +58,18 @@ def test_literal_tf32_assignment_couples_precision_only_in_verified_runtime(tmp_
     assert workload_key(GPU,runtime,source_spec(code.replace('matmul.allow_tf32 = True','matmul.allow_tf32 = False')))['runtime_flags']['float32_matmul_precision']=='highest'
 
 
-def test_native_task_hardware_facts_are_not_repeated_on_draft(enabled):
+def test_native_task_identity_keeps_optional_hardware_patterns(enabled):
     _,task=parent_fixture();sent=[]
     @with_hardware_prompt
     def provider(prompt,cfg,**kwargs):sent.append((prompt,cfg,kwargs));return 'original provider response'
     @hardware_context('draft')
     def draft(agent):return provider(task+'\n# Response format\nOriginal format',CFG,max_tokens=16384)
     assert draft(NS(task_desc=task))=='original provider response'
-    assert sent==[(task+'\n# Response format\nOriginal format',CFG,{'max_tokens':16384})]
+    assert sent[0][1] is CFG and sent[0][2]=={'max_tokens':16384}
+    assert sent[0][0].startswith(task) and sent[0][0].endswith('# Response format\nOriginal format')
+    assert '[precision_choice]' in sent[0][0]
     rows=[json.loads(l) for l in (enabled/'prompt-audit.jsonl').read_text().splitlines()]
-    assert rows[-1]['chars']==0 and 'already supplies' in rows[-1]['skip_reason']
+    assert rows[-1]['chars']>0 and rows[-1]['draft_identity_facts_deduplicated']
     assert build(stage='draft',code='',parent_execution_succeeded=None,failure_text='')[0]  # absent facts remain available
 
 

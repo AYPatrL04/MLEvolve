@@ -102,5 +102,5 @@ def test_compact_parent_advice_preserves_ema_selection(phase):
     text, audit = build(phase=phase)
     assert text and len(text) <= 750
     assert 'keep EMA/checkpoint selection unchanged' in text
-    assert audit['policy_revision'] == 'v8.15'
+    assert audit['policy_revision'] == 'v8.16'
     assert audit['added_provider_calls'] == 0

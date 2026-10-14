@@ -96,14 +96,14 @@ def guidance(stage, task, code, device, edges, runtime, *, phase='coder',
     if free is not None and (not number(free,True) or peak > .6*free*1024**2): return None
     action = ('Plan one fused=True change to existing CUDA AdamW.' if phase == 'planner'
               else 'Set fused=True on the existing CUDA AdamW; keep FP32 parameters.')
-    advice=(f'HWKG v8.15: {device.name}, sm_120; measured R50/BF16/b64/128px AdamW recipe.\n'
+    advice=(f'HWKG v8.16: {device.name}, sm_120; measured R50/BF16/b64/128px AdamW recipe.\n'
             f'[optimizer_fused_adamw] {action} Preserve AMP, batch, LR/WD, sample order, epochs, '
             'eval precision and EMA/checkpoint selection. Recheck live memory. '
             f'Local steps {default["step_seconds"]/fused["step_seconds"]:.2f}x; conditional {updates} updates net {net:.2f}s '
             f'after setup/{reserve:g}s declared reserve. Earlier short-repeat range conflicted; '
             'quality/full-pipeline/LLM cost unverified. No extra training or benchmark; original response format.')
     if len(advice)>min(max_chars,750): return None
-    audit={'policy':'hardware-v8','policy_revision':'v8.15','advice_ids':['optimizer_fused_adamw'],
+    audit={'policy':'hardware-v8','policy_revision':'v8.16','advice_ids':['optimizer_fused_adamw'],
            'selected_feature_ids':[FEATURE,'feat:bf16'],'verified_hardware_feature_ids':[FEATURE,'feat:bf16'],
            'decision_provenance':[{'id':'optimizer_fused_adamw','feature_ids':[FEATURE,'feat:bf16'],
                'reason':'exact measured host/runtime/primitive recipe; full dataflow and quality unknown'}],

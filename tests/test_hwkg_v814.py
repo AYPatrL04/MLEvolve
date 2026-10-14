@@ -29,7 +29,7 @@ def call(code=CODE, **kwargs):
 def test_measured_scope_proposal_is_compact_conditional_and_single_flag(phase):
     text,audit=call(phase=phase)
     assert len(text)<=750 and 'fused=True' in text and 'Preserve AMP, batch, LR/WD' in text
-    assert audit['policy_revision']=='v8.15' and audit['advice_ids']==['optimizer_fused_adamw']
+    assert audit['policy_revision']=='v8.16' and audit['advice_ids']==['optimizer_fused_adamw']
     assert audit['calibration_file_sha256']==BUNDLED_SHA256 and audit['projected_updates']==3750
     assert audit['calibration_trial']['repeat_spread_net_seconds']>0
     assert audit['earlier_short_repeat_spread_conflict_retained']

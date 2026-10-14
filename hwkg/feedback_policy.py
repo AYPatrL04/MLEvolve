@@ -18,13 +18,28 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
     base,eligible=guidance_v6(stage,task,code,device,hardware,feature_nodes,edges,runtime,10000,
         phase=phase,proposed_plan=proposed_plan,failure_text=failure_text,optimization_mode=optimization_mode)
     audit={**eligible}
-    audit.update(policy='hardware-v8',policy_revision='v8.15',native_parent_evidence=evidence,
+    audit.update(policy='hardware-v8',policy_revision='v8.16',native_parent_evidence=evidence,
         measurements_verified=False,end_to_end_gain_verified=False,calibration_basis=None,
         calibration_trial=None,added_provider_calls=0,blocked_profiles=list(blocked_profiles))
     def skip(reason):
         audit.update(advice_ids=[],decision_provenance=[],selected_feature_ids=[],
                      verified_hardware_feature_ids=[],precision_guard=False,skip_reason=reason)
         return None,audit
+    def explore(identity_already_present=False):
+        from .exploration_policy import guidance
+        proposal=guidance(stage,code,device,edges,runtime,phase=phase,
+            parent_execution_succeeded=parent_execution_succeeded,
+            blocked_profiles=blocked_profiles,identity_already_present=identity_already_present,
+            max_chars=limit)
+        if not proposal:return None
+        text,info=proposal
+        features=info['selected_feature_ids']
+        info.update(verified_hardware_feature_ids=features,
+            decision_provenance=[{'id':key,'feature_ids':features,
+                'reason':'verified RTX5080 capability/API; candidate benefit unverified'} for key in info['advice_ids']],
+            exploration_basis='hardware capability and optional software API, not calibrated candidate cost',
+            precision_guard='precision' in info['advice_ids'],skip_reason=None)
+        return text,{**audit,**info}
     from .optimizer_policy import guidance as optimizer_guidance
     optimizer_trial = optimizer_guidance(stage, task, code, device, edges, runtime,
         phase=phase, parent_execution_succeeded=parent_execution_succeeded,
@@ -51,8 +66,11 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         else:
             identity_text = str(task) if provider_prompt is None else ''
         audit['draft_identity_check_basis'] = 'actual provider prompt' if provider_prompt is not None else 'direct policy task input'
-        if (device.name in identity_text and 'capability '+capability in identity_text
-                and cuda_build != 'cu' and cuda_build in identity_text):
+        identity_present=(device.name in identity_text and 'capability '+capability in identity_text
+                and cuda_build != 'cu' and cuda_build in identity_text)
+        proposal=explore(identity_present)
+        if proposal:return proposal
+        if identity_present:
             return skip('actual provider prompt already supplies this host identity; defer hardware trial until a usable parent')
         # A parentless draft has no measured workload or recipe to preserve.
         # Supply verified host facts, not a compulsory BF16 experiment plus a
@@ -66,7 +84,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
             modes.append('BF16');features.append('feat:bf16')
         if not modes:return skip('no verified host AMP facts for a parentless draft')
         layout=' CUDA CNNs can use model/input channels_last.' if 'vision_layout' in audit.get('advice_ids',[]) else ''
-        text=(f'HWKG v8.15: {device.name}, sm_{device.major}{device.minor}, CUDA {runtime.get("cuda","unknown")}.\n'
+        text=(f'HWKG v8.16: {device.name}, sm_{device.major}{device.minor}, CUDA {runtime.get("cuda","unknown")}.\n'
               f'[hardware_target] Native AMP supports {"/".join(modes)}.{layout} '
               'No dtype winner is established for this draft. Keep the task and original response format.')
         if len(text)>min(limit,340):return skip('compact draft context budget')
@@ -128,13 +146,19 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         match=eligible_cards.get(target)
         if match:ids=[target];provenance[target]=match
         else:return skip('calibrated trial has no applicable host-graph implementation')
-    elif record and updates is not None and current:return skip('matched calibration predicts no profitable single trial')
+    elif record and updates is not None and current:
+        proposal=explore()
+        if proposal:return proposal
+        return skip('matched calibration predicts no profitable single trial')
     # A known low-precision parent is not grounds for an unmeasured dtype swap.
     if not trial and current and current.startswith(('fp16_', 'bf16_')):
         ids=[k for k in ids if k!='precision']
     fallback_target='bf16_'+('channels_last' if configured.get('channels_last') else 'contiguous')
     if not trial and fallback_target in blocked_profiles: ids=[k for k in ids if k!='precision']
-    if not ids:return skip('no unadopted applicable host intervention; avoid unmeasured low-precision swaps')
+    if not ids:
+        proposal=explore()
+        if proposal:return proposal
+        return skip('no unadopted applicable host intervention; no eligible capability-guided hypothesis')
     key=ids[0]
     target_dtype=(trial['profile'].split('_',1)[0] if trial else 'bf16')
     if key=='precision':
@@ -149,7 +173,7 @@ def guidance_v8(stage, task, code, device, hardware, feature_nodes, edges, runti
         if key in provenance:
             provenance[key]={**provenance[key], 'feature_ids':[f for f in provenance[key].get('feature_ids',[])
                 if f in (('feat:bf16','feat:amp') if target_dtype=='bf16' else ('feat:amp',))]}
-    lines=[f'HWKG v8.15 {phase}: {device.name}, sm_{device.major}{device.minor}.',
+    lines=[f'HWKG v8.16 {phase}: {device.name}, sm_{device.major}{device.minor}.',
         'Preserve recipe/RNG/sample order/epochs, eval/test precision and original response format. '
         'This hardware trial changes only the selected item; keep EMA/checkpoint selection unchanged. '
         'No extra training/benchmark/BN-stat passes.']

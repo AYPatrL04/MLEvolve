@@ -19,12 +19,17 @@ SOURCES = {
 def runtime_facts():
     """Read capabilities only; do not benchmark, install, or change backend flags."""
     import torch
+    import inspect
+    try: fused_api = 'fused' in inspect.signature(torch.optim.AdamW).parameters
+    except (TypeError,ValueError): fused_api = False
     free, total = torch.cuda.mem_get_info(0)
     return {
         'torch': str(torch.__version__), 'cuda': torch.version.cuda,
         'arch_list': torch.cuda.get_arch_list(),
         'float32_matmul_precision': torch.get_float32_matmul_precision(),
         'bf16_supported': torch.cuda.is_bf16_supported(),
+        'adamw_fused_api': fused_api,
+        'grad_scaler_api': hasattr(torch.amp, 'GradScaler'),
         'free_mib_snapshot': free // 1024**2, 'total_mib': total // 1024**2,
         'sdpa_api': hasattr(torch.nn.functional, 'scaled_dot_product_attention'),
         'flash_sdp_built': torch.backends.cuda.is_flash_attention_available(),

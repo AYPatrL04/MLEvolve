@@ -137,9 +137,11 @@ def source_spec(code):
               {'cross_entropy', 'CrossEntropyLoss'}]
     if len(losses) == 1:
         loss = losses[0]
+        from .loss_scope import used_for_backward
         direct = ((origin(loss.func) == 'torch.nn.functional.cross_entropy' and len(loss.args) == 2)
                   or (origin(loss.func) == 'torch.nn.CrossEntropyLoss' and not loss.args))
-        if direct and all(k.arg == 'label_smoothing' for k in loss.keywords) and len(loss.keywords) <= 1:
+        if (direct and used_for_backward(tree,loss)
+                and all(k.arg == 'label_smoothing' for k in loss.keywords) and len(loss.keywords) <= 1):
             try:
                 smoothing = literal(loss.keywords[0].value) if loss.keywords else 0.
                 if type(smoothing) in (float, int) and math.isfinite(smoothing) and 0 <= smoothing <= 1:
