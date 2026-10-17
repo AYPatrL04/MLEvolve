@@ -21316,28 +21316,6 @@
     },
     {
       "type": "HAS_FEATURE",
-      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070.spec",
-      "to": "feat:cut_cross_entropy",
-      "properties": {
-        "support_level": "supported",
-        "recommended": true,
-        "verified": false,
-        "limitations": "software technique for cross-entropy over a linear classifier/logit projection; strongest fit is large-vocabulary LM heads, but Apple documents the general logits = X @ A.T + b form; requires compatible PyTorch/Triton/CUDA stack for the Triton CCE path; little benefit when logits materialization is not a memory/time bottleneck; example_code + Nautilus run pending before verified=true"
-      }
-    },
-    {
-      "type": "HAS_FEATURE",
-      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070.spec",
-      "to": "feat:dataset_decomposition",
-      "properties": {
-        "support_level": "supported",
-        "recommended": true,
-        "verified": false,
-        "limitations": "data-ordering technique for text sequence training; no hardware-specific acceleration and no direct inference benefit; example_code + Nautilus run pending before verified=true"
-      }
-    },
-    {
-      "type": "HAS_FEATURE",
       "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_super.spec",
       "to": "feat:cut_cross_entropy",
       "properties": {
@@ -22625,17 +22603,6 @@
     },
     {
       "type": "HAS_FEATURE",
-      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070.spec",
-      "to": "feat:nvimagecodec_gpu_decode",
-      "properties": {
-        "support_level": "supported",
-        "recommended": true,
-        "verified": false,
-        "limitations": "GPU image-codec data pipeline; recommended=true only for CV/imaging pipelines where CPU image decode is a measured bottleneck, not for text/LLM-only workloads or storage/augmentation-bound pipelines; dedicated hardware JPEG decode is documented for Ada GPUs; hardware JPEG path is for supported baseline JPEG workloads and depends on supported platform/library/backend; other codec/plugin support is format-dependent; example_code + Nautilus run pending before verified=true"
-      }
-    },
-    {
-      "type": "HAS_FEATURE",
       "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070_super.spec",
       "to": "feat:nvimagecodec_gpu_decode",
       "properties": {
@@ -23755,30 +23722,6 @@
     {
       "type": "HAS_FEATURE",
       "from": "hw:nvidia.ada_lovelace.geforce_rtx_4060_ti_8gb.spec",
-      "to": "feat:fp8_all_gather_fsdp2",
-      "properties": {
-        "support_level": "experimental",
-        "recommended": false,
-        "verified": false,
-        "limitations": "distributed FSDP2 training only; this feature is an opt-in candidate only when parameter all-gather communication is a measured bottleneck, not a single-GPU or default small-model setting; communication optimization uses FP8 all-gather while Tensor Cores are used by surrounding FP8 Linear compute; requires torchao float8 + FSDP2 stack and benchmark validation against BF16 communication; example_code + Nautilus run pending before verified=true Not part of the default NVIDIA mixed-precision training path; prefer BF16/FP16/TF32 for default speed optimization and require benchmark validation before using FP8.",
-        "recommendation_scope": "experimental_fp8_validated_long_transformer_only"
-      }
-    },
-    {
-      "type": "HAS_FEATURE",
-      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070.spec",
-      "to": "feat:fp8_rowwise_scaling",
-      "properties": {
-        "support_level": "experimental",
-        "recommended": false,
-        "verified": false,
-        "limitations": "requires FP8-capable hardware plus torchao float8/torch.compile backend support for the target SM; this feature is an opt-in candidate only, and Ada backend/performance support should be validated before treating as production-supported; rowwise scaling favors numerical stability over tensorwise throughput; example_code + Nautilus run pending before verified=true Not part of the default NVIDIA mixed-precision training path; prefer BF16/FP16/TF32 for default speed optimization and require benchmark validation before using FP8.",
-        "recommendation_scope": "experimental_fp8_validated_long_transformer_only"
-      }
-    },
-    {
-      "type": "HAS_FEATURE",
-      "from": "hw:nvidia.ada_lovelace.geforce_rtx_4070.spec",
       "to": "feat:fp8_all_gather_fsdp2",
       "properties": {
         "support_level": "experimental",

@@ -1,8 +1,8 @@
 # HWKD: hardware knowledge and context injection
 
 Optional hardware context for original InternScience/MLEvolve, based on commit
-`9c5c8a3b23f0361708b59a401452dddc00f97189`. The implementation is on the
-`hwkd-impl` branch. The component's runtime policy is v8.19.
+`9c5c8a3b23f0361708b59a401452dddc00f97189`. The standalone distribution is on the
+`hwkd-only` branch. The component's runtime policy is v8.19.
 
 ## Contents
 
@@ -33,7 +33,7 @@ Keep the task, data, model/API settings and budgets equal to your baseline.
 Unset `MLEVOLVE_HWKG_GRAPH_PATH` to disable this component.
 
 Graph SHA256:
-`ef5850d7ab5af271413141ade5777878fbf8dcee0750e7eba406c924e4c6bec1`.
+`91e52fd2f7299b24c782f63f600ed4e2fa429a7159f9743d912b1dcf922efd3a`.
 
 ## Device and runtime scope
 

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hwkd"
+version = "8.19.0"
+description = "Hardware knowledge graph and scoped context injection for ML agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = []
+
+[project.optional-dependencies]
+gpu = ["torch"]
+calibration = ["torch", "torchvision", "numpy", "pandas"]
+
+[project.urls]
+Source = "https://github.com/AYPatrL04/MLEvolve/tree/hwkd-only"
+
+[tool.setuptools]
+packages = ["hwkg"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+hwkg = ["graph.json", "injection.env.example", "README.md"]
