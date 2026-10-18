@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hwkg"
+version = "0.1.0"
+description = "In-process hardware knowledge and bounded advice for coding agents"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+dependencies = []
+
+[tool.setuptools]
+packages = ["hwkg"]
+
+[tool.setuptools.package-data]
+hwkg = ["graph.json", "injection.env.example"]

@@ -7,12 +7,15 @@ import json
 import os
 import re
 import textwrap
+from functools import lru_cache
 from pathlib import Path
+import threading
 
 
 _FEATURE_IDS = ("feat:amp", "feat:fp16", "feat:bf16")
 DEFAULT_POLICY = "v8"
 _MAX_CHARS = 1600
+_knowledge_lock = threading.Lock()
 _TOKENIZER_PACKAGES = ("sentencepiece", "tiktoken")
 _IMAGE_TASK = re.compile(r"\b(?:images?|photos?|pictures?|jpe?gs?|pngs?|vision)\b", re.I)
 _LANGUAGE_MODEL_TASK = re.compile(
@@ -142,7 +145,7 @@ def _matches_visible_device(hardware, device):
     )
 
 
-def _verify_visible_hardware(graph, hardware):
+def _verify_visible_hardware(graph, hardware, *, policy=None):
     from .device_support import capability as device_capability
     device = _visible_cuda_device()
     capability = device_capability(device)
@@ -152,7 +155,7 @@ def _verify_visible_hardware(graph, hardware):
     else:
         matches = [node for node in graph["nodes"] if node.get('properties',{}).get('gpu_count',1)==1
                    and _matches_visible_device(node, device)]
-    family_only=(os.environ.get('MLEVOLVE_HWKG_EVIDENCE_POLICY',DEFAULT_POLICY)=='v8'
+    family_only=((policy or os.environ.get('MLEVOLVE_HWKG_EVIDENCE_POLICY',DEFAULT_POLICY))=='v8'
                  and len(matches)>1 and any(n['id']==hardware['id'] for n in matches)
                  and all(n['properties']['name']==hardware['properties']['name']
                          and n['properties']['compute_capabilities']==hardware['properties']['compute_capabilities']
@@ -195,9 +198,6 @@ def _has_hidden_matrix_model(candidate_code):
 
 
 def _muon_available():
-    helper = Path(__file__).resolve().parents[1] / "utils" / "muon_optimizer.py"
-    if helper.is_file():
-        return True
     try:
         import torch
     except ImportError:
@@ -247,6 +247,13 @@ def _exploratory_relevance(feature_id, task_description, candidate_code):
     return True, ""
 
 
+@lru_cache(maxsize=4)
+def _configured_knowledge(graph_path, expected_sha, hardware_id, policy, audit_dir, optimization_mode):
+    from .database import HardwareKnowledge
+    return HardwareKnowledge(hardware_id, graph_path=graph_path, graph_sha256=expected_sha,
+                             policy=policy, audit_dir=audit_dir, optimization_mode=optimization_mode)
+
+
 def hardware_guidance(stage, task_description="", candidate_code="", **stage_context):
     """Return graph-backed advice, or None when the treatment is disabled."""
     graph_path = os.environ.get("MLEVOLVE_HWKG_GRAPH_PATH")
@@ -258,6 +265,12 @@ def hardware_guidance(stage, task_description="", candidate_code="", **stage_con
         raise ValueError(f"Unknown HWKG evidence policy: {policy}")
     expected_sha = os.environ["MLEVOLVE_HWKG_GRAPH_SHA256"]
     hardware_id = os.environ["MLEVOLVE_HWKG_HARDWARE_ID"]
+    if policy in {"v6", "v7", "v8"}:
+        with _knowledge_lock:
+            knowledge = _configured_knowledge(os.path.abspath(graph_path), expected_sha,
+                hardware_id, policy, os.environ.get("MLEVOLVE_HWKG_AUDIT_DIR"),
+                os.environ.get("MLEVOLVE_HWKG_OPTIMIZATION_MODE", "normal"))
+        return knowledge.guidance(stage, task_description, candidate_code, **stage_context)
     raw = Path(graph_path).read_bytes()
     actual_sha = hashlib.sha256(raw).hexdigest()
     if actual_sha != expected_sha:
@@ -269,52 +282,6 @@ def hardware_guidance(stage, task_description="", candidate_code="", **stage_con
     if hardware is None:
         raise ValueError(f"HWKG hardware node not found: {node_id}")
     device, capability, memory_mib = _verify_visible_hardware(graph, hardware)
-
-    if policy in {"v6", "v7", "v8"}:
-        from .host_policy import guidance_v6, runtime_facts
-        if policy == 'v7':
-            from .adaptive_policy import guidance_v7
-        if policy == 'v8':
-            from .feedback_policy import guidance_v8
-        selected_guidance = guidance_v8 if policy == 'v8' else guidance_v7 if policy == 'v7' else guidance_v6
-        edges = {e["to"]: e for e in graph["edges"] if e["from"] == node_id}
-        features = {n["id"]: n for n in graph["nodes"] if n["id"].startswith("feat:")}
-        runtime = runtime_facts()
-        siblings=[n for n in graph['nodes'] if n.get('properties',{}).get('gpu_count',1)==1
-                  and _matches_visible_device(n,device)]
-        runtime['hardware_profile_identity_verified']=len(siblings)==1 and hardware['properties'].get('gpu_count',1)==1
-        runtime['matching_graph_profile_ids']=[n['id'] for n in siblings]
-        if len(siblings)>1:
-            # Equal driver identities can represent GDDR6/GDDR6X variants. Use
-            # common feature eligibility, without borrowing variant bandwidth
-            # or a calibration that cannot identify the actual memory variant.
-            hardware={**hardware,'properties':{**hardware['properties'],
-                'memory_bandwidth_GBps':None,'vram_type':'unverified driver-identical variant'}}
-            sets=[{e['to'] for e in graph['edges'] if e['from']==n['id']
-                   and e.get('properties',{}).get('verified') is True
-                   and e.get('properties',{}).get('support_level')=='supported'} for n in siblings]
-            shared=set.intersection(*sets)
-            edges={k:v for k,v in edges.items() if k in shared}
-        if policy == 'v8':
-            from .calibration import calibration_flags
-            runtime['calibration_flags'] = calibration_flags()
-        text, evidence = selected_guidance(stage, task_description, candidate_code, device, hardware,
-                                    features, edges, runtime, _MAX_CHARS,
-                                    optimization_mode=os.environ.get("MLEVOLVE_HWKG_OPTIMIZATION_MODE", "normal"),
-                                    **stage_context)
-        directory = os.environ.get("MLEVOLVE_HWKG_AUDIT_DIR")
-        if directory:
-            path = Path(directory); path.mkdir(parents=True, exist_ok=True)
-            record = {"event":"context_built", "stage":stage, "graph_sha256":actual_sha,
-                      "visible_gpu_name":device.name, "visible_compute_capability":capability,
-                      "visible_memory_mib":round(memory_mib), "chars":len(text or ''),
-                      "context_sha256":hashlib.sha256((text or '').encode()).hexdigest(),
-                      "context_text":text, "graph_profile_gpu_count":hardware['properties'].get('gpu_count',1),
-                      "visible_device_scope":"one GPU; platform topology and aggregate memory not verified",
-                      **evidence}
-            with (path/"prompt-audit.jsonl").open("a", encoding="utf-8") as stream:
-                stream.write(json.dumps(record, sort_keys=True)+"\n")
-        return text
 
     props = hardware["properties"]
     lines = [

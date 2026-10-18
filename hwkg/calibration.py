@@ -21,25 +21,7 @@ BUNDLED_SHA256 = '5912ee52bd8bd78f605432485284064c097320479feb677732f642641dfad7
 
 
 def calibration_path(device):
-    if 'MLEVOLVE_HWKG_CALIBRATION_PATH' in os.environ:
-        return os.environ['MLEVOLVE_HWKG_CALIBRATION_PATH']
-    directory=Path(__file__).with_name('calibrations')
-    priority=('rtx5080-v87-resnet50.json','rtx5080-v84-resnet50.json','rtx5080-resnet50-b64.json')
-    paths=[directory/name for name in priority]
-    paths += [p for p in sorted(directory.glob('*.json')) if p.name not in priority]
-    for path in paths:
-        # Discovery is metadata-only. select_record separately enforces owned,
-        # non-symlink bounded input and exact GPU/runtime/workload matching.
-        if path.is_symlink() or not path.is_file() or path.stat().st_size>2*1024**2: continue
-        try: doc=json.loads(path.read_bytes())
-        except (OSError,ValueError,TypeError): continue
-        if not isinstance(doc,dict) or doc.get('schema')!=SCHEMA or not isinstance(doc.get('records'),list): continue
-        for row in doc['records']:
-            key=row.get('workload',{}) if isinstance(row,dict) else {}
-            if (key.get('gpu_name')==device.name and key.get('capability')==[device.major,device.minor]
-                    and (not architecture(device).startswith('gfx') or key.get('gpu_architecture')==architecture(device))):
-                return path
-    return None
+    return os.environ.get('MLEVOLVE_HWKG_CALIBRATION_PATH')
 
 
 def calibration_flags():

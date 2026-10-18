@@ -25,8 +25,8 @@ FEATURE = 'feat:optimizer_fused_adamw'
 
 def load_record():
     configured=os.environ.get('MLEVOLVE_HWKG_OPTIMIZER_CALIBRATION_PATH')
-    if configured=='': return None
-    path = Path(configured) if configured is not None else Path(__file__).with_name('calibrations')/'rtx5080-v814-r50-fused.json'
+    if not configured: return None
+    path = Path(configured)
     try:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
         with os.fdopen(fd, 'rb') as f:
@@ -35,7 +35,6 @@ def load_record():
                 return None
             raw = f.read(65537)
         digest=hashlib.sha256(raw).hexdigest()
-        if configured is None and digest != BUNDLED_SHA256: return None
         record = json.loads(raw)
     except (OSError, ValueError, TypeError): return None
     if (not isinstance(record,dict) or record.get('schema') != 'hwkg-optimizer-calibration-v1'
